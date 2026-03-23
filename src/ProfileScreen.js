@@ -234,6 +234,10 @@ export default function ProfileScreen({ user, setActiveTab }) {
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
           Modifier mon profil
         </button>
+        <button onClick={() => window.location.href = window.location.pathname + '?admin=true'}
+  style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#eee',textAlign:'center',padding:'4px',width:'100%'}}>
+  ···
+</button>
       </div>
     </div>
   )

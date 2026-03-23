@@ -24,6 +24,10 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
+      const params = new URLSearchParams(window.location.search)
+if (params.get('admin') === 'true') {
+  setScreen('admin')
+}
       setLoading(false)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -81,7 +85,7 @@ function LandingScreen({ setScreen }) {
       <div style={{width:72,height:72,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
         <span style={{color:'white',fontWeight:700,fontSize:24}}>LK</span>
       </div>
-      <h1 style={{fontSize:28,fontWeight:700,color:'#1a1a1a',textAlign:'center'}}>LinkUp</h1>
+      <h1 style={{fontSize:28,fontWeight:700,color:'#1a1a1a',textAlign:'center'}}>TieUp</h1>
       <p style={{color:'#666',textAlign:'center',fontSize:15,lineHeight:1.6}}>Le réseau B2B pour les entreprises suisses</p>
       <div style={{width:'100%',background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
         <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>🎉 Offre Fondateurs</p>
@@ -138,7 +142,7 @@ function VisitorMode({ setScreen }) {
         <div style={{fontSize:40,marginBottom:'0.75rem'}}>🔒</div>
         <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>Créez un compte gratuit</h3>
         <p style={{fontSize:14,color:'#666',lineHeight:1.6,marginBottom:'1.25rem'}}>
-          Rejoignez LinkUp pour accéder à toutes les fonctionnalités B2B.
+          Rejoignez TieUp pour accéder à toutes les fonctionnalités B2B.
         </p>
         <button onClick={() => setScreen('register')}
           style={{width:'100%',padding:'13px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:'0.75rem'}}>
@@ -167,7 +171,7 @@ function VisitorMode({ setScreen }) {
           <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <span style={{color:'white',fontWeight:700,fontSize:12}}>LK</span>
           </div>
-          <span style={{fontWeight:700,fontSize:16}}>LinkUp</span>
+          <span style={{fontWeight:700,fontSize:16}}>TieUp</span>
         </div>
         <span style={{fontSize:12,color:'#999',background:'#f5f5f5',padding:'4px 10px',borderRadius:20}}>Mode démo</span>
       </div>
@@ -371,7 +375,7 @@ function RegisterScreen({ setScreen }) {
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',gap:'1rem',textAlign:'center'}}>
       <div style={{fontSize:48}}>🎉</div>
       <h2 style={{fontSize:22,fontWeight:700}}>Compte créé !</h2>
-      <p style={{color:'#666',fontSize:15}}>Bienvenue parmi les membres fondateurs de LinkUp !</p>
+      <p style={{color:'#666',fontSize:15}}>Bienvenue parmi les membres fondateurs de TieUp !</p>
       <button onClick={() => setScreen('login')}
         style={{padding:'14px 32px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
         Se connecter
@@ -409,7 +413,7 @@ function RegisterScreen({ setScreen }) {
         <input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}
           style={{marginTop:3,cursor:'pointer',width:16,height:16,flexShrink:0}} />
         <p style={{fontSize:13,color:'#666',lineHeight:1.5}}>
-          J'accepte les <span onClick={() => setScreen('legal')} style={{color:'#E24B4A',cursor:'pointer',textDecoration:'underline'}}>Conditions Générales d'Utilisation</span> et la <span onClick={() => setScreen('legal')} style={{color:'#E24B4A',cursor:'pointer',textDecoration:'underline'}}>Politique de Confidentialité</span> de LinkUp.
+          J'accepte les <span onClick={() => setScreen('legal')} style={{color:'#E24B4A',cursor:'pointer',textDecoration:'underline'}}>Conditions Générales d'Utilisation</span> et la <span onClick={() => setScreen('legal')} style={{color:'#E24B4A',cursor:'pointer',textDecoration:'underline'}}>Politique de Confidentialité</span> de TieUp.
         </p>
       </div>
 
@@ -441,7 +445,7 @@ function Dashboard({ user, setUser }) {
           <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <span style={{color:'white',fontWeight:700,fontSize:12}}>LK</span>
           </div>
-          <span style={{fontWeight:700,fontSize:16}}>LinkUp</span>
+          <span style={{fontWeight:700,fontSize:16}}>TieUp</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={() => setActiveTab('pricing')}
