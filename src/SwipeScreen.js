@@ -5,14 +5,22 @@ export default function SwipeScreen({ user, setScreen }) {
   const [companies, setCompanies] = useState([])
   const [current, setCurrent] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [dragging, setDragging] = useState(false)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [decision, setDecision] = useState(null)
   const [showMatchModal, setShowMatchModal] = useState(false)
   const startPos = useRef(null)
+  const dragging = useRef(false)
   const cardRef = useRef(null)
+  const offsetRef = useRef({ x: 0, y: 0 })
+  const decisionRef = useRef(null)
+  const currentRef = useRef(0)
+  const companiesRef = useRef([])
 
   useEffect(() => { loadCompanies() }, [])
+
+  useEffect(() => { currentRef.current = current }, [current])
+  useEffect(() => { companiesRef.current = companies }, [companies])
+  useEffect(() => { decisionRef.current = decision }, [decision])
 
   const loadCompanies = async () => {
     setLoading(true)
@@ -28,8 +36,10 @@ export default function SwipeScreen({ user, setScreen }) {
   }
 
   const handleSwipe = async (direction) => {
-    if (current >= companies.length || decision) return
-    const company = companies[current]
+    if (decisionRef.current) return
+    const company = companiesRef.current[currentRef.current]
+    if (!company) return
+
     if (direction === 'right' && user) {
       const { data: myCompany } = await supabase
         .from('companies').select('id').eq('user_id', user.id).single()
@@ -44,47 +54,61 @@ export default function SwipeScreen({ user, setScreen }) {
       setShowMatchModal(true)
       setTimeout(() => setShowMatchModal(false), 1500)
     }
+
+    decisionRef.current = direction
     setDecision(direction)
     setTimeout(() => {
       setCurrent(c => c + 1)
       setOffset({ x: 0, y: 0 })
+      offsetRef.current = { x: 0, y: 0 }
       setDecision(null)
+      decisionRef.current = null
     }, 400)
   }
 
-  const getClientPos = (e) => {
-    if (e.touches && e.touches.length > 0) {
-      return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+  // Attacher les événements touch directement sur le DOM
+  useEffect(() => {
+    const card = cardRef.current
+    if (!card) return
+
+    const onTouchStart = (e) => {
+      if (decisionRef.current) return
+      dragging.current = true
+      startPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
     }
-    return { x: e.clientX, y: e.clientY }
-  }
 
-  const onDragStart = (e) => {
-    if (decision) return
-    e.preventDefault()
-    setDragging(true)
-    startPos.current = getClientPos(e)
-  }
+    const onTouchMove = (e) => {
+      if (!dragging.current || !startPos.current) return
+      e.preventDefault()
+      const x = e.touches[0].clientX - startPos.current.x
+      const y = e.touches[0].clientY - startPos.current.y
+      offsetRef.current = { x, y }
+      setOffset({ x, y })
+    }
 
-  const onDragMove = (e) => {
-    if (!dragging || !startPos.current || decision) return
-    e.preventDefault()
-    const pos = getClientPos(e)
-    setOffset({
-      x: pos.x - startPos.current.x,
-      y: pos.y - startPos.current.y
-    })
-  }
+    const onTouchEnd = () => {
+      if (!dragging.current) return
+      dragging.current = false
+      const { x } = offsetRef.current
+      if (x > 80) handleSwipe('right')
+      else if (x < -80) handleSwipe('left')
+      else {
+        setOffset({ x: 0, y: 0 })
+        offsetRef.current = { x: 0, y: 0 }
+      }
+      startPos.current = null
+    }
 
-  const onDragEnd = (e) => {
-    if (!dragging) return
-    e.preventDefault()
-    setDragging(false)
-    if (offset.x > 80) handleSwipe('right')
-    else if (offset.x < -80) handleSwipe('left')
-    else setOffset({ x: 0, y: 0 })
-    startPos.current = null
-  }
+    card.addEventListener('touchstart', onTouchStart, { passive: true })
+    card.addEventListener('touchmove', onTouchMove, { passive: false })
+    card.addEventListener('touchend', onTouchEnd, { passive: true })
+
+    return () => {
+      card.removeEventListener('touchstart', onTouchStart)
+      card.removeEventListener('touchmove', onTouchMove)
+      card.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [companies, current])
 
   const rotate = offset.x * 0.08
   const likeOpacity = Math.max(0, Math.min(offset.x / 80, 1))
@@ -130,7 +154,7 @@ export default function SwipeScreen({ user, setScreen }) {
   const color = sectorColors[company.sector] || '#E24B4A'
 
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'1.5rem 1rem',gap:'1.5rem',userSelect:'none',touchAction:'none'}}>
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'1.5rem 1rem',gap:'1.5rem',userSelect:'none'}}>
 
       {showMatchModal && user && (
         <div style={{position:'fixed',top:'20%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center'}}>
@@ -156,23 +180,44 @@ export default function SwipeScreen({ user, setScreen }) {
 
         <div
           ref={cardRef}
-          onMouseDown={onDragStart}
-          onMouseMove={onDragMove}
-          onMouseUp={onDragEnd}
-          onMouseLeave={onDragEnd}
-          onTouchStart={onDragStart}
-          onTouchMove={onDragMove}
-          onTouchEnd={onDragEnd}
-          onTouchCancel={onDragEnd}
+          onMouseDown={(e) => {
+            if (decisionRef.current) return
+            dragging.current = true
+            startPos.current = { x: e.clientX, y: e.clientY }
+          }}
+          onMouseMove={(e) => {
+            if (!dragging.current || !startPos.current) return
+            const x = e.clientX - startPos.current.x
+            const y = e.clientY - startPos.current.y
+            offsetRef.current = { x, y }
+            setOffset({ x, y })
+          }}
+          onMouseUp={() => {
+            if (!dragging.current) return
+            dragging.current = false
+            const { x } = offsetRef.current
+            if (x > 80) handleSwipe('right')
+            else if (x < -80) handleSwipe('left')
+            else { setOffset({ x: 0, y: 0 }); offsetRef.current = { x: 0, y: 0 } }
+            startPos.current = null
+          }}
+          onMouseLeave={() => {
+            if (!dragging.current) return
+            dragging.current = false
+            const { x } = offsetRef.current
+            if (x > 80) handleSwipe('right')
+            else if (x < -80) handleSwipe('left')
+            else { setOffset({ x: 0, y: 0 }); offsetRef.current = { x: 0, y: 0 } }
+            startPos.current = null
+          }}
           style={{
             position:'absolute',top:0,left:0,right:0,height:400,
             background:'white',borderRadius:20,border:'1px solid #eee',
             boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
             transform: getCardTransform(),
-            transition: dragging ? 'none' : 'transform 0.4s ease',
+            transition: dragging.current ? 'none' : 'transform 0.4s ease',
             cursor: decision ? 'default' : 'grab',
             zIndex:2,overflow:'hidden',
-            touchAction:'none',
           }}
         >
           <div style={{height:140,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
