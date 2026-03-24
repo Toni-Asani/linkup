@@ -342,9 +342,19 @@ function RegisterScreen({ setScreen }) {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const handleRegister = async () => {
+const handleRegister = async () => {
     setLoading(true)
     setError('')
+
+    // Bloquer les emails non-professionnels
+    const forbiddenDomains = ['gmail.com','hotmail.com','yahoo.com','outlook.com','icloud.com','live.com','msn.com','hotmail.fr','yahoo.fr','gmail.fr','bluewin.ch','gmx.ch','gmx.net','web.de']
+    const emailDomain = email.split('@')[1]?.toLowerCase()
+    if (forbiddenDomains.includes(emailDomain)) {
+      setError('Veuillez utiliser votre email professionnel (ex: vous@votreentreprise.ch)')
+      setLoading(false)
+      return
+    }
+
     if (!email || !password || !company || !zefix || !contactName || !contactTitle || !address) {
       setError('Veuillez remplir tous les champs obligatoires')
       setLoading(false)
@@ -352,6 +362,27 @@ function RegisterScreen({ setScreen }) {
     }
     if (!accepted) {
       setError('Veuillez accepter les CGU pour continuer')
+      setLoading(false)
+      return
+    }
+
+    // Vérification Zefix
+    try {
+      const cleanZefix = zefix.replace('CHE-', '').replace(/\./g, '')
+      const zefixRes = await fetch(`https://www.zefix.ch/ZefixREST/api/v1/firm/uid/${cleanZefix}`)
+      if (!zefixRes.ok) {
+        setError('Numéro IDE introuvable. Vérifiez que votre entreprise est enregistrée en Suisse.')
+        setLoading(false)
+        return
+      }
+      const zefixData = await zefixRes.json()
+      if (!zefixData || zefixData.length === 0) {
+        setError('Entreprise non trouvée dans le registre suisse (Zefix).')
+        setLoading(false)
+        return
+      }
+    } catch (err) {
+      setError('Impossible de vérifier le numéro IDE. Réessayez.')
       setLoading(false)
       return
     }
@@ -375,7 +406,7 @@ function RegisterScreen({ setScreen }) {
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',gap:'1rem',textAlign:'center'}}>
       <div style={{fontSize:48}}>🎉</div>
       <h2 style={{fontSize:22,fontWeight:700}}>Compte créé !</h2>
-      <p style={{color:'#666',fontSize:15}}>Bienvenue parmi les membres fondateurs de Hubbing !</p>
+      <p style={{color:'#666',fontSize:15}}>Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.</p>
       <button onClick={() => setScreen('login')}
         style={{padding:'14px 32px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
         Se connecter
