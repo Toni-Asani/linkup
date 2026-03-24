@@ -116,7 +116,7 @@ export default function MapScreen({ user, setScreen }) {
 
       {/* Entreprise sélectionnée */}
       {selected && (
-        <div style={{padding:'1rem',borderTop:'1px solid #f0f0f0',background:'white',flexShrink:0}}>
+        <div style={{padding:'1rem',paddingBottom:'1.5rem',borderTop:'1px solid #f0f0f0',background:'white',flexShrink:0}}>
           <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
             <div style={{width:44,height:44,borderRadius:'50%',background:sectorColors[selected.sector]||'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
               <span style={{color:'white',fontWeight:700,fontSize:14}}>{selected.name.substring(0,2).toUpperCase()}</span>
@@ -133,7 +133,7 @@ export default function MapScreen({ user, setScreen }) {
           {/* CTA visiteur */}
           {!user && (
             <button onClick={() => setScreen && setScreen('register')}
-              style={{width:'100%',marginTop:'0.75rem',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+              style={{width:'100%',marginTop:'0.75rem',marginBottom:'0.5rem',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
               Créer un compte pour contacter {selected.name} →
             </button>
           )}
