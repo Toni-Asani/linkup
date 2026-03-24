@@ -170,6 +170,9 @@ export default function SwipeScreen({ user, setScreen }) {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
+          onTouchStart={onPointerDown}
+          onTouchMove={onPointerMove}
+          onTouchEnd={onPointerUp}
           style={{
             position:'absolute',top:0,left:0,right:0,height:400,
             background:'white',borderRadius:20,border:'1px solid #eee',
