@@ -61,14 +61,18 @@ export default function SwipeScreen({ user, setScreen }) {
   const onPointerDown = (e) => {
     if (decision) return
     setDragging(true)
-    startPos.current = { x: e.clientX, y: e.clientY }
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    startPos.current = { x: clientX, y: clientY }
   }
 
   const onPointerMove = (e) => {
     if (!dragging || !startPos.current || decision) return
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
     setOffset({
-      x: e.clientX - startPos.current.x,
-      y: e.clientY - startPos.current.y
+      x: clientX - startPos.current.x,
+      y: clientY - startPos.current.y
     })
   }
 

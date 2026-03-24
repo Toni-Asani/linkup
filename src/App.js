@@ -806,21 +806,8 @@ function VisitorMode({ setScreen, t }) {
         )}
 
         {activeTab === 'map' && (
-          <div style={{flex:1,display:'flex',flexDirection:'column'}}>
-            <div style={{padding:'0.75rem 1rem',background:'#FFF5F5',textAlign:'center'}}>
-              <p style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>{t.demoMap}</p>
-            </div>
-            <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'1rem',padding:'2rem',textAlign:'center'}}>
-              <div style={{fontSize:48}}>🗺️</div>
-              <h3 style={{fontSize:18,fontWeight:700}}>{t.mapTitle}</h3>
-              <p style={{color:'#999',fontSize:14}}>{companies.length} {t.companies}</p>
-              <button onClick={() => setShowModal(true)}
-                style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-                {t.seeMap}
-              </button>
-            </div>
-          </div>
-        )}
+  <MapScreen user={null} setScreen={setScreen} />
+)}
 
         {activeTab === 'messages' && (
           <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
@@ -927,7 +914,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'swipe' && <SwipeScreen user={user} />}
-        {activeTab === 'map' && <MapScreen user={user} setScreen={setScreen} />}
+        {activeTab === 'map' && <MapScreen user={user} />}
         {activeTab === 'messages' && <MessagesScreen user={user} />}
         {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} />}
