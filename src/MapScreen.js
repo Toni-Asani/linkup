@@ -22,7 +22,7 @@ const sectorColors = {
   'Services': '#993C1D',
 }
 
-export default function MapScreen() {
+export default function MapScreen({ user, setScreen }) {
   const [companies, setCompanies] = useState([])
   const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState('')
@@ -54,6 +54,15 @@ export default function MapScreen() {
 
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',height:'calc(100vh - 120px)'}}>
+
+      {/* Bannière visiteur */}
+      {!user && (
+        <div style={{padding:'0.6rem 1rem',background:'#FFF5F5',borderBottom:'1px solid #FECACA',textAlign:'center'}}>
+          <p style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>
+            👀 Mode démo — <span onClick={() => setScreen && setScreen('register')} style={{textDecoration:'underline',cursor:'pointer'}}>Créez un compte</span> pour contacter ces entreprises
+          </p>
+        </div>
+      )}
 
       {/* Filtres secteur */}
       <div style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f0f0f0',display:'flex',gap:8,overflowX:'auto',flexShrink:0}}>
@@ -91,7 +100,13 @@ export default function MapScreen() {
                 <div style={{fontFamily:'Plus Jakarta Sans',minWidth:160}}>
                   <p style={{fontWeight:700,fontSize:14,margin:'0 0 4px'}}>{company.name}</p>
                   <p style={{fontSize:12,color:'#666',margin:'0 0 2px'}}>{company.sector}</p>
-                  <p style={{fontSize:12,color:'#999',margin:0}}>📍 {company.city}, {company.canton}</p>
+                  <p style={{fontSize:12,color:'#999',margin:'0 0 6px'}}>📍 {company.city}, {company.canton}</p>
+                  {!user && (
+                    <button onClick={() => setScreen && setScreen('register')}
+                      style={{width:'100%',padding:'6px',background:'#E24B4A',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer'}}>
+                      Créer un compte →
+                    </button>
+                  )}
                 </div>
               </Popup>
             </Marker>
@@ -101,17 +116,27 @@ export default function MapScreen() {
 
       {/* Entreprise sélectionnée */}
       {selected && (
-        <div style={{padding:'1rem',borderTop:'1px solid #f0f0f0',background:'white',display:'flex',alignItems:'center',gap:'1rem',flexShrink:0}}>
-          <div style={{width:44,height:44,borderRadius:'50%',background:sectorColors[selected.sector]||'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <span style={{color:'white',fontWeight:700,fontSize:14}}>{selected.name.substring(0,2).toUpperCase()}</span>
+        <div style={{padding:'1rem',borderTop:'1px solid #f0f0f0',background:'white',flexShrink:0}}>
+          <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
+            <div style={{width:44,height:44,borderRadius:'50%',background:sectorColors[selected.sector]||'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <span style={{color:'white',fontWeight:700,fontSize:14}}>{selected.name.substring(0,2).toUpperCase()}</span>
+            </div>
+            <div style={{flex:1}}>
+              <p style={{fontWeight:700,fontSize:15,margin:0}}>{selected.name}</p>
+              <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{selected.sector} · {selected.city}, {selected.canton}</p>
+              {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.4}}>{selected.description}</p>}
+            </div>
+            <button onClick={() => setSelected(null)}
+              style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:20,flexShrink:0}}>✕</button>
           </div>
-          <div style={{flex:1}}>
-            <p style={{fontWeight:700,fontSize:15,margin:0}}>{selected.name}</p>
-            <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{selected.sector} · {selected.city}, {selected.canton}</p>
-            {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.4}}>{selected.description}</p>}
-          </div>
-          <button onClick={() => setSelected(null)}
-            style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:20,flexShrink:0}}>✕</button>
+
+          {/* CTA visiteur */}
+          {!user && (
+            <button onClick={() => setScreen && setScreen('register')}
+              style={{width:'100%',marginTop:'0.75rem',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+              Créer un compte pour contacter {selected.name} →
+            </button>
+          )}
         </div>
       )}
 

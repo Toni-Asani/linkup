@@ -927,7 +927,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'swipe' && <SwipeScreen user={user} />}
-        {activeTab === 'map' && <MapScreen />}
+        {activeTab === 'map' && <MapScreen user={user} setScreen={setScreen} />}
         {activeTab === 'messages' && <MessagesScreen user={user} />}
         {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} />}
