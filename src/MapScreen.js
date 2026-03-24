@@ -26,6 +26,7 @@ export default function MapScreen({ user, setScreen }) {
   const [companies, setCompanies] = useState([])
   const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => { loadCompanies() }, [])
 
@@ -39,9 +40,15 @@ export default function MapScreen({ user, setScreen }) {
     setCompanies(data || [])
   }
 
-  const filtered = companies.filter(c =>
-    !filter || c.sector === filter
-  )
+  const filtered = companies.filter(c => {
+    const matchSector = !filter || c.sector === filter
+    const matchSearch = !search || 
+      c.name?.toLowerCase().includes(search.toLowerCase()) ||
+      c.sector?.toLowerCase().includes(search.toLowerCase()) ||
+      c.city?.toLowerCase().includes(search.toLowerCase()) ||
+      c.canton?.toLowerCase().includes(search.toLowerCase())
+    return matchSector && matchSearch
+  })
 
   const sectors = [...new Set(companies.map(c => c.sector).filter(Boolean))]
 
@@ -64,8 +71,27 @@ export default function MapScreen({ user, setScreen }) {
         </div>
       )}
 
+      {/* Barre de recherche */}
+      <div style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
+        <div style={{position:'relative'}}>
+          <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14}}>🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher une entreprise, secteur, ville..."
+            style={{width:'100%',padding:'10px 12px 10px 34px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans',background:'#f9f9f9'}}
+          />
+          {search && (
+            <button onClick={() => setSearch('')}
+              style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:16}}>
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Filtres secteur */}
-      <div style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f0f0f0',display:'flex',gap:8,overflowX:'auto',flexShrink:0}}>
+      <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',display:'flex',gap:8,overflowX:'auto',flexShrink:0}}>
         <button onClick={() => setFilter('')}
           style={{padding:'6px 14px',borderRadius:20,border:'none',background:filter==='' ? '#E24B4A' : '#f5f5f5',color:filter==='' ? 'white' : '#666',fontSize:12,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
           Tous ({companies.length})
