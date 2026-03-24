@@ -53,7 +53,7 @@ export default function MapScreen({ user, setScreen }) {
   })
 
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',height:'calc(100vh - 170px)'}}>
+    <div style={{flex:1,display:'flex',flexDirection:'column',height:'calc(100vh - 190px)'}}>
 
       {/* Bannière visiteur */}
       {!user && (
