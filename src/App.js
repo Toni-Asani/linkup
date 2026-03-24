@@ -482,7 +482,7 @@ function WaitlistScreen() {
         Des questions ? <a href="mailto:contact@hubbing.ch" style={{color:'#E24B4A',textDecoration:'none',fontWeight:500}}>contact@hubbing.ch</a>
       </p>
 
-      <p style={{position:'absolute',bottom:'1.5rem',right:'1.5rem',fontSize:12,color:'#ccc'}}>🇨🇭 Made in Switzerland</p>
+      <p style={{fontSize:12,color:'#ccc',textAlign:'center'}}>🇨🇭 Made in Switzerland</p>
     </div>
   )
 }
