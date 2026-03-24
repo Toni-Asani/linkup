@@ -12,9 +12,7 @@ export default function SwipeScreen({ user, setScreen }) {
   const startPos = useRef(null)
   const cardRef = useRef(null)
 
-  useEffect(() => {
-    loadCompanies()
-  }, [])
+  useEffect(() => { loadCompanies() }, [])
 
   const loadCompanies = async () => {
     setLoading(true)
@@ -32,24 +30,20 @@ export default function SwipeScreen({ user, setScreen }) {
   const handleSwipe = async (direction) => {
     if (current >= companies.length || decision) return
     const company = companies[current]
-
-    if (direction === 'right') {
-      if (user) {
-        const { data: myCompany } = await supabase
-          .from('companies').select('id').eq('user_id', user.id).single()
-        if (myCompany) {
-          await supabase.from('matches').insert({
-            company_a: myCompany.id,
-            company_b: company.id,
-            initiated_by: myCompany.id,
-            status: 'pending'
-          })
-        }
-        setShowMatchModal(true)
-        setTimeout(() => setShowMatchModal(false), 1500)
+    if (direction === 'right' && user) {
+      const { data: myCompany } = await supabase
+        .from('companies').select('id').eq('user_id', user.id).single()
+      if (myCompany) {
+        await supabase.from('matches').insert({
+          company_a: myCompany.id,
+          company_b: company.id,
+          initiated_by: myCompany.id,
+          status: 'pending'
+        })
       }
+      setShowMatchModal(true)
+      setTimeout(() => setShowMatchModal(false), 1500)
     }
-
     setDecision(direction)
     setTimeout(() => {
       setCurrent(c => c + 1)
@@ -58,26 +52,33 @@ export default function SwipeScreen({ user, setScreen }) {
     }, 400)
   }
 
-  const onPointerDown = (e) => {
-    if (decision) return
-    setDragging(true)
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
-    startPos.current = { x: clientX, y: clientY }
+  const getClientPos = (e) => {
+    if (e.touches && e.touches.length > 0) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    }
+    return { x: e.clientX, y: e.clientY }
   }
 
-  const onPointerMove = (e) => {
+  const onDragStart = (e) => {
+    if (decision) return
+    e.preventDefault()
+    setDragging(true)
+    startPos.current = getClientPos(e)
+  }
+
+  const onDragMove = (e) => {
     if (!dragging || !startPos.current || decision) return
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    e.preventDefault()
+    const pos = getClientPos(e)
     setOffset({
-      x: clientX - startPos.current.x,
-      y: clientY - startPos.current.y
+      x: pos.x - startPos.current.x,
+      y: pos.y - startPos.current.y
     })
   }
 
-  const onPointerUp = () => {
+  const onDragEnd = (e) => {
     if (!dragging) return
+    e.preventDefault()
     setDragging(false)
     if (offset.x > 80) handleSwipe('right')
     else if (offset.x < -80) handleSwipe('left')
@@ -129,9 +130,8 @@ export default function SwipeScreen({ user, setScreen }) {
   const color = sectorColors[company.sector] || '#E24B4A'
 
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'1.5rem 1rem',gap:'1.5rem',userSelect:'none'}}>
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'1.5rem 1rem',gap:'1.5rem',userSelect:'none',touchAction:'none'}}>
 
-      {/* Match modal visiteur */}
       {showMatchModal && user && (
         <div style={{position:'fixed',top:'20%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center'}}>
           <div style={{fontSize:36}}>🎉</div>
@@ -139,40 +139,31 @@ export default function SwipeScreen({ user, setScreen }) {
         </div>
       )}
 
-      {/* Bannière visiteur */}
       {!user && (
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.75rem 1rem',width:'100%',textAlign:'center'}}>
           <p style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>
-            👀 Mode démo — <span onClick={() => setScreen && setScreen('register')} style={{textDecoration:'underline',cursor:'pointer'}}>Créez un compte</span> pour sauvegarder vos matches
+            👀 Mode visiteur — <span onClick={() => setScreen && setScreen('register')} style={{textDecoration:'underline',cursor:'pointer'}}>Créez un compte</span> pour sauvegarder vos matches
           </p>
         </div>
       )}
 
-      {/* Compteur */}
       <span style={{fontSize:13,color:'#999'}}>{current + 1} / {companies.length}</span>
 
-      {/* Zone cartes */}
       <div style={{position:'relative',width:'100%',maxWidth:360,height:420}}>
-
-        {/* Carte suivante */}
         {nextCompany && (
-          <div style={{
-            position:'absolute',top:8,left:8,right:8,height:400,
-            background:'white',borderRadius:20,border:'1px solid #eee',
-            transform:'scale(0.97)',zIndex:1
-          }} />
+          <div style={{position:'absolute',top:8,left:8,right:8,height:400,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
         )}
 
-        {/* Carte principale */}
         <div
           ref={cardRef}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerLeave={onPointerUp}
-          onTouchStart={onPointerDown}
-          onTouchMove={onPointerMove}
-          onTouchEnd={onPointerUp}
+          onMouseDown={onDragStart}
+          onMouseMove={onDragMove}
+          onMouseUp={onDragEnd}
+          onMouseLeave={onDragEnd}
+          onTouchStart={onDragStart}
+          onTouchMove={onDragMove}
+          onTouchEnd={onDragEnd}
+          onTouchCancel={onDragEnd}
           style={{
             position:'absolute',top:0,left:0,right:0,height:400,
             background:'white',borderRadius:20,border:'1px solid #eee',
@@ -181,26 +172,23 @@ export default function SwipeScreen({ user, setScreen }) {
             transition: dragging ? 'none' : 'transform 0.4s ease',
             cursor: decision ? 'default' : 'grab',
             zIndex:2,overflow:'hidden',
+            touchAction:'none',
           }}
         >
-          {/* Header coloré */}
           <div style={{height:140,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
             <div style={{width:72,height:72,borderRadius:'50%',background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
               <span style={{color:'white',fontWeight:700,fontSize:24}}>
                 {company.name.substring(0,2).toUpperCase()}
               </span>
             </div>
-            {/* Badge LIKE */}
             <div style={{position:'absolute',top:16,left:16,opacity:likeOpacity,transform:'rotate(-15deg)',background:'#22c55e',color:'white',padding:'6px 14px',borderRadius:8,fontWeight:700,fontSize:16,border:'2px solid white'}}>
               MATCH ✓
             </div>
-            {/* Badge PASS */}
             <div style={{position:'absolute',top:16,right:16,opacity:passOpacity,transform:'rotate(15deg)',background:'#E24B4A',color:'white',padding:'6px 14px',borderRadius:8,fontWeight:700,fontSize:16,border:'2px solid white'}}>
               PASS ✗
             </div>
           </div>
 
-          {/* Infos */}
           <div style={{padding:'1.25rem'}}>
             <h3 style={{fontSize:20,fontWeight:700,marginBottom:4}}>{company.name}</h3>
             <div style={{display:'flex',gap:8,marginBottom:'0.75rem',flexWrap:'wrap'}}>
@@ -216,20 +204,17 @@ export default function SwipeScreen({ user, setScreen }) {
         </div>
       </div>
 
-      {/* Boutons */}
       <div style={{display:'flex',gap:'2rem',alignItems:'center'}}>
         <button onClick={() => handleSwipe('left')}
           style={{width:60,height:60,borderRadius:'50%',background:'white',border:'2px solid #E24B4A',color:'#E24B4A',fontSize:24,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>
           ✗
         </button>
-        <button
-          onClick={() => user ? handleSwipe('right') : setScreen && setScreen('register')}
+        <button onClick={() => user ? handleSwipe('right') : setScreen && setScreen('register')}
           style={{width:70,height:70,borderRadius:'50%',background:'#E24B4A',border:'none',color:'white',fontSize:26,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(226,75,74,0.4)'}}>
           ✓
         </button>
       </div>
 
-      {/* CTA visiteur sous les boutons */}
       {!user && (
         <p style={{fontSize:12,color:'#999',textAlign:'center'}}>
           Appuyez sur ✓ pour créer un compte et sauvegarder vos matches
