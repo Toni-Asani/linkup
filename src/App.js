@@ -775,35 +775,8 @@ function VisitorMode({ setScreen, t }) {
 
       <div style={{flex:1,overflow:'hidden'}}>
         {activeTab === 'swipe' && (
-          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'1.5rem 1rem',gap:'1rem'}}>
-            <p style={{fontSize:13,color:'#999',background:'#f5f5f5',padding:'6px 14px',borderRadius:20}}>{t.demoSwipe}</p>
-            {company ? (
-              <div style={{width:'100%',maxWidth:360,background:'white',borderRadius:20,border:'1px solid #eee',boxShadow:'0 8px 30px rgba(0,0,0,0.08)',overflow:'hidden'}}>
-                <div style={{height:140,background:sectorColors[company.sector]||'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                  <div style={{width:72,height:72,borderRadius:'50%',background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <span style={{color:'white',fontWeight:700,fontSize:24}}>{company.name?.substring(0,2).toUpperCase()}</span>
-                  </div>
-                </div>
-                <div style={{padding:'1.25rem'}}>
-                  <h3 style={{fontSize:20,fontWeight:700,marginBottom:4}}>{company.name}</h3>
-                  <div style={{display:'flex',gap:8,marginBottom:'0.75rem',flexWrap:'wrap'}}>
-                    <span style={{background:'#f5f5f5',color:'#666',padding:'3px 10px',borderRadius:20,fontSize:12}}>{company.sector}</span>
-                    <span style={{background:'#f5f5f5',color:'#666',padding:'3px 10px',borderRadius:20,fontSize:12}}>📍 {company.city}, {company.canton}</span>
-                  </div>
-                  <p style={{color:'#666',fontSize:14,lineHeight:1.6}}>{company.description}</p>
-                </div>
-              </div>
-            ) : (
-              <p style={{color:'#999'}}>Chargement...</p>
-            )}
-            <div style={{display:'flex',gap:'2rem',alignItems:'center'}}>
-              <button onClick={() => setShowModal(true)}
-                style={{width:60,height:60,borderRadius:'50%',background:'white',border:'2px solid #E24B4A',color:'#E24B4A',fontSize:24,cursor:'pointer'}}>✗</button>
-              <button onClick={() => setShowModal(true)}
-                style={{width:70,height:70,borderRadius:'50%',background:'#E24B4A',border:'none',color:'white',fontSize:26,cursor:'pointer',boxShadow:'0 4px 16px rgba(226,75,74,0.4)'}}>✓</button>
-            </div>
-          </div>
-        )}
+  <SwipeScreen user={null} setScreen={setScreen} />
+)}
 
         {activeTab === 'map' && (
   <MapScreen user={null} setScreen={setScreen} />
