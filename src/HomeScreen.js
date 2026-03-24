@@ -43,7 +43,7 @@ export default function HomeScreen({ user, setActiveTab }) {
         .from('messages').select('*', { count: 'exact', head: true })
         .eq('sender_id', comp.id)
 
-      // Total entreprises sur TieUp
+      // Total entreprises sur Hubbing
       const { count: totalCompanies } = await supabase
         .from('companies').select('*', { count: 'exact', head: true })
 
@@ -93,7 +93,7 @@ export default function HomeScreen({ user, setActiveTab }) {
         )}
         <div style={{marginTop:12,background:'rgba(255,255,255,0.15)',borderRadius:8,padding:'6px 12px',display:'inline-block'}}>
           <span style={{color:'white',fontSize:12,fontWeight:600}}>
-            🏢 {stats.totalCompanies} entreprises sur TieUp
+            🏢 {stats.totalCompanies} entreprises sur Hubbing
           </span>
         </div>
       </div>

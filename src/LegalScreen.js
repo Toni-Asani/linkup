@@ -34,15 +34,15 @@ export default function LegalScreen({ setScreen }) {
             <p style={{fontSize:12,color:'#999'}}>Dernière mise à jour : mars 2026</p>
 
             <Section title="1. Objet">
-              TieUp est une plateforme de mise en relation B2B exclusivement réservée aux entreprises légalement enregistrées en Suisse. En créant un compte, vous acceptez les présentes CGU dans leur intégralité.
+              Hubbing est une plateforme de mise en relation B2B exclusivement réservée aux entreprises légalement enregistrées en Suisse. En créant un compte, vous acceptez les présentes CGU dans leur intégralité.
             </Section>
 
             <Section title="2. Conditions d'accès">
-              L'accès à TieUp est réservé aux entreprises disposant d'un numéro IDE valide (CHE-xxx.xxx.xxx) enregistré auprès du Registre du commerce suisse (Zefix). Toute inscription frauduleuse entraîne la suppression immédiate du compte.
+              L'accès à Hubbing est réservé aux entreprises disposant d'un numéro IDE valide (CHE-xxx.xxx.xxx) enregistré auprès du Registre du commerce suisse (Zefix). Toute inscription frauduleuse entraîne la suppression immédiate du compte.
             </Section>
 
             <Section title="3. Utilisation de la plateforme">
-              Les utilisateurs s'engagent à utiliser TieUp uniquement à des fins professionnelles et légitimes. Il est strictement interdit de publier des informations fausses, trompeuses ou diffamatoires. TieUp se réserve le droit de supprimer tout contenu inapproprié.
+              Les utilisateurs s'engagent à utiliser Hubbing uniquement à des fins professionnelles et légitimes. Il est strictement interdit de publier des informations fausses, trompeuses ou diffamatoires. Hubbing se réserve le droit de supprimer tout contenu inapproprié.
             </Section>
 
             <Section title="4. Abonnements et paiements">
@@ -50,7 +50,7 @@ export default function LegalScreen({ setScreen }) {
             </Section>
 
             <Section title="5. Propriété intellectuelle">
-              L'ensemble du contenu de TieUp (logo, design, code, textes) est la propriété exclusive de TieUp. Toute reproduction non autorisée est interdite.
+              L'ensemble du contenu de Hubbing (logo, design, code, textes) est la propriété exclusive de Hubbing. Toute reproduction non autorisée est interdite.
             </Section>
 
             <Section title="6. Droit applicable">
@@ -65,15 +65,15 @@ export default function LegalScreen({ setScreen }) {
             <p style={{fontSize:12,color:'#999'}}>Conforme au nLPD (nouvelle Loi sur la Protection des Données, Suisse)</p>
 
             <Section title="1. Données collectées">
-              TieUp collecte les données suivantes : informations d'entreprise (nom, numéro IDE, adresse), informations du décideur (nom, prénom, titre), adresse email, données d'utilisation (matchs, messages, connexions).
+              Hubbing collecte les données suivantes : informations d'entreprise (nom, numéro IDE, adresse), informations du décideur (nom, prénom, titre), adresse email, données d'utilisation (matchs, messages, connexions).
             </Section>
 
             <Section title="2. Utilisation des données">
-              Vos données sont utilisées exclusivement pour : le fonctionnement de la plateforme, la mise en relation avec d'autres entreprises, l'envoi de notifications liées à votre activité sur TieUp, et l'amélioration de nos services.
+              Vos données sont utilisées exclusivement pour : le fonctionnement de la plateforme, la mise en relation avec d'autres entreprises, l'envoi de notifications liées à votre activité sur Hubbing, et l'amélioration de nos services.
             </Section>
 
             <Section title="3. Partage des données">
-              TieUp ne vend jamais vos données à des tiers. Les informations de votre profil sont visibles par les autres entreprises inscrites sur la plateforme dans le cadre normal d'utilisation.
+              Hubbing ne vend jamais vos données à des tiers. Les informations de votre profil sont visibles par les autres entreprises inscrites sur la plateforme dans le cadre normal d'utilisation.
             </Section>
 
             <Section title="4. Sécurité">
@@ -81,7 +81,7 @@ export default function LegalScreen({ setScreen }) {
             </Section>
 
             <Section title="5. Vos droits">
-              Conformément au nLPD, vous disposez du droit d'accès, de rectification et de suppression de vos données. Pour exercer ces droits, contactez-nous à : privacy@TieUp.ch
+              Conformément au nLPD, vous disposez du droit d'accès, de rectification et de suppression de vos données. Pour exercer ces droits, contactez-nous à : privacy@Hubbing.ch
             </Section>
 
             <Section title="6. Conservation">
@@ -95,23 +95,23 @@ export default function LegalScreen({ setScreen }) {
             <h3 style={{fontSize:16,fontWeight:700,color:'#E24B4A'}}>Clause de Non-Responsabilité</h3>
 
             <Section title="1. Exactitude des informations">
-              TieUp ne peut être tenu responsable de l'exactitude des informations fournies par les entreprises inscrites. Chaque entreprise est seule responsable du contenu de son profil.
+              Hubbing ne peut être tenu responsable de l'exactitude des informations fournies par les entreprises inscrites. Chaque entreprise est seule responsable du contenu de son profil.
             </Section>
 
             <Section title="2. Relations commerciales">
-              TieUp est une plateforme de mise en relation. TieUp n'est pas partie prenante dans les transactions, accords ou contrats conclus entre les entreprises. Toute relation commerciale établie via TieUp est sous la seule responsabilité des parties concernées.
+              Hubbing est une plateforme de mise en relation. Hubbing n'est pas partie prenante dans les transactions, accords ou contrats conclus entre les entreprises. Toute relation commerciale établie via Hubbing est sous la seule responsabilité des parties concernées.
             </Section>
 
             <Section title="3. Disponibilité du service">
-              TieUp s'efforce d'assurer une disponibilité maximale de la plateforme mais ne peut garantir un accès ininterrompu. Des maintenances peuvent occasionner des interruptions temporaires.
+              Hubbing s'efforce d'assurer une disponibilité maximale de la plateforme mais ne peut garantir un accès ininterrompu. Des maintenances peuvent occasionner des interruptions temporaires.
             </Section>
 
             <Section title="4. Contenu des messages">
-              TieUp n'est pas responsable du contenu des messages échangés entre utilisateurs. Tout abus peut être signalé à abuse@TieUp.ch.
+              Hubbing n'est pas responsable du contenu des messages échangés entre utilisateurs. Tout abus peut être signalé à abuse@Hubbing.ch.
             </Section>
 
             <Section title="5. Vérification Zefix">
-              La vérification du numéro IDE via Zefix est effectuée à titre indicatif. TieUp ne peut garantir la validité permanente d'une inscription au registre du commerce.
+              La vérification du numéro IDE via Zefix est effectuée à titre indicatif. Hubbing ne peut garantir la validité permanente d'une inscription au registre du commerce.
             </Section>
           </div>
         )}
@@ -121,10 +121,10 @@ export default function LegalScreen({ setScreen }) {
             <h3 style={{fontSize:16,fontWeight:700,color:'#E24B4A'}}>Mentions Légales</h3>
 
             <Section title="Éditeur">
-              TieUp{'\n'}
+              Hubbing{'\n'}
               Plateforme de mise en relation B2B{'\n'}
               Suisse{'\n'}
-              contact@TieUp.ch
+              contact@Hubbing.ch
             </Section>
 
             <Section title="Hébergement">
@@ -136,14 +136,14 @@ export default function LegalScreen({ setScreen }) {
             </Section>
 
             <Section title="Propriété intellectuelle">
-              © 2026 TieUp. Tous droits réservés.{'\n'}
-              Le contenu, le design et le code source de TieUp sont protégés par le droit suisse de la propriété intellectuelle.
+              © 2026 Hubbing. Tous droits réservés.{'\n'}
+              Le contenu, le design et le code source de Hubbing sont protégés par le droit suisse de la propriété intellectuelle.
             </Section>
 
             <Section title="Contact">
-              Pour toute question légale : legal@TieUp.ch{'\n'}
-              Pour la protection des données : privacy@TieUp.ch{'\n'}
-              Pour les abus : abuse@TieUp.ch
+              Pour toute question légale : legal@Hubbing.ch{'\n'}
+              Pour la protection des données : privacy@Hubbing.ch{'\n'}
+              Pour les abus : abuse@Hubbing.ch
             </Section>
           </div>
         )}

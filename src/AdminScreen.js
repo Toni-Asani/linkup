@@ -111,7 +111,7 @@ export default function AdminScreen({ user, setScreen }) {
             <span style={{color:'white',fontWeight:700,fontSize:12}}>LK</span>
           </div>
           <div>
-            <p style={{color:'white',fontWeight:700,fontSize:15,margin:0}}>TieUp Admin</p>
+            <p style={{color:'white',fontWeight:700,fontSize:15,margin:0}}>Hubbing Admin</p>
             <p style={{color:'#666',fontSize:11,margin:0}}>Tableau de bord</p>
           </div>
         </div>
