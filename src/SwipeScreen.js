@@ -38,16 +38,18 @@ export default function SwipeScreen({ user, setScreen }) {
     const company = companiesRef.current[currentRef.current]
     if (!company) return
 
-    if (direction === 'right' && user) {
-      const { data: myCompany } = await supabase
-        .from('companies').select('id').eq('user_id', user.id).single()
-      if (myCompany) {
-        await supabase.from('matches').insert({
-          company_a: myCompany.id,
-          company_b: company.id,
-          initiated_by: myCompany.id,
-          status: 'pending'
-        })
+    if (direction === 'right') {
+      if (!user) {
+        setShowMatchModal(true)
+        setTimeout(() => setShowMatchModal(false), 3000)
+        setDecision(direction)
+        setTimeout(() => {
+          setCurrent(c => c + 1)
+          setOffset({ x: 0, y: 0 })
+          setDecision(null)
+          decisionRef.current = null
+        }, 400)
+        return
       }
       setShowMatchModal(true)
       setTimeout(() => setShowMatchModal(false), 1500)
@@ -135,12 +137,30 @@ export default function SwipeScreen({ user, setScreen }) {
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'1.5rem 1rem',gap:'1.5rem',userSelect:'none'}}>
 
-      {showMatchModal && user && (
-        <div style={{position:'fixed',top:'20%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center'}}>
-          <div style={{fontSize:36}}>🎉</div>
-          <p style={{fontWeight:700,fontSize:16,marginTop:8}}>Match envoyé !</p>
-        </div>
-      )}
+      {showMatchModal && (
+  <div style={{position:'fixed',top:'20%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center',width:'80%',maxWidth:300}}>
+    {user ? (
+      <>
+        <div style={{fontSize:36}}>🎉</div>
+        <p style={{fontWeight:700,fontSize:16,marginTop:8}}>Match envoyé !</p>
+      </>
+    ) : (
+      <>
+        <div style={{fontSize:36}}>🔒</div>
+        <p style={{fontWeight:700,fontSize:16,marginTop:8}}>Créez un compte !</p>
+        <p style={{fontSize:13,color:'#666',marginTop:4,marginBottom:12}}>Inscrivez-vous pour sauvegarder ce match et contacter cette entreprise.</p>
+        <button onClick={() => setScreen && setScreen('register')}
+          style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>
+          Créer un compte →
+        </button>
+        <button onClick={() => setShowMatchModal(false)}
+          style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>
+          Continuer en mode visiteur
+        </button>
+      </>
+    )}
+  </div>
+)}
 
       {!user && (
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.75rem 1rem',width:'100%',textAlign:'center'}}>
