@@ -311,7 +311,7 @@ if (isProduction) return (
         ) : screen === 'visitor' ? (
           <VisitorMode setScreen={setScreen} t={t} />
         ) : screen === 'legal' ? (
-          <LegalScreen setScreen={setScreen} />
+          <LegalScreen setScreen={setScreen} lang={lang} />
         ) : screen === 'admin' ? (
           <AdminScreen user={user} setScreen={setScreen} />
         ) : null}
