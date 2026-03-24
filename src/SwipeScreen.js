@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
+import Hammer from 'hammerjs'
 
 export default function SwipeScreen({ user, setScreen }) {
   const [companies, setCompanies] = useState([])
@@ -8,16 +9,13 @@ export default function SwipeScreen({ user, setScreen }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [decision, setDecision] = useState(null)
   const [showMatchModal, setShowMatchModal] = useState(false)
-  const startPos = useRef(null)
-  const dragging = useRef(false)
   const cardRef = useRef(null)
-  const offsetRef = useRef({ x: 0, y: 0 })
+  const hammerRef = useRef(null)
   const decisionRef = useRef(null)
   const currentRef = useRef(0)
   const companiesRef = useRef([])
 
   useEffect(() => { loadCompanies() }, [])
-
   useEffect(() => { currentRef.current = current }, [current])
   useEffect(() => { companiesRef.current = companies }, [companies])
   useEffect(() => { decisionRef.current = decision }, [decision])
@@ -60,54 +58,35 @@ export default function SwipeScreen({ user, setScreen }) {
     setTimeout(() => {
       setCurrent(c => c + 1)
       setOffset({ x: 0, y: 0 })
-      offsetRef.current = { x: 0, y: 0 }
       setDecision(null)
       decisionRef.current = null
     }, 400)
   }
 
-  // Attacher les événements touch directement sur le DOM
   useEffect(() => {
     const card = cardRef.current
-    if (!card) return
+    if (!card || companies.length === 0) return
 
-    const onTouchStart = (e) => {
+    if (hammerRef.current) hammerRef.current.destroy()
+
+    const hammer = new Hammer(card)
+    hammerRef.current = hammer
+
+    hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 5 })
+
+    hammer.on('panmove', (e) => {
       if (decisionRef.current) return
-      dragging.current = true
-      startPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-    }
+      setOffset({ x: e.deltaX, y: e.deltaY * 0.3 })
+    })
 
-    const onTouchMove = (e) => {
-      if (!dragging.current || !startPos.current) return
-      e.preventDefault()
-      const x = e.touches[0].clientX - startPos.current.x
-      const y = e.touches[0].clientY - startPos.current.y
-      offsetRef.current = { x, y }
-      setOffset({ x, y })
-    }
+    hammer.on('panend', (e) => {
+      if (decisionRef.current) return
+      if (e.deltaX > 80) handleSwipe('right')
+      else if (e.deltaX < -80) handleSwipe('left')
+      else setOffset({ x: 0, y: 0 })
+    })
 
-    const onTouchEnd = () => {
-      if (!dragging.current) return
-      dragging.current = false
-      const { x } = offsetRef.current
-      if (x > 80) handleSwipe('right')
-      else if (x < -80) handleSwipe('left')
-      else {
-        setOffset({ x: 0, y: 0 })
-        offsetRef.current = { x: 0, y: 0 }
-      }
-      startPos.current = null
-    }
-
-    card.addEventListener('touchstart', onTouchStart, { passive: true })
-    card.addEventListener('touchmove', onTouchMove, { passive: false })
-    card.addEventListener('touchend', onTouchEnd, { passive: true })
-
-    return () => {
-      card.removeEventListener('touchstart', onTouchStart)
-      card.removeEventListener('touchmove', onTouchMove)
-      card.removeEventListener('touchend', onTouchEnd)
-    }
+    return () => hammer.destroy()
   }, [companies, current])
 
   const rotate = offset.x * 0.08
@@ -128,7 +107,7 @@ export default function SwipeScreen({ user, setScreen }) {
   const getCardTransform = () => {
     if (decision === 'right') return 'translateX(150%) rotate(20deg)'
     if (decision === 'left') return 'translateX(-150%) rotate(-20deg)'
-    return `translateX(${offset.x}px) translateY(${offset.y * 0.3}px) rotate(${rotate}deg)`
+    return `translateX(${offset.x}px) translateY(${offset.y}px) rotate(${rotate}deg)`
   }
 
   if (loading) return (
@@ -180,44 +159,15 @@ export default function SwipeScreen({ user, setScreen }) {
 
         <div
           ref={cardRef}
-          onMouseDown={(e) => {
-            if (decisionRef.current) return
-            dragging.current = true
-            startPos.current = { x: e.clientX, y: e.clientY }
-          }}
-          onMouseMove={(e) => {
-            if (!dragging.current || !startPos.current) return
-            const x = e.clientX - startPos.current.x
-            const y = e.clientY - startPos.current.y
-            offsetRef.current = { x, y }
-            setOffset({ x, y })
-          }}
-          onMouseUp={() => {
-            if (!dragging.current) return
-            dragging.current = false
-            const { x } = offsetRef.current
-            if (x > 80) handleSwipe('right')
-            else if (x < -80) handleSwipe('left')
-            else { setOffset({ x: 0, y: 0 }); offsetRef.current = { x: 0, y: 0 } }
-            startPos.current = null
-          }}
-          onMouseLeave={() => {
-            if (!dragging.current) return
-            dragging.current = false
-            const { x } = offsetRef.current
-            if (x > 80) handleSwipe('right')
-            else if (x < -80) handleSwipe('left')
-            else { setOffset({ x: 0, y: 0 }); offsetRef.current = { x: 0, y: 0 } }
-            startPos.current = null
-          }}
           style={{
             position:'absolute',top:0,left:0,right:0,height:400,
             background:'white',borderRadius:20,border:'1px solid #eee',
             boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
             transform: getCardTransform(),
-            transition: dragging.current ? 'none' : 'transform 0.4s ease',
-            cursor: decision ? 'default' : 'grab',
+            transition: decision ? 'transform 0.4s ease' : 'none',
+            cursor:'grab',
             zIndex:2,overflow:'hidden',
+            touchAction:'none',
           }}
         >
           <div style={{height:140,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
