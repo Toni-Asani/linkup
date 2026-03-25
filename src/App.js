@@ -343,7 +343,8 @@ function WaitlistScreen() {
   const [loading, setLoading] = useState(false)
   const handleZefixLookup = async (ideNumber) => {
     setZefix(ideNumber)
-    if (ideNumber.replace('CHE-', '').replace(/\./g, '').length < 9) return
+    const clean = ideNumber.replace('CHE-', '').replace(/\./g, '').replace(/-/g, '')
+    if (clean.length !== 9) return
     try {
       const clean = ideNumber.replace('CHE-', '').replace(/\./g, '')
       const res = await fetch(`https://www.zefix.ch/ZefixREST/api/v1/firm/uid/${clean}`)
