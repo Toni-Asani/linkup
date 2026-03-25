@@ -341,20 +341,6 @@ function WaitlistScreen() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const handleZefixLookup = async (ideNumber) => {
-    setZefix(ideNumber)
-    const clean = ideNumber.replace('CHE-', '').replace(/\./g, '').replace(/-/g, '')
-    if (clean.length !== 9) return
-    try {
-      const clean = ideNumber.replace('CHE-', '').replace(/\./g, '')
-      const res = await fetch(`https://www.zefix.ch/ZefixREST/api/v1/firm/uid/${clean}`)
-      if (res.ok) {
-        const data = await res.json()
-        const name = data.name || data[0]?.name
-        if (name) setCompany(name)
-      }
-    } catch {}
-  }
   const [timeLeft, setTimeLeft] = useState({})
 
   useEffect(() => {
@@ -608,6 +594,19 @@ function RegisterScreen({ setScreen, t }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const handleZefixLookup = async (ideNumber) => {
+    setZefix(ideNumber)
+    const clean = ideNumber.replace('CHE-', '').replace(/\./g, '').replace(/-/g, '')
+    if (clean.length !== 9) return
+    try {
+      const res = await fetch(`https://www.zefix.ch/ZefixREST/api/v1/firm/uid/${clean}`)
+      if (res.ok) {
+        const data = await res.json()
+        const name = data.name || data[0]?.name
+        if (name) setCompany(name)
+      }
+    } catch {}
+  }
 
   const handleRegister = async () => {
     setLoading(true)
