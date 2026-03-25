@@ -341,6 +341,19 @@ function WaitlistScreen() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const handleZefixLookup = async (ideNumber) => {
+    setZefix(ideNumber)
+    if (ideNumber.replace('CHE-', '').replace(/\./g, '').length < 9) return
+    try {
+      const clean = ideNumber.replace('CHE-', '').replace(/\./g, '')
+      const res = await fetch(`https://www.zefix.ch/ZefixREST/api/v1/firm/uid/${clean}`)
+      if (res.ok) {
+        const data = await res.json()
+        const name = data.name || data[0]?.name
+        if (name) setCompany(name)
+      }
+    } catch {}
+  }
   const [timeLeft, setTimeLeft] = useState({})
 
   useEffect(() => {
@@ -632,6 +645,18 @@ function RegisterScreen({ setScreen, t }) {
         setLoading(false)
         return
       }
+
+      // Vérification que le nom correspond
+      const officialName = zefixData.name || zefixData[0]?.name || ''
+      const enteredName = company.trim().toLowerCase()
+      const official = officialName.trim().toLowerCase()
+
+      if (!official.includes(enteredName) && !enteredName.includes(official.split(' ')[0])) {
+        setError(`Le nom de l'entreprise ne correspond pas au registre suisse. Nom officiel : "${officialName}"`)
+        setLoading(false)
+        return
+      }
+
     } catch (err) {
       setError(t.errorZefixRetry)
       setLoading(false)
@@ -677,8 +702,7 @@ function RegisterScreen({ setScreen, t }) {
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.5rem'}}>{t.companyInfo}</p>
       <input value={company} onChange={e => setCompany(e.target.value)} placeholder={t.companyName}
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
-      <input value={zefix} onChange={e => setZefix(e.target.value)} placeholder={t.ideNumber}
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+      <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
       <input value={address} onChange={e => setAddress(e.target.value)} placeholder={t.companyAddress}
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
 
