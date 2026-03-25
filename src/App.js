@@ -596,7 +596,7 @@ function RegisterScreen({ setScreen, t }) {
   const [loading, setLoading] = useState(false)
   const handleZefixLookup = async (ideNumber) => {
     setZefix(ideNumber)
-    const clean = ideNumber.replace('CHE-', '').replace(/\./g, '').replace(/-/g, '')
+    const clean = ideNumber.replace(/[^0-9]/g, '').trim()
     if (clean.length !== 9) return
     try {
       const res = await fetch(`https://www.zefix.ch/ZefixREST/api/v1/firm/uid/${clean}`)
@@ -632,7 +632,7 @@ function RegisterScreen({ setScreen, t }) {
     }
 
     try {
-      const cleanZefix = zefix.replace('CHE-', '').replace(/\./g, '')
+      const cleanZefix = zefix.replace('CHE-', '').replace(/\./g, '').replace(/-/g, '').trim()
       const zefixRes = await fetch(`https://www.zefix.ch/ZefixREST/api/v1/firm/uid/${cleanZefix}`)
       if (!zefixRes.ok) {
         setError(t.errorZefix)
