@@ -594,19 +594,8 @@ function RegisterScreen({ setScreen, t }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-  const handleZefixLookup = async (ideNumber) => {
+ const handleZefixLookup = async (ideNumber) => {
     setZefix(ideNumber)
-    const clean = ideNumber.replace(/[^0-9]/g, '').trim()
-    if (clean.length !== 9) return
-    try {
-      const formatted = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
-      const res = await fetch(`https://www.uid.admin.ch/UIDPublicServices/api/v1/uid/${formatted}`)
-      if (res.ok) {
-        const data = await res.json()
-        const name = data.organisationIdentification?.organisationName || ''
-        if (name) setCompany(name)
-      }
-    } catch {}
   }
 
   const handleRegister = async () => {
@@ -632,33 +621,9 @@ function RegisterScreen({ setScreen, t }) {
       return
     }
 
-try {
-      const clean = zefix.replace(/[^0-9]/g, '').trim()
-      const formatted = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
-      const zefixRes = await fetch(`https://www.uid.admin.ch/UIDPublicServices/api/v1/uid/${formatted}`)
-      if (!zefixRes.ok) {
-        setError(t.errorZefix)
-        setLoading(false)
-        return
-      }
-      const zefixData = await zefixRes.json()
-      if (!zefixData) {
-        setError(t.errorZefixNotFound)
-        setLoading(false)
-        return
-      }
-      const officialName = zefixData.organisationIdentification?.organisationName || ''
-      if (officialName) {
-        const enteredName = company.trim().toLowerCase()
-        const official = officialName.trim().toLowerCase()
-        if (!official.includes(enteredName) && !enteredName.includes(official.split(' ')[0])) {
-          setError(`Le nom ne correspond pas au registre suisse. Nom officiel : "${officialName}"`)
-          setLoading(false)
-          return
-        }
-      }
-    } catch (err) {
-      setError(t.errorZefixRetry)
+    const clean = zefix.replace(/[^0-9]/g, '').trim()
+    if (clean.length !== 9) {
+      setError('Format IDE invalide. Utilisez le format CHE-xxx.xxx.xxx')
       setLoading(false)
       return
     }
