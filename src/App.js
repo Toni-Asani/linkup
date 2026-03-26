@@ -599,10 +599,11 @@ function RegisterScreen({ setScreen, t }) {
     const clean = ideNumber.replace(/[^0-9]/g, '').trim()
     if (clean.length !== 9) return
     try {
-      const res = await fetch(`https://www.zefix.admin.ch/ZefixPublicREST/api/v1/firm/uid/CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`)
+      const formatted = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
+      const res = await fetch(`https://www.uid.admin.ch/UIDPublicServices/api/v1/uid/${formatted}`)
       if (res.ok) {
         const data = await res.json()
-        const name = data.name || data[0]?.name
+        const name = data.organisationIdentification?.organisationName || ''
         if (name) setCompany(name)
       }
     } catch {}
@@ -632,27 +633,29 @@ function RegisterScreen({ setScreen, t }) {
     }
 
 try {
-      const cleanZefix = zefix.replace(/[^0-9]/g, '').trim()
-      const formattedUID = `CHE-${cleanZefix.substring(0,3)}.${cleanZefix.substring(3,6)}.${cleanZefix.substring(6,9)}`
-      const zefixRes = await fetch(`https://www.zefix.admin.ch/ZefixPublicREST/api/v1/firm/uid/${formattedUID}`)
+      const clean = zefix.replace(/[^0-9]/g, '').trim()
+      const formatted = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
+      const zefixRes = await fetch(`https://www.uid.admin.ch/UIDPublicServices/api/v1/uid/${formatted}`)
       if (!zefixRes.ok) {
         setError(t.errorZefix)
         setLoading(false)
         return
       }
       const zefixData = await zefixRes.json()
-      if (!zefixData || zefixData.length === 0) {
+      if (!zefixData) {
         setError(t.errorZefixNotFound)
         setLoading(false)
         return
       }
-      const officialName = zefixData.name || zefixData[0]?.name || ''
-      const enteredName = company.trim().toLowerCase()
-      const official = officialName.trim().toLowerCase()
-      if (!official.includes(enteredName) && !enteredName.includes(official.split(' ')[0])) {
-        setError(`Le nom ne correspond pas au registre suisse. Nom officiel : "${officialName}"`)
-        setLoading(false)
-        return
+      const officialName = zefixData.organisationIdentification?.organisationName || ''
+      if (officialName) {
+        const enteredName = company.trim().toLowerCase()
+        const official = officialName.trim().toLowerCase()
+        if (!official.includes(enteredName) && !enteredName.includes(official.split(' ')[0])) {
+          setError(`Le nom ne correspond pas au registre suisse. Nom officiel : "${officialName}"`)
+          setLoading(false)
+          return
+        }
       }
     } catch (err) {
       setError(t.errorZefixRetry)
