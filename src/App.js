@@ -630,15 +630,18 @@ function RegisterScreen({ setScreen, t }) {
 
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
-    if (data.user) {
-      await supabase.from('companies').insert({
-        user_id: data.user.id,
+    
+    const userId = data?.user?.id || data?.session?.user?.id
+    if (userId) {
+      const { error: insertError } = await supabase.from('companies').insert({
+        user_id: userId,
         name: company,
         zefix_uid: zefix,
         contact_name: contactName,
         contact_title: contactTitle,
         address: address
       })
+      if (insertError) console.error('Insert error:', insertError)
     }
     setSuccess(true)
     setLoading(false)
