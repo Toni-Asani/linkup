@@ -590,6 +590,9 @@ function RegisterScreen({ setScreen, t }) {
   const [contactName, setContactName] = useState('')
   const [contactTitle, setContactTitle] = useState('')
   const [address, setAddress] = useState('')
+  const [city, setCity] = useState('')
+  const [canton, setCanton] = useState('')
+  const [npa, setNpa] = useState('')
   const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -610,8 +613,7 @@ function RegisterScreen({ setScreen, t }) {
       return
     }
 
-    if (!email || !password || !company || !zefix || !contactName || !contactTitle || !address) {
-      setError(t.errorFields)
+if (!email || !password || !company || !zefix || !contactName || !contactTitle || !address || !city || !canton || !npa) {      setError(t.errorFields)
       setLoading(false)
       return
     }
@@ -635,11 +637,13 @@ function RegisterScreen({ setScreen, t }) {
     if (userId) {
       const { error: insertError } = await supabase.from('companies').insert({
         user_id: userId,
-        name: company,
-        zefix_uid: zefix,
-        contact_name: contactName,
-        contact_title: contactTitle,
-        address: address
+      name: company,
+      zefix_uid: zefix,
+      contact_name: contactName,
+      contact_title: contactTitle,
+      address: `${address}, ${npa} ${city}`,
+     city: city,
+     canton: canton,
       })
       if (insertError) console.error('Insert error:', insertError)
     }
@@ -671,8 +675,21 @@ function RegisterScreen({ setScreen, t }) {
       <input value={company} onChange={e => setCompany(e.target.value)} placeholder={t.companyName}
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
       <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
-      <input value={address} onChange={e => setAddress(e.target.value)} placeholder={t.companyAddress}
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rue et numéro *"
+  style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+<div style={{display:'flex',gap:8}}>
+  <input value={npa} onChange={e => setNpa(e.target.value)} placeholder="NPA *"
+    style={{width:100,padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+  <input value={city} onChange={e => setCity(e.target.value)} placeholder="Ville *"
+    style={{flex:1,padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+</div>
+<select value={canton} onChange={e => setCanton(e.target.value)}
+  style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
+  <option value="">Canton *</option>
+  {['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH'].map(c => (
+    <option key={c} value={c}>{c}</option>
+  ))}
+</select>
 
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{t.contactInfo}</p>
       <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder={t.contactName}
