@@ -909,11 +909,12 @@ const handleTabChange = (tab) => {
       <div style={{flex:1,display:'flex',flexDirection:'column',overflowY:'auto',position:'relative'}}>
   {selectedCompanyId ? (
     <CompanyProfileScreen
-      companyId={selectedCompanyId}
-      plan={userPlan}
-      onBack={() => setSelectedCompanyId(null)}
-      setActiveTab={setActiveTab}
-    />
+  companyId={selectedCompanyId}
+  plan={userPlan}
+  onBack={() => setSelectedCompanyId(null)}
+  setActiveTab={setActiveTab}
+  setSelectedCompanyId={setSelectedCompanyId}
+/>
   ) : (
     <>
       {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} />}
