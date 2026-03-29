@@ -130,7 +130,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             <p style={{fontSize:14,color:'#666',lineHeight:1.6,marginBottom:'1.25rem'}}>
               Passez en Basic ou Premium pour contacter des entreprises et accéder à la messagerie B2B.
             </p>
-            <button onClick={() => { setShowUpgradeModal(false); setActiveTab && setActiveTab('pricing') }}
+            <button onClick={() => { setShowUpgradeModal(false); setSelectedCompanyId && setSelectedCompanyId(null); setActiveTab && setActiveTab('pricing') }}
               style={{width:'100%',padding:'13px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:'0.75rem'}}>
               Voir les forfaits →
             </button>
@@ -194,7 +194,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
               <div style={{background:'#f5f5f5',borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:16}}>🔒</span>
                 <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>Passez en <strong>Basic ou Premium</strong> pour répondre à ces besoins</p>
-                <button onClick={() => setActiveTab && setActiveTab('pricing')}
+                <button onClick={() => { setSelectedCompanyId && setSelectedCompanyId(null); setActiveTab && setActiveTab('pricing') }}
                   style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
                   Upgrader →
                 </button>
@@ -242,7 +242,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
                 <div style={{marginTop:8,background:'#f0f0f0',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:12}}>🔒</span>
                   <span style={{fontSize:12,color:'#999',flex:1}}>Photo et LinkedIn disponibles en Premium</span>
-                  <button onClick={() => setActiveTab && setActiveTab('pricing')}
+                  <button onClick={() => { setSelectedCompanyId && setSelectedCompanyId(null); setActiveTab && setActiveTab('pricing') }}
                     style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
                     Upgrader →
                   </button>
