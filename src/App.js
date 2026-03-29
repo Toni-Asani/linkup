@@ -8,6 +8,7 @@ import HomeScreen from './HomeScreen'
 import PricingScreen from './PricingScreen'
 import LegalScreen from './LegalScreen'
 import AdminScreen from './AdminScreen'
+import CompanyProfileScreen from './CompanyProfileScreen'
 
 const styles = `
   @keyframes pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.8); } }
@@ -848,6 +849,14 @@ function VisitorMode({ setScreen, t }) {
 
 function Dashboard({ user, setUser, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('home')
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null)
+  const [userPlan, setUserPlan] = useState('Starter')
+  useEffect(() => {
+  supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
+    .then(({ data }) => {
+      if (data) setUserPlan(data.plan.charAt(0).toUpperCase() + data.plan.slice(1))
+    })
+}, [user])
   const handleLogout = async () => { await supabase.auth.signOut() }
 
   const tabStyle = (tab) => ({
@@ -896,10 +905,17 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'swipe' && <SwipeScreen user={user} />}
-        {activeTab === 'map' && <MapScreen user={user} />}
+        {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} />}
         {activeTab === 'messages' && <MessagesScreen user={user} />}
         {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} />}
+      {selectedCompanyId && (
+  <CompanyProfileScreen
+    companyId={selectedCompanyId}
+    plan={userPlan}
+    onBack={() => setSelectedCompanyId(null)}
+  />
+)}
       </div>
 
       <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white'}}>

@@ -1,0 +1,226 @@
+import { useState, useEffect } from 'react'
+import { supabase } from './supabaseClient'
+
+const sectorColors = {
+  'Fiduciaire & Comptabilité': '#3B6D11',
+  'Design & Créatif': '#533AB7',
+  'Informatique & Tech': '#185FA5',
+  'BTP & Construction': '#854F0B',
+  'Marketing & Publicité': '#993556',
+  'Ressources Humaines': '#0F6E56',
+  'Transport & Déménagement': '#444441',
+  'Services aux entreprises': '#993C1D',
+  'Architecture & Urbanisme': '#2D6A8F',
+  'Assurance & Prévoyance': '#1A5276',
+  'Automobile & Mobilité': '#6E2F1A',
+  'Banque & Finance': '#1A3A5C',
+  'Chimie & Pharmacie': '#4A235A',
+  'Commerce de détail': '#784212',
+  'Communication & PR': '#1D6A4A',
+  'Conseil & Stratégie': '#2E4057',
+  'Distribution & Logistique': '#4A4A4A',
+  'Droit & Juridique': '#2C3E50',
+  'E-commerce': '#1ABC9C',
+  'Éducation & Formation': '#2980B9',
+  'Energie & Environnement': '#27AE60',
+  'Hôtellerie & Restauration': '#E67E22',
+  'Immobilier': '#8E44AD',
+  'Import & Export': '#16A085',
+  'Imprimerie & Édition': '#D35400',
+  'Industrie & Manufacturing': '#7F8C8D',
+  'Luxe & Horlogerie': '#C0392B',
+  'Médias & Presse': '#2C3E50',
+  'Médical & Clinique': '#E74C3C',
+  'Nettoyage & Facility': '#3498DB',
+  'Optique & Lunetterie': '#9B59B6',
+  'Santé & Bien-être': '#1ABC9C',
+  'Sanitaire & Plomberie': '#2980B9',
+  'Sécurité & Surveillance': '#E74C3C',
+  'Sport & Loisirs': '#F39C12',
+  'Telecommunications': '#2980B9',
+  'Textile & Mode': '#8E44AD',
+  'Tourisme & Voyages': '#16A085',
+  'Agriculture & Viticulture': '#27AE60',
+  'Arts & Culture': '#E91E63',
+  'Autre': '#666',
+}
+
+export default function CompanyProfileScreen({ companyId, plan, onBack }) {
+  const [company, setCompany] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { loadCompany() }, [companyId])
+
+  const loadCompany = async () => {
+    const { data } = await supabase
+      .from('companies').select('*').eq('id', companyId).single()
+    setCompany(data)
+    setLoading(false)
+  }
+
+  if (loading) return (
+    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
+      <p style={{color:'#999'}}>Chargement...</p>
+    </div>
+  )
+
+  if (!company) return (
+    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center'}}>
+      <p style={{color:'#999'}}>Profil introuvable</p>
+    </div>
+  )
+
+  const color = sectorColors[company.sector] || '#E24B4A'
+  const initials = company.name?.substring(0, 2).toUpperCase()
+  const isBasic = plan === 'Basic' || plan === 'Premium'
+  const isPremium = plan === 'Premium'
+
+  let parsedTags = []
+  try { parsedTags = company.needs_tags ? JSON.parse(company.needs_tags) : [] } catch { parsedTags = [] }
+  const activeTags = parsedTags.filter(t => {
+    if (!t.expires) return true
+    return new Date(t.expires) > new Date()
+  })
+
+  const LockedBadge = ({ text }) => (
+    <div style={{display:'flex',alignItems:'center',gap:6,background:'#f5f5f5',borderRadius:8,padding:'8px 12px'}}>
+      <span style={{fontSize:14}}>🔒</span>
+      <span style={{fontSize:13,color:'#999'}}>{text}</span>
+    </div>
+  )
+
+  return (
+    <div style={{flex:1,overflowY:'auto'}}>
+      {/* Header */}
+      <div style={{background:color,padding:'1rem 1.5rem 3rem',position:'relative',textAlign:'center'}}>
+        <button onClick={onBack}
+          style={{position:'absolute',top:16,left:16,background:'rgba(255,255,255,0.2)',border:'none',borderRadius:20,padding:'6px 12px',color:'white',fontSize:13,cursor:'pointer',fontWeight:600}}>
+          ← Retour
+        </button>
+        <div style={{width:80,height:80,margin:'2rem auto 0',borderRadius:'50%',overflow:'hidden',border:'3px solid white'}}>
+          {company.logo_url ? (
+            <img src={company.logo_url} alt="logo"
+              style={{width:'100%',height:'100%',objectFit:'cover'}} />
+          ) : (
+            <div style={{width:'100%',height:'100%',background:'rgba(255,255,255,0.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <span style={{color:'white',fontWeight:700,fontSize:28}}>{initials}</span>
+            </div>
+          )}
+        </div>
+        <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem'}}>{company.name}</h2>
+        {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
+        {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}
+      </div>
+
+      <div style={{padding:'1.5rem 1rem',display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:'-1rem'}}>
+
+        {/* Description — tous les plans */}
+        {company.description && (
+          <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
+            <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:6}}>À PROPOS</p>
+            <p style={{fontSize:14,color:'#444',lineHeight:1.6}}>{company.description}</p>
+          </div>
+        )}
+
+        {/* Besoins — Basic+ */}
+        {(company.needs_description || activeTags.length > 0) && (
+          <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
+            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>💼 BESOINS</p>
+            {isBasic ? (
+              <>
+                {company.needs_description && (
+                  <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0}}>
+                    {company.needs_description}
+                  </p>
+                )}
+                {activeTags.length > 0 && (
+                  <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                    {activeTags.map((tag, i) => (
+                      <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:500,color:'#333'}}>
+                        {tag.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <LockedBadge text="Disponible dès le plan Basic" />
+            )}
+          </div>
+        )}
+
+        {/* Décisionnaire — Premium uniquement */}
+        {company.contact_name && (
+          <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
+            <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>DÉCIDEUR</p>
+            {isPremium ? (
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                {company.contact_photo_url ? (
+                  <img src={company.contact_photo_url} alt="contact"
+                    style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:'2px solid #eee',flexShrink:0}} />
+                ) : (
+                  <div style={{width:52,height:52,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <span style={{fontSize:22}}>👤</span>
+                  </div>
+                )}
+                <div style={{flex:1}}>
+                  <p style={{fontSize:15,fontWeight:700,margin:0}}>{company.contact_name}</p>
+                  {company.contact_title && <p style={{fontSize:13,color:'#666',margin:0}}>{company.contact_title}</p>}
+                  {company.contact_phone && <p style={{fontSize:13,color:'#444',margin:'4px 0 0'}}>{company.contact_phone}</p>}
+                </div>
+                {company.contact_linkedin && (
+                  <a href={company.contact_linkedin} target="_blank" rel="noreferrer"
+                    style={{background:'#0A66C2',color:'white',borderRadius:8,padding:'6px 10px',fontSize:12,fontWeight:600,textDecoration:'none',flexShrink:0}}>
+                    in
+                  </a>
+                )}
+              </div>
+            ) : isBasic ? (
+              <div>
+                <p style={{fontSize:14,fontWeight:600,margin:0}}>{company.contact_name}</p>
+                {company.contact_title && <p style={{fontSize:13,color:'#666',margin:'2px 0 0'}}>{company.contact_title}</p>}
+                {company.contact_phone && <p style={{fontSize:13,color:'#444',margin:'4px 0 0'}}>{company.contact_phone}</p>}
+                <div style={{marginTop:8,display:'flex',alignItems:'center',gap:6,background:'#f0f0f0',borderRadius:8,padding:'6px 10px'}}>
+                  <span style={{fontSize:12}}>🔒</span>
+                  <span style={{fontSize:12,color:'#999'}}>Photo et LinkedIn disponibles en Premium</span>
+                </div>
+              </div>
+            ) : (
+              <LockedBadge text="Disponible dès le plan Basic" />
+            )}
+          </div>
+        )}
+
+        {/* Infos entreprise — tous les plans */}
+        <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
+          <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>INFORMATIONS</p>
+          {company.city && <InfoRow label="Ville" value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
+          {company.website && <InfoRow label="Site web" value={company.website} color="#185FA5" />}
+        </div>
+
+        {/* Upgrade CTA si pas Premium */}
+        {!isPremium && (
+          <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
+            <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>
+              {isBasic ? '⭐ Passez Premium' : '🔓 Débloquez plus d\'infos'}
+            </p>
+            <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>
+              {isBasic
+                ? 'Accédez à la photo et LinkedIn du décisionnaire'
+                : 'Passez en Basic ou Premium pour voir les besoins et le décisionnaire'}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function InfoRow({ label, value, color }) {
+  return (
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+      <span style={{fontSize:13,color:'#666'}}>{label}</span>
+      <span style={{fontSize:13,color:color||'#444',fontWeight:500,textAlign:'right',maxWidth:'60%'}}>{value}</span>
+    </div>
+  )
+}

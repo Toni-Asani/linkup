@@ -22,7 +22,7 @@ const sectorColors = {
   'Services': '#993C1D',
 }
 
-export default function MapScreen({ user, setScreen }) {
+export default function MapScreen({ user, setScreen, setSelectedCompanyId, setActiveTab }) {
   const [companies, setCompanies] = useState([])
   const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState('')
@@ -42,7 +42,7 @@ export default function MapScreen({ user, setScreen }) {
 
   const filtered = companies.filter(c => {
     const matchSector = !filter || c.sector === filter
-    const matchSearch = !search || 
+    const matchSearch = !search ||
       c.name?.toLowerCase().includes(search.toLowerCase()) ||
       c.sector?.toLowerCase().includes(search.toLowerCase()) ||
       c.city?.toLowerCase().includes(search.toLowerCase()) ||
@@ -62,7 +62,6 @@ export default function MapScreen({ user, setScreen }) {
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',height:'calc(100vh - 190px)'}}>
 
-      {/* Bannière visiteur */}
       {!user && (
         <div style={{padding:'0.6rem 1rem',background:'#FFF5F5',borderBottom:'1px solid #FECACA',textAlign:'center'}}>
           <p style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>
@@ -71,7 +70,6 @@ export default function MapScreen({ user, setScreen }) {
         </div>
       )}
 
-      {/* Barre de recherche */}
       <div style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
         <div style={{position:'relative'}}>
           <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14}}>🔍</span>
@@ -90,7 +88,6 @@ export default function MapScreen({ user, setScreen }) {
         </div>
       </div>
 
-      {/* Filtres secteur */}
       <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',display:'flex',gap:8,overflowX:'auto',flexShrink:0}}>
         <button onClick={() => setFilter('')}
           style={{padding:'6px 14px',borderRadius:20,border:'none',background:filter==='' ? '#E24B4A' : '#f5f5f5',color:filter==='' ? 'white' : '#666',fontSize:12,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
@@ -104,7 +101,6 @@ export default function MapScreen({ user, setScreen }) {
         ))}
       </div>
 
-      {/* Carte */}
       <div style={{flex:1,position:'relative'}}>
         <MapContainer
           center={[46.8182, 8.2275]}
@@ -140,7 +136,6 @@ export default function MapScreen({ user, setScreen }) {
         </MapContainer>
       </div>
 
-      {/* Entreprise sélectionnée */}
       {selected && (
         <div style={{padding:'1rem',paddingBottom:'1.5rem',borderTop:'1px solid #f0f0f0',background:'white',flexShrink:0}}>
           <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
@@ -156,17 +151,25 @@ export default function MapScreen({ user, setScreen }) {
               style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:20,flexShrink:0}}>✕</button>
           </div>
 
-          {/* CTA visiteur */}
-          {!user && (
-            <button onClick={() => setScreen && setScreen('register')}
-              style={{width:'100%',marginTop:'0.75rem',marginBottom:'0.5rem',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-              Créer un compte pour contacter {selected.name} →
-            </button>
-          )}
+          <div style={{marginTop:'0.75rem',display:'flex',gap:8}}>
+            {user ? (
+              <button onClick={() => {
+                setSelectedCompanyId(selected.id)
+                setActiveTab('map')
+              }}
+                style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                Voir le profil →
+              </button>
+            ) : (
+              <button onClick={() => setScreen && setScreen('register')}
+                style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                Créer un compte pour contacter {selected.name} →
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Compteur */}
       <div style={{padding:'6px',textAlign:'center',background:'#f9f9f9',borderTop:'1px solid #f0f0f0',flexShrink:0}}>
         <span style={{fontSize:12,color:'#999'}}>{filtered.length} entreprise{filtered.length > 1 ? 's' : ''} sur la carte</span>
       </div>
