@@ -45,7 +45,7 @@ const sectorColors = {
   'Autre': '#666',
 }
 
-export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab }) {
+export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId }) {
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
