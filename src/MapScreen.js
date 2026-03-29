@@ -129,11 +129,17 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
                   <p style={{fontSize:12,color:'#666',margin:'0 0 2px'}}>{company.sector}</p>
                   <p style={{fontSize:12,color:'#999',margin:'0 0 6px'}}>📍 {company.city}, {company.canton}</p>
                   {!user && (
-                    <button onClick={() => setScreen && setScreen('register')}
-                      style={{width:'100%',padding:'6px',background:'#E24B4A',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer'}}>
-                      Créer un compte →
-                    </button>
-                  )}
+  <div style={{marginTop:'0.75rem',display:'flex',flexDirection:'column',gap:8}}>
+    <button onClick={() => setScreen && setScreen('register')}
+      style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+      Créer un compte →
+    </button>
+    <button onClick={() => setScreen && setScreen('login')}
+      style={{width:'100%',padding:'12px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+      Se connecter →
+    </button>
+  </div>
+)}
                 </div>
               </Popup>
             </Marker>
