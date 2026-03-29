@@ -875,7 +875,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   ]
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
       <div style={{padding:'0.875rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -902,7 +902,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
         </div>
       </div>
 
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',position:'relative'}}>
         {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'swipe' && <SwipeScreen user={user} />}
         {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} />}
