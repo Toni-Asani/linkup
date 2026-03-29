@@ -173,6 +173,8 @@ const handleContactPhotoUpload = async (e) => {
     needs_tags: JSON.stringify(tags),
     lat,
     lng,
+    notif_app: form.notif_app ?? true,
+notif_email: form.notif_email ?? true,
   }).eq('user_id', user.id)
 
   if (!error) {
@@ -320,7 +322,29 @@ const handleContactPhotoUpload = async (e) => {
         </div>
         <p style={{fontSize:11,color:'#999'}}>La date d'échéance est optionnelle</p>
       </div>
-
+<Label>NOTIFICATIONS</Label>
+<div style={{display:'flex',flexDirection:'column',gap:12,background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
+  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+    <div>
+      <p style={{fontSize:14,fontWeight:600,margin:0}}>🔔 Notifications dans l'app</p>
+      <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>Nouveaux matchs, messages, alertes</p>
+    </div>
+    <div onClick={() => setForm({...form, notif_app: !form.notif_app})}
+      style={{width:44,height:24,borderRadius:12,background: form.notif_app !== false ? '#E24B4A' : '#ddd',cursor:'pointer',position:'relative',transition:'background 0.2s',flexShrink:0}}>
+      <div style={{position:'absolute',top:2,left: form.notif_app !== false ? 22 : 2,width:20,height:20,borderRadius:'50%',background:'white',boxShadow:'0 1px 4px rgba(0,0,0,0.2)',transition:'left 0.2s'}}></div>
+    </div>
+  </div>
+  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+    <div>
+      <p style={{fontSize:14,fontWeight:600,margin:0}}>📧 Notifications par email</p>
+      <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>Résumé des activités par email</p>
+    </div>
+    <div onClick={() => setForm({...form, notif_email: !form.notif_email})}
+      style={{width:44,height:24,borderRadius:12,background: form.notif_email !== false ? '#E24B4A' : '#ddd',cursor:'pointer',position:'relative',transition:'background 0.2s',flexShrink:0}}>
+      <div style={{position:'absolute',top:2,left: form.notif_email !== false ? 22 : 2,width:20,height:20,borderRadius:'50%',background:'white',boxShadow:'0 1px 4px rgba(0,0,0,0.2)',transition:'left 0.2s'}}></div>
+    </div>
+  </div>
+</div>
       <button onClick={handleSave} disabled={saving}
         style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer',marginTop:'0.5rem'}}>
         {saving ? 'Sauvegarde...' : 'Sauvegarder'}
