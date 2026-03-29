@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 
-export default function MessagesScreen({ user, plan }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId }) {
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [messages, setMessages] = useState([])
@@ -223,10 +223,10 @@ const loadMyCompanyAndMatches = async () => {
               {other?.name?.substring(0,2).toUpperCase()}
             </span>
           </div>
-          <div style={{flex:1}}>
-            <p style={{fontWeight:700,fontSize:15,margin:0}}>{other?.name}</p>
-            <p style={{fontSize:12,color:'#999',margin:0}}>{other?.sector} · {other?.city}</p>
-          </div>
+          <div style={{flex:1,cursor:'pointer'}} onClick={() => setSelectedCompanyId && setSelectedCompanyId(other?.id)}>
+  <p style={{fontWeight:700,fontSize:15,margin:0}}>{other?.name}</p>
+  <p style={{fontSize:12,color:'#999',margin:0}}>{other?.sector} · {other?.city} — <span style={{color:'#E24B4A'}}>Voir le profil →</span></p>
+</div>
           {/* Bouton avis */}
           {canLeaveReview && (
             <button onClick={() => setShowReviewModal(true)}
