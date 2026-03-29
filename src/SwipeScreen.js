@@ -68,7 +68,7 @@ export default function SwipeScreen({ user, setScreen }) {
   const [showMatchModal, setShowMatchModal] = useState(false)
   const [allSeen, setAllSeen] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
-  const [filterRadius, setFilterRadius] = useState(50)
+  const [filterRadius, setFilterRadius] = useState(300)
   const [filterSector, setFilterSector] = useState('')
   const [myCompanyCoords, setMyCompanyCoords] = useState(null)
   const cardRef = useRef(null)
