@@ -2,14 +2,75 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import Hammer from 'hammerjs'
 
+const sectorColors = {
+  'Fiduciaire & Comptabilité': '#3B6D11',
+  'Design & Créatif': '#533AB7',
+  'Informatique & Tech': '#185FA5',
+  'BTP & Construction': '#854F0B',
+  'Marketing & Publicité': '#993556',
+  'Ressources Humaines': '#0F6E56',
+  'Transport & Déménagement': '#444441',
+  'Services aux entreprises': '#993C1D',
+  'Architecture & Urbanisme': '#2D6A8F',
+  'Assurance & Prévoyance': '#1A5276',
+  'Automobile & Mobilité': '#6E2F1A',
+  'Banque & Finance': '#1A3A5C',
+  'Chimie & Pharmacie': '#4A235A',
+  'Commerce de détail': '#784212',
+  'Communication & PR': '#1D6A4A',
+  'Conseil & Stratégie': '#2E4057',
+  'Distribution & Logistique': '#4A4A4A',
+  'Droit & Juridique': '#2C3E50',
+  'E-commerce': '#1ABC9C',
+  'Éducation & Formation': '#2980B9',
+  'Energie & Environnement': '#27AE60',
+  'Hôtellerie & Restauration': '#E67E22',
+  'Immobilier': '#8E44AD',
+  'Import & Export': '#16A085',
+  'Imprimerie & Édition': '#D35400',
+  'Industrie & Manufacturing': '#7F8C8D',
+  'Luxe & Horlogerie': '#C0392B',
+  'Médias & Presse': '#2C3E50',
+  'Médical & Clinique': '#E74C3C',
+  'Nettoyage & Facility': '#3498DB',
+  'Optique & Lunetterie': '#9B59B6',
+  'Santé & Bien-être': '#1ABC9C',
+  'Sanitaire & Plomberie': '#2980B9',
+  'Sécurité & Surveillance': '#E74C3C',
+  'Sport & Loisirs': '#F39C12',
+  'Telecommunications': '#2980B9',
+  'Textile & Mode': '#8E44AD',
+  'Tourisme & Voyages': '#16A085',
+  'Agriculture & Viticulture': '#27AE60',
+  'Arts & Culture': '#E91E63',
+  'Autre': '#666',
+}
+
+const sectors = Object.keys(sectorColors)
+
+const haversine = (lat1, lng1, lat2, lng2) => {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
 export default function SwipeScreen({ user, setScreen }) {
   const [companies, setCompanies] = useState([])
+  const [filteredCompanies, setFilteredCompanies] = useState([])
   const [current, setCurrent] = useState(0)
   const [loading, setLoading] = useState(false)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [decision, setDecision] = useState(null)
   const [showMatchModal, setShowMatchModal] = useState(false)
   const [allSeen, setAllSeen] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  const [filterRadius, setFilterRadius] = useState(50)
+  const [filterSector, setFilterSector] = useState('')
+  const [myCompanyCoords, setMyCompanyCoords] = useState(null)
   const cardRef = useRef(null)
   const hammerRef = useRef(null)
   const decisionRef = useRef(null)
@@ -18,8 +79,37 @@ export default function SwipeScreen({ user, setScreen }) {
 
   useEffect(() => { loadCompanies() }, [])
   useEffect(() => { currentRef.current = current }, [current])
-  useEffect(() => { companiesRef.current = companies }, [companies])
+  useEffect(() => { companiesRef.current = filteredCompanies }, [filteredCompanies])
   useEffect(() => { decisionRef.current = decision }, [decision])
+
+  useEffect(() => {
+    applyFilters()
+  }, [companies, filterRadius, filterSector, myCompanyCoords])
+
+  const applyFilters = () => {
+    let result = [...companies]
+
+    if (filterSector) {
+      result = result.filter(c => c.sector === filterSector)
+    }
+
+    if (myCompanyCoords && filterRadius < 300) {
+      result = result.filter(c => {
+        if (!c.lat || !c.lng) return true // inclure si pas de coords
+        const dist = haversine(myCompanyCoords.lat, myCompanyCoords.lng, c.lat, c.lng)
+        return dist <= filterRadius
+      })
+    }
+
+    setFilteredCompanies(result)
+    setCurrent(0)
+
+    if (result.length === 0 && companies.length > 0) {
+      setAllSeen(true)
+    } else {
+      setAllSeen(false)
+    }
+  }
 
   const loadCompanies = async (ignoreHistory = false) => {
     setLoading(true)
@@ -29,25 +119,29 @@ export default function SwipeScreen({ user, setScreen }) {
 
     if (user && !ignoreHistory) {
       const { data: myCompany } = await supabase
-        .from('companies').select('id').eq('user_id', user.id).single()
+        .from('companies').select('id, lat, lng').eq('user_id', user.id).single()
 
       if (myCompany) {
+        if (myCompany.lat && myCompany.lng) {
+          setMyCompanyCoords({ lat: myCompany.lat, lng: myCompany.lng })
+        }
         const { data: history } = await supabase
-          .from('swipe_history')
-          .select('company_id')
-          .eq('user_id', user.id)
+          .from('swipe_history').select('company_id').eq('user_id', user.id)
         seenIds = (history || []).map(h => h.company_id)
+        seenIds.push(myCompany.id)
+      }
+    } else if (user) {
+      const { data: myCompany } = await supabase
+        .from('companies').select('id, lat, lng').eq('user_id', user.id).single()
+      if (myCompany) {
+        if (myCompany.lat && myCompany.lng) {
+          setMyCompanyCoords({ lat: myCompany.lat, lng: myCompany.lng })
+        }
         seenIds.push(myCompany.id)
       }
     }
 
-    let query = supabase.from('companies').select('*').limit(20)
-
-    if (user) {
-      const { data: myCompany } = await supabase
-        .from('companies').select('id').eq('user_id', user.id).single()
-      if (myCompany && !seenIds.includes(myCompany.id)) seenIds.push(myCompany.id)
-    }
+    let query = supabase.from('companies').select('*').limit(100)
 
     if (seenIds.length > 0) {
       query = query.not('id', 'in', `(${seenIds.join(',')})`)
@@ -58,9 +152,9 @@ export default function SwipeScreen({ user, setScreen }) {
     if (!data || data.length === 0) {
       setAllSeen(true)
       setCompanies([])
+      setFilteredCompanies([])
     } else {
       setCompanies(data)
-      setCurrent(0)
     }
 
     setLoading(false)
@@ -111,7 +205,7 @@ export default function SwipeScreen({ user, setScreen }) {
 
   useEffect(() => {
     const card = cardRef.current
-    if (!card || companies.length === 0) return
+    if (!card || filteredCompanies.length === 0) return
 
     if (hammerRef.current) hammerRef.current.destroy()
 
@@ -133,22 +227,11 @@ export default function SwipeScreen({ user, setScreen }) {
     })
 
     return () => hammer.destroy()
-  }, [companies, current])
+  }, [filteredCompanies, current])
 
   const rotate = offset.x * 0.08
   const likeOpacity = Math.max(0, Math.min(offset.x / 80, 1))
   const passOpacity = Math.max(0, Math.min(-offset.x / 80, 1))
-
-  const sectorColors = {
-    'Fiduciaire': '#3B6D11',
-    'Design & Communication': '#533AB7',
-    'Informatique': '#185FA5',
-    'Construction': '#854F0B',
-    'Marketing Digital': '#993556',
-    'Ressources Humaines': '#0F6E56',
-    'Transport & Logistique': '#444441',
-    'Services': '#993C1D',
-  }
 
   const getCardTransform = () => {
     if (decision === 'right') return 'translateX(150%) rotate(20deg)'
@@ -156,18 +239,29 @@ export default function SwipeScreen({ user, setScreen }) {
     return `translateX(${offset.x}px) translateY(${offset.y}px) rotate(${rotate}deg)`
   }
 
+  const activeFilters = (filterSector ? 1 : 0) + (filterRadius < 300 ? 1 : 0)
+
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
       <p style={{color:'#999'}}>Chargement...</p>
     </div>
   )
 
-  // Tout vu — proposer de recommencer
-  if (allSeen || current >= companies.length) return (
+  if (allSeen || current >= filteredCompanies.length) return (
     <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
-      <div style={{fontSize:48}}>🎉</div>
-      <h3 style={{fontSize:20,fontWeight:700}}>Vous avez tout vu !</h3>
-      <p style={{color:'#999',fontSize:14}}>Vous avez parcouru toutes les entreprises disponibles.</p>
+      <div style={{fontSize:48}}>{activeFilters > 0 ? '🔍' : '🎉'}</div>
+      <h3 style={{fontSize:20,fontWeight:700}}>
+        {activeFilters > 0 ? 'Aucun résultat pour ces filtres' : 'Vous avez tout vu !'}
+      </h3>
+      <p style={{color:'#999',fontSize:14}}>
+        {activeFilters > 0 ? 'Essayez d\'élargir le rayon ou changer de secteur.' : 'Vous avez parcouru toutes les entreprises disponibles.'}
+      </p>
+      {activeFilters > 0 && (
+        <button onClick={() => { setFilterSector(''); setFilterRadius(300) }}
+          style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
+          Effacer les filtres
+        </button>
+      )}
       <button onClick={() => loadCompanies(true)}
         style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
         Tout revoir depuis le début
@@ -179,8 +273,8 @@ export default function SwipeScreen({ user, setScreen }) {
     </div>
   )
 
-  const company = companies[current]
-  const nextCompany = companies[current + 1]
+  const company = filteredCompanies[current]
+  const nextCompany = filteredCompanies[current + 1]
   const color = sectorColors[company.sector] || '#E24B4A'
 
   return (
@@ -211,6 +305,59 @@ export default function SwipeScreen({ user, setScreen }) {
         </div>
       )}
 
+      {/* Panneau filtres */}
+      {showFilters && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',zIndex:200}}
+          onClick={() => setShowFilters(false)}>
+          <div style={{position:'absolute',bottom:0,left:0,right:0,background:'white',borderRadius:'20px 20px 0 0',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1.25rem'}}
+            onClick={e => e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <h3 style={{fontSize:18,fontWeight:700}}>Filtres</h3>
+              <button onClick={() => setShowFilters(false)}
+                style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:'#999'}}>✕</button>
+            </div>
+
+            {/* Rayon */}
+            <div>
+              <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8}}>
+                📍 Rayon : {filterRadius >= 300 ? 'Toute la Suisse' : `${filterRadius} km`}
+              </p>
+              <input type="range" min={10} max={300} step={10} value={filterRadius}
+                onChange={e => setFilterRadius(Number(e.target.value))}
+                style={{width:'100%',accentColor:'#E24B4A'}} />
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#999',marginTop:4}}>
+                <span>10 km</span>
+                <span>Toute la Suisse</span>
+              </div>
+              {!myCompanyCoords && (
+                <p style={{fontSize:11,color:'#F39C12',marginTop:6}}>⚠️ Sauvegardez votre profil pour activer le filtre par rayon</p>
+              )}
+            </div>
+
+            {/* Secteur */}
+            <div>
+              <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8}}>🏢 Secteur</p>
+              <select value={filterSector} onChange={e => setFilterSector(e.target.value)}
+                style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
+                <option value="">Tous les secteurs</option>
+                {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={() => { setFilterSector(''); setFilterRadius(300) }}
+                style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                Effacer
+              </button>
+              <button onClick={() => setShowFilters(false)}
+                style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                Appliquer ({filteredCompanies.length} résultats)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!user && (
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.75rem 1rem',width:'100%',textAlign:'center'}}>
           <p style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>
@@ -219,26 +366,28 @@ export default function SwipeScreen({ user, setScreen }) {
         </div>
       )}
 
-      <span style={{fontSize:13,color:'#999'}}>{current + 1} / {companies.length}</span>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%'}}>
+        <span style={{fontSize:13,color:'#999'}}>{current + 1} / {filteredCompanies.length}</span>
+        <button onClick={() => setShowFilters(true)}
+          style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background: activeFilters > 0 ? '#E24B4A' : 'white',color: activeFilters > 0 ? 'white' : '#444',border:'1px solid #ddd',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+          🎛 Filtres {activeFilters > 0 ? `(${activeFilters})` : ''}
+        </button>
+      </div>
 
       <div style={{position:'relative',width:'100%',maxWidth:360,height:420}}>
         {nextCompany && (
           <div style={{position:'absolute',top:8,left:8,right:8,height:400,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
         )}
 
-        <div
-          ref={cardRef}
+        <div ref={cardRef}
           style={{
             position:'absolute',top:0,left:0,right:0,height:400,
             background:'white',borderRadius:20,border:'1px solid #eee',
             boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
             transform: getCardTransform(),
             transition: decision ? 'transform 0.4s ease' : 'none',
-            cursor:'grab',
-            zIndex:2,overflow:'hidden',
-            touchAction:'none',
-          }}
-        >
+            cursor:'grab', zIndex:2, overflow:'hidden', touchAction:'none',
+          }}>
           <div style={{height:140,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
             {company.logo_url ? (
               <img src={company.logo_url} alt="logo"
@@ -267,6 +416,11 @@ export default function SwipeScreen({ user, setScreen }) {
               <span style={{background:'#f5f5f5',color:'#666',padding:'3px 10px',borderRadius:20,fontSize:12}}>
                 📍 {company.city}, {company.canton}
               </span>
+              {myCompanyCoords && company.lat && company.lng && (
+                <span style={{background:'#f0f9ff',color:'#0284c7',padding:'3px 10px',borderRadius:20,fontSize:12}}>
+                  📏 {Math.round(haversine(myCompanyCoords.lat, myCompanyCoords.lng, company.lat, company.lng))} km
+                </span>
+              )}
             </div>
 
             {company.contact_name && (
@@ -291,7 +445,6 @@ export default function SwipeScreen({ user, setScreen }) {
                 )}
               </div>
             )}
-
             <p style={{color:'#666',fontSize:14,lineHeight:1.6}}>{company.description}</p>
           </div>
         </div>
