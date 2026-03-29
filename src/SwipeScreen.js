@@ -196,6 +196,7 @@ export default function SwipeScreen({ user, setScreen }) {
   useEffect(() => {
   if (filteredCompanies.length === 0) return
   const card = cardRef.current
+  console.log('card ref:', card)
   if (!card) return
 
   let startX = 0
