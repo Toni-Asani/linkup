@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
-import Hammer from 'hammerjs'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -195,31 +194,49 @@ export default function SwipeScreen({ user, setScreen }) {
 
   // Hammer.js touch swipe
   useEffect(() => {
-    if (filteredCompanies.length === 0) return
-    const timer = setTimeout(() => {
-      const card = cardRef.current
-      if (!card) return
-      if (hammerRef.current) { hammerRef.current.destroy(); hammerRef.current = null }
-      const hammer = new Hammer.Manager(card)
-      const pan = new Hammer.Pan({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 10 })
-      hammer.add(pan)
-      hammerRef.current = hammer
-      hammer.on('panmove', (e) => {
-        if (decisionRef.current) return
-        setOffset({ x: e.deltaX, y: e.deltaY * 0.1 })
-      })
-      hammer.on('panend', (e) => {
-        if (decisionRef.current) return
-        if (e.deltaX > 80) handleSwipe('right')
-        else if (e.deltaX < -80) handleSwipe('left')
-        else setOffset({ x: 0, y: 0 })
-      })
-    }, 100)
-    return () => {
-      clearTimeout(timer)
-      if (hammerRef.current) { hammerRef.current.destroy(); hammerRef.current = null }
+  if (filteredCompanies.length === 0) return
+  const card = cardRef.current
+  if (!card) return
+
+  let startX = 0
+  let startY = 0
+  let isDragging = false
+
+  const onTouchStart = (e) => {
+    startX = e.touches[0].clientX
+    startY = e.touches[0].clientY
+    isDragging = true
+  }
+
+  const onTouchMove = (e) => {
+    if (!isDragging || decisionRef.current) return
+    const deltaX = e.touches[0].clientX - startX
+    const deltaY = e.touches[0].clientY - startY
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      e.preventDefault()
+      setOffset({ x: deltaX, y: deltaY * 0.1 })
     }
-  }, [filteredCompanies.length, current])
+  }
+
+  const onTouchEnd = (e) => {
+    if (!isDragging || decisionRef.current) return
+    isDragging = false
+    const deltaX = e.changedTouches[0].clientX - startX
+    if (deltaX > 60) handleSwipe('right')
+    else if (deltaX < -60) handleSwipe('left')
+    else setOffset({ x: 0, y: 0 })
+  }
+
+  card.addEventListener('touchstart', onTouchStart, { passive: true })
+  card.addEventListener('touchmove', onTouchMove, { passive: false })
+  card.addEventListener('touchend', onTouchEnd, { passive: true })
+
+  return () => {
+    card.removeEventListener('touchstart', onTouchStart)
+    card.removeEventListener('touchmove', onTouchMove)
+    card.removeEventListener('touchend', onTouchEnd)
+  }
+}, [filteredCompanies.length, current])
 
   const rotate = offset.x * 0.08
   const likeOpacity = Math.max(0, Math.min(offset.x / 80, 1))
@@ -329,7 +346,7 @@ export default function SwipeScreen({ user, setScreen }) {
           transform: getCardTransform(),
           transition: decision ? 'transform 0.4s ease' : 'none',
           cursor:'grab', zIndex:2, overflow:'hidden',
-          touchAction:'pan-y',
+          touchAction:'manipulation',
         }}>
           <div style={{height:100,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',flexShrink:0}}>
             {company.logo_url ? (
