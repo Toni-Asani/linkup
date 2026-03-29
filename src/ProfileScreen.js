@@ -91,7 +91,26 @@ export default function ProfileScreen({ user, setActiveTab }) {
   }
 
   const handleContactPhotoUpload = async (e) => {
+  const handleLogoUpload = async (e) => {
   const file = e.target.files[0]
+  if (!file) return
+  setUploadingLogo(true)
+  try {
+    const ext = file.name.split('.').pop()
+    const fileName = `${user.id}-logo.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('logos').upload(fileName, file, { upsert: true })
+    if (uploadError) throw uploadError
+    const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName)
+    await supabase.from('companies').update({ logo_url: urlData.publicUrl }).eq('user_id', user.id)
+    setCompany({ ...company, logo_url: urlData.publicUrl })
+    setForm({ ...form, logo_url: urlData.publicUrl })
+  } catch (e) {
+    alert('Erreur lors du téléchargement.')
+  }
+  setUploadingLogo(false)
+}
+    const file = e.target.files[0]
   if (!file) return
   setUploadingContact(true)
   try {
