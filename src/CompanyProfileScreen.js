@@ -51,9 +51,9 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [contacting, setContacting] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
-const [reportReason, setReportReason] = useState('')
-const [reportComment, setReportComment] = useState('')
-const [submittingReport, setSubmittingReport] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportComment, setReportComment] = useState('')
+  const [submittingReport, setSubmittingReport] = useState(false)
 
   useEffect(() => { loadCompany() }, [companyId])
 
