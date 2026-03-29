@@ -90,8 +90,7 @@ export default function ProfileScreen({ user, setActiveTab }) {
     setStats({ matches: count || 0 })
   }
 
-  const handleContactPhotoUpload = async (e) => {
-  const handleLogoUpload = async (e) => {
+const handleLogoUpload = async (e) => {
   const file = e.target.files[0]
   if (!file) return
   setUploadingLogo(true)
@@ -110,7 +109,9 @@ export default function ProfileScreen({ user, setActiveTab }) {
   }
   setUploadingLogo(false)
 }
-    const file = e.target.files[0]
+
+const handleContactPhotoUpload = async (e) => {
+  const file = e.target.files[0]
   if (!file) return
   setUploadingContact(true)
   try {
