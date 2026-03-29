@@ -261,7 +261,9 @@ const handleSwipe = async (direction) => {
 }
 
   useEffect(() => {
-    if (filteredCompanies.length === 0) return
+  if (filteredCompanies.length === 0) return
+  
+  const timer = setTimeout(() => {
     const card = cardRef.current
     if (!card) return
 
@@ -283,9 +285,13 @@ const handleSwipe = async (direction) => {
       else if (e.deltaX < -80) handleSwipe('left')
       else setOffset({ x: 0, y: 0 })
     })
+  }, 100)
 
-    return () => hammer.destroy()
-  }, [filteredCompanies.length, current])
+  return () => {
+    clearTimeout(timer)
+    if (hammerRef.current) hammerRef.current.destroy()
+  }
+}, [filteredCompanies.length, current])
 
   const rotate = offset.x * 0.08
   const likeOpacity = Math.max(0, Math.min(offset.x / 80, 1))
