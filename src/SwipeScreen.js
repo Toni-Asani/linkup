@@ -262,34 +262,56 @@ const handleSwipe = async (direction) => {
 
   useEffect(() => {
   if (filteredCompanies.length === 0) return
-  
-  const timer = setTimeout(() => {
+
+  let hammer = null
+
+  const initHammer = () => {
     const card = cardRef.current
     if (!card) return
 
-    if (hammerRef.current) hammerRef.current.destroy()
+    if (hammerRef.current) {
+      hammerRef.current.destroy()
+      hammerRef.current = null
+    }
 
-    const hammer = new Hammer(card)
+    hammer = new Hammer(card, { touchAction: 'pan-y' })
     hammerRef.current = hammer
 
-    hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 5 })
+    hammer.get('pan').set({ 
+      direction: Hammer.DIRECTION_HORIZONTAL, 
+      threshold: 3,
+      pointers: 1
+    })
+
+    hammer.on('panstart', () => {
+      if (decisionRef.current) return
+    })
 
     hammer.on('panmove', (e) => {
       if (decisionRef.current) return
-      setOffset({ x: e.deltaX, y: e.deltaY * 0.3 })
+      setOffset({ x: e.deltaX, y: e.deltaY * 0.1 })
     })
 
     hammer.on('panend', (e) => {
       if (decisionRef.current) return
-      if (e.deltaX > 80) handleSwipe('right')
-      else if (e.deltaX < -80) handleSwipe('left')
+      if (e.deltaX > 60) handleSwipe('right')
+      else if (e.deltaX < -60) handleSwipe('left')
       else setOffset({ x: 0, y: 0 })
     })
-  }, 100)
+
+    hammer.on('pancancel', () => {
+      setOffset({ x: 0, y: 0 })
+    })
+  }
+
+  const timer = setTimeout(initHammer, 50)
 
   return () => {
     clearTimeout(timer)
-    if (hammerRef.current) hammerRef.current.destroy()
+    if (hammerRef.current) {
+      hammerRef.current.destroy()
+      hammerRef.current = null
+    }
   }
 }, [filteredCompanies.length, current])
 
@@ -442,15 +464,14 @@ const handleSwipe = async (direction) => {
         </button>
       </div>
 
-      <div style={{position:'relative',width:'100%',maxWidth:360,height:360}}>
+      <div style={{position:'relative',width:'100%',maxWidth:360,height:300}}>
   {nextCompany && (
-    <div style={{position:'absolute',top:8,left:8,right:8,height:340,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
+    <div style={{position:'absolute',top:8,left:8,right:8,height:280,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
   )}
 
   <div ref={cardRef}
-    key={`card-${current}-${filteredCompanies.length}`}
     style={{
-      position:'absolute',top:0,left:0,right:0,height:340,
+      position:'absolute',top:0,left:0,right:0,height:280,
             background:'white',borderRadius:20,border:'1px solid #eee',
             boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
             transform: getCardTransform(),
