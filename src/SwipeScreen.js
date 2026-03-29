@@ -342,7 +342,7 @@ const handleSwipe = async (direction) => {
   const color = sectorColors[company.sector] || '#E24B4A'
 
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'1.5rem 1rem',gap:'1.5rem',userSelect:'none'}}>
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'0.75rem 1rem',gap:'1rem',userSelect:'none',overflowY:'auto'}}>
 
       {showMatchModal && (
         <div style={{position:'fixed',top:'20%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center',width:'80%',maxWidth:300}}>
@@ -442,21 +442,22 @@ const handleSwipe = async (direction) => {
         </button>
       </div>
 
-      <div style={{position:'relative',width:'100%',maxWidth:360,height:420}}>
-        {nextCompany && (
-          <div style={{position:'absolute',top:8,left:8,right:8,height:400,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
-        )}
+      <div style={{position:'relative',width:'100%',maxWidth:360,height:360}}>
+  {nextCompany && (
+    <div style={{position:'absolute',top:8,left:8,right:8,height:340,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
+  )}
 
-        <div ref={cardRef}
-          style={{
-            position:'absolute',top:0,left:0,right:0,height:400,
+  <div ref={cardRef}
+    key={`card-${current}-${filteredCompanies.length}`}
+    style={{
+      position:'absolute',top:0,left:0,right:0,height:340,
             background:'white',borderRadius:20,border:'1px solid #eee',
             boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
             transform: getCardTransform(),
             transition: decision ? 'transform 0.4s ease' : 'none',
             cursor:'grab', zIndex:2, overflow:'hidden', touchAction:'none',
           }}>
-          <div style={{height:140,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
+          <div style={{height:110,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
             {company.logo_url ? (
               <img src={company.logo_url} alt="logo"
                 style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',border:'3px solid white'}} />
