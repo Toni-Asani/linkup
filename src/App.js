@@ -837,8 +837,7 @@ function VisitorMode({ setScreen, t }) {
           {id:'messages',label:'Messages',icon:'💬'},
           {id:'pricing',label:'Tarifs',icon:'💳'},
         ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}>
-            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
+<button key={tab.id} onClick={() => handleTabChange(tab.id)} style={tabStyle(tab.id)}>            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
             {tab.label}
           </button>
         ))}
@@ -858,6 +857,11 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
     })
 }, [user])
   const handleLogout = async () => { await supabase.auth.signOut() }
+
+const handleTabChange = (tab) => {
+  setActiveTab(tab)
+  setSelectedCompanyId(null)
+}
 
   const tabStyle = (tab) => ({
     flex:1, padding:'12px 0', background:'none', border:'none', cursor:'pointer',
@@ -930,8 +934,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
           {id:'messages',label:'Messages',icon:'💬'},
           {id:'profile',label:'Profil',icon:'👤'},
         ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}>
-            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
+<button key={tab.id} onClick={() => handleTabChange(tab.id)} style={tabStyle(tab.id)}>            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
             {tab.label}
           </button>
         ))}
