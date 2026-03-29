@@ -45,7 +45,7 @@ const sectorColors = {
   'Autre': '#666',
 }
 
-export default function CompanyProfileScreen({ companyId, plan, onBack }) {
+export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab }) {
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -74,6 +74,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack }) {
   const initials = company.name?.substring(0, 2).toUpperCase()
   const isBasic = plan === 'Basic' || plan === 'Premium'
   const isPremium = plan === 'Premium'
+  const isStarter = !isBasic
 
   let parsedTags = []
   try { parsedTags = company.needs_tags ? JSON.parse(company.needs_tags) : [] } catch { parsedTags = [] }
@@ -82,15 +83,11 @@ export default function CompanyProfileScreen({ companyId, plan, onBack }) {
     return new Date(t.expires) > new Date()
   })
 
-  const LockedBadge = ({ text }) => (
-    <div style={{display:'flex',alignItems:'center',gap:6,background:'#f5f5f5',borderRadius:8,padding:'8px 12px'}}>
-      <span style={{fontSize:14}}>🔒</span>
-      <span style={{fontSize:13,color:'#999'}}>{text}</span>
-    </div>
-  )
+  const hasNeeds = company.needs_description || activeTags.length > 0
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>
+
       {/* Header */}
       <div style={{background:color,padding:'1rem 1.5rem 3rem',position:'relative',textAlign:'center'}}>
         <button onClick={onBack}
@@ -99,8 +96,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack }) {
         </button>
         <div style={{width:80,height:80,margin:'2rem auto 0',borderRadius:'50%',overflow:'hidden',border:'3px solid white'}}>
           {company.logo_url ? (
-            <img src={company.logo_url} alt="logo"
-              style={{width:'100%',height:'100%',objectFit:'cover'}} />
+            <img src={company.logo_url} alt="logo" style={{width:'100%',height:'100%',objectFit:'cover'}} />
           ) : (
             <div style={{width:'100%',height:'100%',background:'rgba(255,255,255,0.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
               <span style={{color:'white',fontWeight:700,fontSize:28}}>{initials}</span>
@@ -122,34 +118,45 @@ export default function CompanyProfileScreen({ companyId, plan, onBack }) {
           </div>
         )}
 
-        {/* Besoins — Basic+ */}
-        {(company.needs_description || activeTags.length > 0) && (
+        {/* Besoins — visibles par tous, interaction bloquée pour Starter */}
+        {hasNeeds && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>💼 BESOINS</p>
-            {isBasic ? (
-              <>
-                {company.needs_description && (
-                  <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0}}>
-                    {company.needs_description}
-                  </p>
-                )}
-                {activeTags.length > 0 && (
-                  <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                    {activeTags.map((tag, i) => (
-                      <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:500,color:'#333'}}>
-                        {tag.label}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </>
+            {company.needs_description && (
+              <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0}}>
+                {company.needs_description}
+              </p>
+            )}
+            {activeTags.length > 0 && (
+              <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+                {activeTags.map((tag, i) => (
+                  <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:500,color:'#333'}}>
+                    {tag.label}
+                  </span>
+                ))}
+              </div>
+            )}
+            {/* Bouton contacter — bloqué pour Starter */}
+            {isStarter ? (
+              <div style={{background:'#f5f5f5',borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:16}}>🔒</span>
+                <div style={{flex:1}}>
+                  <p style={{fontSize:12,color:'#666',margin:0}}>Passez en <strong>Basic ou Premium</strong> pour répondre à ces besoins</p>
+                </div>
+                <button onClick={() => setActiveTab && setActiveTab('pricing')}
+                  style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
+                  Upgrader →
+                </button>
+              </div>
             ) : (
-              <LockedBadge text="Disponible dès le plan Basic" />
+              <button style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                Répondre à ce besoin →
+              </button>
             )}
           </div>
         )}
 
-        {/* Décisionnaire — Premium uniquement */}
+        {/* Décisionnaire */}
         {company.contact_name && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>DÉCIDEUR</p>
@@ -180,37 +187,35 @@ export default function CompanyProfileScreen({ companyId, plan, onBack }) {
                 <p style={{fontSize:14,fontWeight:600,margin:0}}>{company.contact_name}</p>
                 {company.contact_title && <p style={{fontSize:13,color:'#666',margin:'2px 0 0'}}>{company.contact_title}</p>}
                 {company.contact_phone && <p style={{fontSize:13,color:'#444',margin:'4px 0 0'}}>{company.contact_phone}</p>}
-                <div style={{marginTop:8,display:'flex',alignItems:'center',gap:6,background:'#f0f0f0',borderRadius:8,padding:'6px 10px'}}>
+                <div style={{marginTop:8,background:'#f0f0f0',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:12}}>🔒</span>
                   <span style={{fontSize:12,color:'#999'}}>Photo et LinkedIn disponibles en Premium</span>
+                  <button onClick={() => setActiveTab && setActiveTab('pricing')}
+                    style={{marginLeft:'auto',background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
+                    Upgrader →
+                  </button>
                 </div>
               </div>
             ) : (
-              <LockedBadge text="Disponible dès le plan Basic" />
+              <div style={{display:'flex',alignItems:'center',gap:8,background:'#f5f5f5',borderRadius:10,padding:'10px 12px'}}>
+                <span style={{fontSize:16}}>🔒</span>
+                <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>Disponible dès le plan <strong>Basic</strong></p>
+                <button onClick={() => setActiveTab && setActiveTab('pricing')}
+                  style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
+                  Upgrader →
+                </button>
+              </div>
             )}
           </div>
         )}
 
-        {/* Infos entreprise — tous les plans */}
+        {/* Infos de base — tous les plans */}
         <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
           <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>INFORMATIONS</p>
           {company.city && <InfoRow label="Ville" value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
           {company.website && <InfoRow label="Site web" value={company.website} color="#185FA5" />}
         </div>
 
-        {/* Upgrade CTA si pas Premium */}
-        {!isPremium && (
-          <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
-            <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>
-              {isBasic ? '⭐ Passez Premium' : '🔓 Débloquez plus d\'infos'}
-            </p>
-            <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>
-              {isBasic
-                ? 'Accédez à la photo et LinkedIn du décisionnaire'
-                : 'Passez en Basic ou Premium pour voir les besoins et le décisionnaire'}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )

@@ -914,6 +914,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
     companyId={selectedCompanyId}
     plan={userPlan}
     onBack={() => setSelectedCompanyId(null)}
+    setActiveTab={setActiveTab}
   />
 )}
       </div>
