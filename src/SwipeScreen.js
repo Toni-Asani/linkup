@@ -193,39 +193,60 @@ setRatings(avgRatings)
     }, { onConflict: 'user_id,company_id' })
   }
 
-  const handleSwipe = async (direction) => {
-    if (decisionRef.current) return
-    const company = companiesRef.current[currentRef.current]
-    if (!company) return
+const handleSwipe = async (direction) => {
+  if (decisionRef.current) return
+  const company = companiesRef.current[currentRef.current]
+  if (!company) return
 
-    if (direction === 'right') {
-      if (!user) {
-        setShowMatchModal(true)
-        setTimeout(() => setShowMatchModal(false), 3000)
-        setDecision(direction)
-        setTimeout(() => {
-          setCurrent(c => c + 1)
-          setOffset({ x: 0, y: 0 })
-          setDecision(null)
-          decisionRef.current = null
-        }, 400)
-        return
-      }
+  if (direction === 'right') {
+    if (!user) {
       setShowMatchModal(true)
-      setTimeout(() => setShowMatchModal(false), 1500)
+      setTimeout(() => setShowMatchModal(false), 3000)
+      setDecision(direction)
+      setTimeout(() => {
+        setCurrent(c => c + 1)
+        setOffset({ x: 0, y: 0 })
+        setDecision(null)
+        decisionRef.current = null
+      }, 400)
+      return
     }
 
-    await saveSwipeHistory(company.id, direction)
+    // Créer le match dans la DB
+    const { data: myCompany } = await supabase
+      .from('companies').select('id').eq('user_id', user.id).single()
 
-    decisionRef.current = direction
-    setDecision(direction)
-    setTimeout(() => {
-      setCurrent(c => c + 1)
-      setOffset({ x: 0, y: 0 })
-      setDecision(null)
-      decisionRef.current = null
-    }, 400)
+    if (myCompany) {
+      const { data: existing } = await supabase
+        .from('matches')
+        .select('id')
+        .or(`and(company_a.eq.${myCompany.id},company_b.eq.${company.id}),and(company_a.eq.${company.id},company_b.eq.${myCompany.id})`)
+        .maybeSingle()
+
+      if (!existing) {
+        await supabase.from('matches').insert({
+          company_a: myCompany.id,
+          company_b: company.id,
+          status: 'pending'
+        })
+      }
+    }
+
+    setShowMatchModal(true)
+    setTimeout(() => setShowMatchModal(false), 1500)
   }
+
+  await saveSwipeHistory(company.id, direction)
+
+  decisionRef.current = direction
+  setDecision(direction)
+  setTimeout(() => {
+    setCurrent(c => c + 1)
+    setOffset({ x: 0, y: 0 })
+    setDecision(null)
+    decisionRef.current = null
+  }, 400)
+}
 
   useEffect(() => {
     const card = cardRef.current
