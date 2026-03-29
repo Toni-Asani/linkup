@@ -724,12 +724,6 @@ if (!email || !password || !company || !zefix || !contactName || !contactTitle |
 function VisitorMode({ setScreen, t }) {
   const [activeTab, setActiveTab] = useState('swipe')
   const [showModal, setShowModal] = useState(false)
-  const [companies, setCompanies] = useState([])
-  const [current, setCurrent] = useState(0)
-
-  useEffect(() => {
-    supabase.from('companies').select('*').limit(10).then(({ data }) => setCompanies(data || []))
-  }, [])
 
   const tabStyle = (tab) => ({
     flex:1, padding:'12px 0', background:'none', border:'none', cursor:'pointer',
@@ -738,13 +732,6 @@ function VisitorMode({ setScreen, t }) {
     borderTop: activeTab === tab ? '2px solid #E24B4A' : '2px solid transparent',
     fontFamily:'Plus Jakarta Sans'
   })
-
-  const sectorColors = {
-    'Fiduciaire': '#3B6D11', 'Design & Communication': '#533AB7',
-    'Informatique': '#185FA5', 'Construction': '#854F0B',
-    'Marketing Digital': '#993556', 'Ressources Humaines': '#0F6E56',
-    'Transport & Logistique': '#444441', 'Services': '#993C1D',
-  }
 
   const Modal = () => (
     <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,padding:'1rem'}}>
@@ -768,30 +755,34 @@ function VisitorMode({ setScreen, t }) {
     </div>
   )
 
-  const company = companies[current]
-
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
       {showModal && <Modal />}
-      <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+
+      {/* Header */}
+      <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <span style={{color:'white',fontWeight:700,fontSize:12}}>HB</span>
           </div>
           <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
         </div>
-        <span style={{fontSize:12,color:'#999',background:'#f5f5f5',padding:'4px 10px',borderRadius:20}}>{t.demoMode}</span>
+        <div style={{display:'flex',gap:8}}>
+          <button onClick={() => setScreen('register')}
+            style={{background:'#E24B4A',color:'white',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+            S'inscrire
+          </button>
+          <button onClick={() => setScreen('login')}
+            style={{background:'white',color:'#E24B4A',border:'1px solid #E24B4A',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+            Connexion
+          </button>
+        </div>
       </div>
 
-      <div style={{flex:1,overflow:'hidden'}}>
-        {activeTab === 'swipe' && (
-  <SwipeScreen user={null} setScreen={setScreen} />
-)}
-
-        {activeTab === 'map' && (
-  <MapScreen user={null} setScreen={setScreen} />
-)}
-
+      {/* Contenu */}
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
+        {activeTab === 'map' && <MapScreen user={null} setScreen={setScreen} />}
         {activeTab === 'messages' && (
           <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
             <div style={{fontSize:48}}>💬</div>
@@ -803,7 +794,6 @@ function VisitorMode({ setScreen, t }) {
             </button>
           </div>
         )}
-
         {activeTab === 'pricing' && (
           <div style={{flex:1,overflowY:'auto',padding:'1.5rem 1rem'}}>
             <div style={{textAlign:'center',marginBottom:'1.25rem'}}>
@@ -830,14 +820,16 @@ function VisitorMode({ setScreen, t }) {
         )}
       </div>
 
-      <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white'}}>
+      {/* Barre de navigation */}
+      <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white',flexShrink:0}}>
         {[
           {id:'swipe',label:'Swipe',icon:'💼'},
           {id:'map',label:'Carte',icon:'🗺️'},
           {id:'messages',label:'Messages',icon:'💬'},
           {id:'pricing',label:'Tarifs',icon:'💳'},
         ].map(tab => (
-<button key={tab.id} onClick={() => handleTabChange(tab.id)} style={tabStyle(tab.id)}>            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}>
+            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
             {tab.label}
           </button>
         ))}
