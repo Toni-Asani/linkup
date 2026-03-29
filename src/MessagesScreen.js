@@ -39,19 +39,24 @@ export default function MessagesScreen({ user, plan }) {
   }, [messages])
 
   const loadMyCompanyAndMatches = async () => {
-    const { data: myComp } = await supabase
-      .from('companies').select('*').eq('user_id', user.id).single()
-    if (!myComp) { setLoading(false); return }
-    setMyCompany(myComp)
-    const { data: matchData } = await supabase
-      .from('matches')
-      .select('*, company_a(*), company_b(*)')
-      .or(`company_a.eq.${myComp.id},company_b.eq.${myComp.id}`)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-    setMatches(matchData || [])
-    setLoading(false)
-  }
+  // Expirer les matchs sans message après 7 jours
+  await supabase.rpc('expire_matches')
+
+  const { data: myComp } = await supabase
+    .from('companies').select('*').eq('user_id', user.id).single()
+  if (!myComp) { setLoading(false); return }
+  setMyCompany(myComp)
+
+  const { data: matchData } = await supabase
+    .from('matches')
+    .select('*, company_a(*), company_b(*)')
+    .or(`company_a.eq.${myComp.id},company_b.eq.${myComp.id}`)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+
+  setMatches(matchData || [])
+  setLoading(false)
+}
 
   const loadMessages = async (matchId) => {
     const { data } = await supabase
