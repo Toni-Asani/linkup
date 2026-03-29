@@ -920,7 +920,7 @@ const handleTabChange = (tab) => {
       {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} />}
       {activeTab === 'swipe' && <SwipeScreen user={user} />}
       {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} />}
       {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} />}
       {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} />}
     </>
