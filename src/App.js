@@ -903,21 +903,24 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
       </div>
 
       <div style={{flex:1,display:'flex',flexDirection:'column',overflowY:'auto',position:'relative'}}>
-        {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} />}
-        {activeTab === 'swipe' && <SwipeScreen user={user} />}
-        {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} />}
-        {activeTab === 'messages' && <MessagesScreen user={user} />}
-        {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} />}
-        {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} />}
-      {selectedCompanyId && (
-  <CompanyProfileScreen
-    companyId={selectedCompanyId}
-    plan={userPlan}
-    onBack={() => setSelectedCompanyId(null)}
-    setActiveTab={setActiveTab}
-  />
-)}
-      </div>
+  {selectedCompanyId ? (
+    <CompanyProfileScreen
+      companyId={selectedCompanyId}
+      plan={userPlan}
+      onBack={() => setSelectedCompanyId(null)}
+      setActiveTab={setActiveTab}
+    />
+  ) : (
+    <>
+      {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} />}
+      {activeTab === 'swipe' && <SwipeScreen user={user} />}
+      {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} />}
+      {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} />}
+      {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} />}
+    </>
+  )}
+</div>
 
       <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white'}}>
         {[
