@@ -200,17 +200,17 @@ const handleSwipe = async (direction) => {
 
   if (direction === 'right') {
     if (!user) {
-      setShowMatchModal(true)
-      setTimeout(() => setShowMatchModal(false), 3000)
-      setDecision(direction)
-      setTimeout(() => {
-        setCurrent(c => c + 1)
-        setOffset({ x: 0, y: 0 })
-        setDecision(null)
-        decisionRef.current = null
-      }, 400)
-      return
-    }
+  setShowMatchModal(true)
+  setTimeout(() => setShowMatchModal(false), 3000)
+  setDecision(direction)
+  setTimeout(() => {
+    setCurrent(c => c + 1)
+    setOffset({ x: 0, y: 0 })
+    setDecision(null)
+    decisionRef.current = null
+  }, 400)
+  return
+}
 
     // Créer le match dans la DB
     const { data: myCompany } = await supabase
@@ -284,7 +284,7 @@ const handleSwipe = async (direction) => {
     })
 
     return () => hammer.destroy()
-  }, [filteredCompanies, current])
+  }, [filteredCompanies.length, current])
 
   const rotate = offset.x * 0.08
   const likeOpacity = Math.max(0, Math.min(offset.x / 80, 1))
@@ -350,13 +350,17 @@ const handleSwipe = async (direction) => {
               <p style={{fontWeight:700,fontSize:16,marginTop:8}}>Créez un compte !</p>
               <p style={{fontSize:13,color:'#666',marginTop:4,marginBottom:12}}>Inscrivez-vous pour sauvegarder ce match et contacter cette entreprise.</p>
               <button onClick={() => setScreen && setScreen('register')}
-                style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>
-                Créer un compte →
-              </button>
-              <button onClick={() => setShowMatchModal(false)}
-                style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>
-                Continuer en mode visiteur
-              </button>
+  style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>
+  Créer un compte →
+</button>
+<button onClick={() => setScreen && setScreen('login')}
+  style={{width:'100%',padding:'12px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>
+  Se connecter →
+</button>
+<button onClick={() => setShowMatchModal(false)}
+  style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>
+  Continuer en mode visiteur
+</button>
             </>
           )}
         </div>
@@ -515,7 +519,7 @@ const handleSwipe = async (direction) => {
           style={{width:60,height:60,borderRadius:'50%',background:'white',border:'2px solid #E24B4A',color:'#E24B4A',fontSize:24,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>
           ✗
         </button>
-        <button onClick={() => user ? handleSwipe('right') : setScreen && setScreen('register')}
+        <button onClick={() => handleSwipe('right')}
           style={{width:70,height:70,borderRadius:'50%',background:'#E24B4A',border:'none',color:'white',fontSize:26,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(226,75,74,0.4)'}}>
           ✓
         </button>

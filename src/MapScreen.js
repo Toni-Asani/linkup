@@ -63,12 +63,17 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
     <div style={{flex:1,display:'flex',flexDirection:'column',height:'calc(100vh - 190px)'}}>
 
       {!user && (
-        <div style={{padding:'0.6rem 1rem',background:'#FFF5F5',borderBottom:'1px solid #FECACA',textAlign:'center'}}>
-          <p style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>
-            👀 Mode démo — <span onClick={() => setScreen && setScreen('register')} style={{textDecoration:'underline',cursor:'pointer'}}>Créez un compte</span> pour contacter ces entreprises
-          </p>
-        </div>
-      )}
+  <div style={{display:'flex',flexDirection:'column',gap:4}}>
+    <button onClick={() => setScreen && setScreen('register')}
+      style={{width:'100%',padding:'6px',background:'#E24B4A',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer'}}>
+      Créer un compte →
+    </button>
+    <button onClick={() => setScreen && setScreen('login')}
+      style={{width:'100%',padding:'6px',background:'white',color:'#E24B4A',border:'1px solid #E24B4A',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer'}}>
+      Se connecter →
+    </button>
+  </div>
+)}
 
       <div style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
         <div style={{position:'relative'}}>
