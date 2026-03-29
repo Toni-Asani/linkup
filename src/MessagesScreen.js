@@ -38,9 +38,20 @@ export default function MessagesScreen({ user, plan }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const loadMyCompanyAndMatches = async () => {
+  const markNotificationsRead = async () => {
+  await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', user.id)
+    .eq('read', false)
+}
+
+const loadMyCompanyAndMatches = async () => {
   // Expirer les matchs sans message après 7 jours
   await supabase.rpc('expire_matches')
+
+  // Marquer les notifications comme lues
+  await markNotificationsRead()
 
   const { data: myComp } = await supabase
     .from('companies').select('*').eq('user_id', user.id).single()

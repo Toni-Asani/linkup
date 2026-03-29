@@ -224,12 +224,24 @@ const handleSwipe = async (direction) => {
         .maybeSingle()
 
       if (!existing) {
-        await supabase.from('matches').insert({
-          company_a: myCompany.id,
-          company_b: company.id,
-          status: 'pending'
-        })
-      }
+  const { data: newMatch } = await supabase.from('matches').insert({
+    company_a: myCompany.id,
+    company_b: company.id,
+    status: 'pending'
+  }).select().single()
+
+  // Notifier les deux entreprises
+  if (newMatch) {
+    const { data: otherUser } = await supabase
+      .from('companies').select('user_id').eq('id', company.id).single()
+    if (otherUser) {
+      await supabase.from('notifications').insert([
+        { user_id: user.id, type: 'new_match', match_id: newMatch.id },
+        { user_id: otherUser.user_id, type: 'new_match', match_id: newMatch.id }
+      ])
+    }
+  }
+}
     }
 
     setShowMatchModal(true)
