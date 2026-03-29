@@ -239,9 +239,10 @@ useEffect(() => {
     let isMouseDragging = false
 
     const onMouseDown = (e) => {
-      mouseStartX = e.clientX
-      isMouseDragging = true
-    }
+  console.log('mousedown detected!', e.clientX)
+  mouseStartX = e.clientX
+  isMouseDragging = true
+}
 
     const onMouseMove = (e) => {
       if (!isMouseDragging || decisionRef.current) return
