@@ -111,10 +111,32 @@ export default function SwipeScreen({ user, setScreen }) {
     }
   }
 
+  const [ratings, setRatings] = useState({})
+
+  const loadRatings = async (companiesList) => {
+    const ids = companiesList.map(c => c.id)
+    if (ids.length === 0) return {}
+    const { data } = await supabase
+      .from('reviews')
+      .select('reviewed_company_id, rating')
+      .eq('status', 'approved')
+      .in('reviewed_company_id', ids)
+    const ratingsMap = {}
+    ;(data || []).forEach(r => {
+      if (!ratingsMap[r.reviewed_company_id]) ratingsMap[r.reviewed_company_id] = []
+      ratingsMap[r.reviewed_company_id].push(r.rating)
+    })
+    const avgMap = {}
+    Object.keys(ratingsMap).forEach(id => {
+      const arr = ratingsMap[id]
+      avgMap[id] = (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)
+    })
+    return avgMap
+  }
+
   const loadCompanies = async (ignoreHistory = false) => {
     setLoading(true)
     setAllSeen(false)
-
     let seenIds = []
 
     if (user && !ignoreHistory) {
@@ -155,6 +177,8 @@ export default function SwipeScreen({ user, setScreen }) {
       setFilteredCompanies([])
     } else {
       setCompanies(data)
+      const avgRatings = await loadRatings(data)
+setRatings(avgRatings)
     }
 
     setLoading(false)
@@ -416,6 +440,11 @@ export default function SwipeScreen({ user, setScreen }) {
               <span style={{background:'#f5f5f5',color:'#666',padding:'3px 10px',borderRadius:20,fontSize:12}}>
                 📍 {company.city}, {company.canton}
               </span>
+              {ratings[company.id] && (
+  <span style={{background:'#FFF9F0',color:'#E67E22',padding:'3px 10px',borderRadius:20,fontSize:12,fontWeight:600}}>
+    ★ {ratings[company.id]}
+  </span>
+)}
               {myCompanyCoords && company.lat && company.lng && (
                 <span style={{background:'#f0f9ff',color:'#0284c7',padding:'3px 10px',borderRadius:20,fontSize:12}}>
                   📏 {Math.round(haversine(myCompanyCoords.lat, myCompanyCoords.lng, company.lat, company.lng))} km
