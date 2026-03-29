@@ -62,16 +62,38 @@ export default function MessagesScreen({ user }) {
     setMessages(data || [])
   }
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !myCompany) return
-    const msg = {
-      match_id: selectedMatch.id,
-      sender_id: myCompany.id,
-      content: newMessage.trim()
-    }
-    setNewMessage('')
-    await supabase.from('messages').insert(msg)
+  const forbiddenWords = [
+  // Sexuel
+  'sexe','sex','porn','porno','nue','nud','bite','queue','chatte','vagin','penis','seins','cul',
+  'baise','baiser','niquer','coucher','érotique','erotic','xxx','escort','prostituée',
+  // Raciste / haineux
+  'nègre','negre','youpin','bougnoule','bamboula','bicot','raton','sale arabe','sale noir',
+  'sale juif','hitler','nazi','heil','ku klux','kkk','raciste','antisémite',
+  // Insultes graves
+  'connard','enculé','encule','fdp','ntm','pute','salope','batard','bâtard',
+]
+
+const containsForbiddenContent = (text) => {
+  const lower = text.toLowerCase()
+  return forbiddenWords.some(word => lower.includes(word))
+}
+
+const sendMessage = async () => {
+  if (!newMessage.trim() || !myCompany) return
+
+  if (containsForbiddenContent(newMessage)) {
+    alert('⚠️ Message non envoyé\n\nVotre message contient du contenu inapproprié (sexuel, raciste ou abusif).\n\nTout abus peut entraîner la suspension de votre compte.')
+    return
   }
+
+  const msg = {
+    match_id: selectedMatch.id,
+    sender_id: myCompany.id,
+    content: newMessage.trim()
+  }
+  setNewMessage('')
+  await supabase.from('messages').insert(msg)
+}
 
   const getOtherCompany = (match) => {
     if (!myCompany) return null
