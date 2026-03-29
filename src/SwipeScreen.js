@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -72,6 +73,11 @@ export default function SwipeScreen({ user, setScreen }) {
   const [myCompanyCoords, setMyCompanyCoords] = useState(null)
   const [ratings, setRatings] = useState({})
   const cardRef = useRef(null)
+  const cardCallbackRef = useCallback((node) => {
+  if (node) {
+    cardRef.current = node
+  }
+}, [])
   const hammerRef = useRef(null)
   const decisionRef = useRef(null)
   const currentRef = useRef(0)
@@ -191,54 +197,92 @@ export default function SwipeScreen({ user, setScreen }) {
     setDecision(direction)
     setTimeout(() => { setCurrent(c => c + 1); setOffset({ x: 0, y: 0 }); setDecision(null); decisionRef.current = null }, 400)
   }
-
-  // Hammer.js touch swipe
-  useEffect(() => {
+useEffect(() => {
   if (filteredCompanies.length === 0) return
-  const card = cardRef.current
-  console.log('card ref:', card)
-  if (!card) return
+  
+  const timer = setTimeout(() => {
+    const card = cardRef.current
+    console.log('card ref after timeout:', card)
+    if (!card) return
 
-  let startX = 0
-  let startY = 0
-  let isDragging = false
+    let startX = 0
+    let startY = 0
+    let isDragging = false
 
-  const onTouchStart = (e) => {
-    startX = e.touches[0].clientX
-    startY = e.touches[0].clientY
-    isDragging = true
-  }
-
-  const onTouchMove = (e) => {
-    if (!isDragging || decisionRef.current) return
-    const deltaX = e.touches[0].clientX - startX
-    const deltaY = e.touches[0].clientY - startY
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      e.preventDefault()
-      setOffset({ x: deltaX, y: deltaY * 0.1 })
+    const onTouchStart = (e) => {
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+      isDragging = true
     }
-  }
 
-  const onTouchEnd = (e) => {
-    if (!isDragging || decisionRef.current) return
-    isDragging = false
-    const deltaX = e.changedTouches[0].clientX - startX
-    if (deltaX > 60) handleSwipe('right')
-    else if (deltaX < -60) handleSwipe('left')
-    else setOffset({ x: 0, y: 0 })
-  }
+    const onTouchMove = (e) => {
+      if (!isDragging || decisionRef.current) return
+      const deltaX = e.touches[0].clientX - startX
+      const deltaY = e.touches[0].clientY - startY
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        e.preventDefault()
+        setOffset({ x: deltaX, y: deltaY * 0.1 })
+      }
+    }
 
-  card.addEventListener('touchstart', onTouchStart, { passive: true })
-  card.addEventListener('touchmove', onTouchMove, { passive: false })
-  card.addEventListener('touchend', onTouchEnd, { passive: true })
+    const onTouchEnd = (e) => {
+      if (!isDragging || decisionRef.current) return
+      isDragging = false
+      const deltaX = e.changedTouches[0].clientX - startX
+      if (deltaX > 60) handleSwipe('right')
+      else if (deltaX < -60) handleSwipe('left')
+      else setOffset({ x: 0, y: 0 })
+    }
+
+    // Mouse events pour desktop
+    let mouseStartX = 0
+    let isMouseDragging = false
+
+    const onMouseDown = (e) => {
+      mouseStartX = e.clientX
+      isMouseDragging = true
+    }
+
+    const onMouseMove = (e) => {
+      if (!isMouseDragging || decisionRef.current) return
+      const deltaX = e.clientX - mouseStartX
+      setOffset({ x: deltaX, y: 0 })
+    }
+
+    const onMouseUp = (e) => {
+      if (!isMouseDragging || decisionRef.current) return
+      isMouseDragging = false
+      const deltaX = e.clientX - mouseStartX
+      if (deltaX > 80) handleSwipe('right')
+      else if (deltaX < -80) handleSwipe('left')
+      else setOffset({ x: 0, y: 0 })
+    }
+
+    card.addEventListener('touchstart', onTouchStart, { passive: true })
+    card.addEventListener('touchmove', onTouchMove, { passive: false })
+    card.addEventListener('touchend', onTouchEnd, { passive: true })
+    card.addEventListener('mousedown', onMouseDown)
+    card.addEventListener('mousemove', onMouseMove)
+    card.addEventListener('mouseup', onMouseUp)
+    card.addEventListener('mouseleave', onMouseUp)
+
+    card._cleanup = () => {
+      card.removeEventListener('touchstart', onTouchStart)
+      card.removeEventListener('touchmove', onTouchMove)
+      card.removeEventListener('touchend', onTouchEnd)
+      card.removeEventListener('mousedown', onMouseDown)
+      card.removeEventListener('mousemove', onMouseMove)
+      card.removeEventListener('mouseup', onMouseUp)
+      card.removeEventListener('mouseleave', onMouseUp)
+    }
+  }, 300)
 
   return () => {
-    card.removeEventListener('touchstart', onTouchStart)
-    card.removeEventListener('touchmove', onTouchMove)
-    card.removeEventListener('touchend', onTouchEnd)
+    clearTimeout(timer)
+    const card = cardRef.current
+    if (card && card._cleanup) card._cleanup()
   }
 }, [filteredCompanies.length, current])
-
   const rotate = offset.x * 0.08
   const likeOpacity = Math.max(0, Math.min(offset.x / 80, 1))
   const passOpacity = Math.max(0, Math.min(-offset.x / 80, 1))
@@ -340,7 +384,7 @@ export default function SwipeScreen({ user, setScreen }) {
         {nextCompany && (
           <div style={{position:'absolute',top:8,left:8,right:8,bottom:0,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
         )}
-        <div ref={cardRef} style={{
+        <div ref={cardCallbackRef} style={{
           position:'absolute',top:0,left:0,right:0,bottom:0,
           background:'white',borderRadius:20,border:'1px solid #eee',
           boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
