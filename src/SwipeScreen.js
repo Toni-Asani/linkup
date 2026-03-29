@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
-import { useState, useEffect, useRef, useCallback } from 'react'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
