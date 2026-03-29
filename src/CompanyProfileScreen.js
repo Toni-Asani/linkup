@@ -306,12 +306,58 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           </p>
         )}
 
+        {/* Bouton signaler */}
+        <div style={{textAlign:'center'}}>
+          <button onClick={() => setShowReportModal(true)}
+            style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#999',textDecoration:'underline'}}>
+            🚩 Signaler ce profil
+          </button>
+        </div>
+
       </div>
+
+      {/* Modal signalement */}
+      {showReportModal && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300,padding:'1rem'}}>
+          <div style={{background:'white',borderRadius:16,padding:'1.5rem',width:'100%',maxWidth:360}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+              <h3 style={{fontSize:17,fontWeight:700}}>Signaler ce profil</h3>
+              <button onClick={() => setShowReportModal(false)}
+                style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:'#999'}}>✕</button>
+            </div>
+            <p style={{fontSize:13,color:'#666',marginBottom:12}}>Motif du signalement *</p>
+            {[
+              {value:'fake_profile', label:'🚫 Faux profil / usurpation d\'identité'},
+              {value:'abusive_behavior', label:'⚠️ Comportement abusif ou harcelant'},
+              {value:'inappropriate_message', label:'🔞 Message inapproprié ou sexuel'},
+              {value:'spam', label:'📧 Spam ou contenu commercial abusif'},
+              {value:'other', label:'❓ Autre'},
+            ].map(r => (
+              <div key={r.value} onClick={() => setReportReason(r.value)}
+                style={{padding:'10px 12px',borderRadius:10,border:`2px solid ${reportReason === r.value ? '#E24B4A' : '#eee'}`,marginBottom:8,cursor:'pointer',background: reportReason === r.value ? '#FFF5F5' : 'white'}}>
+                <p style={{fontSize:13,fontWeight: reportReason === r.value ? 600 : 400,color: reportReason === r.value ? '#E24B4A' : '#444',margin:0}}>{r.label}</p>
+              </div>
+            ))}
+            <textarea
+              value={reportComment}
+              onChange={e => setReportComment(e.target.value)}
+              placeholder="Détails supplémentaires (optionnel)..."
+              rows={3}
+              style={{width:'100%',padding:'10px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',marginTop:4,marginBottom:12}}
+            />
+            <p style={{fontSize:11,color:'#999',marginBottom:12}}>
+              Notre équipe examinera ce signalement dans les 48h. Tout faux signalement peut entraîner une suspension de votre compte.
+            </p>
+            <button onClick={handleReport} disabled={!reportReason || submittingReport}
+              style={{width:'100%',padding:'13px',background: reportReason ? '#E24B4A' : '#eee',color: reportReason ? 'white' : '#999',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor: reportReason ? 'pointer' : 'default'}}>
+              {submittingReport ? 'Envoi...' : 'Envoyer le signalement'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
-{/* Modal signalement */}
 {showReportModal && (
   <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300,padding:'1rem'}}>
     <div style={{background:'white',borderRadius:16,padding:'1.5rem',width:'100%',maxWidth:360}}>
@@ -355,13 +401,6 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   </div>
 )}
 
-{/* Bouton signaler */}
-<div style={{padding:'0 1rem 1rem',textAlign:'center'}}>
-  <button onClick={() => setShowReportModal(true)}
-    style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#999',textDecoration:'underline'}}>
-    🚩 Signaler ce profil
-  </button>
-</div>
 function InfoRow({ label, value, color }) {
   return (
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
