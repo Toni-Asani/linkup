@@ -48,6 +48,8 @@ const sectorColors = {
 export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab }) {
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [contacting, setContacting] = useState(false)
 
   useEffect(() => { loadCompany() }, [companyId])
 
@@ -56,6 +58,38 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
       .from('companies').select('*').eq('id', companyId).single()
     setCompany(data)
     setLoading(false)
+  }
+
+  const handleContact = async () => {
+    if (plan === 'Starter') {
+      setShowUpgradeModal(true)
+      return
+    }
+    setContacting(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: myCompany } = await supabase
+        .from('companies').select('id').eq('user_id', user.id).single()
+      if (!myCompany) return
+
+      const { data: existing } = await supabase
+        .from('matches')
+        .select('id')
+        .or(`and(company_a.eq.${myCompany.id},company_b.eq.${companyId}),and(company_a.eq.${companyId},company_b.eq.${myCompany.id})`)
+        .maybeSingle()
+
+      if (!existing) {
+        await supabase.from('matches').insert({
+          company_a: myCompany.id,
+          company_b: companyId,
+          status: 'pending'
+        })
+      }
+      setActiveTab && setActiveTab('messages')
+    } catch (e) {
+      console.error(e)
+    }
+    setContacting(false)
   }
 
   if (loading) return (
@@ -82,11 +116,31 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     if (!t.expires) return true
     return new Date(t.expires) > new Date()
   })
-
   const hasNeeds = company.needs_description || activeTags.length > 0
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>
+
+      {/* Modal upgrade Starter */}
+      {showUpgradeModal && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'1rem'}}>
+          <div style={{background:'white',borderRadius:16,padding:'2rem',width:'100%',maxWidth:340,textAlign:'center'}}>
+            <div style={{fontSize:40,marginBottom:'0.75rem'}}>🔒</div>
+            <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>Fonctionnalité Basic</h3>
+            <p style={{fontSize:14,color:'#666',lineHeight:1.6,marginBottom:'1.25rem'}}>
+              Passez en Basic ou Premium pour contacter des entreprises et accéder à la messagerie B2B.
+            </p>
+            <button onClick={() => { setShowUpgradeModal(false); setActiveTab && setActiveTab('pricing') }}
+              style={{width:'100%',padding:'13px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:'0.75rem'}}>
+              Voir les forfaits →
+            </button>
+            <button onClick={() => setShowUpgradeModal(false)}
+              style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{background:color,padding:'1rem 1.5rem 3rem',position:'relative',textAlign:'center'}}>
@@ -110,7 +164,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
 
       <div style={{padding:'1.5rem 1rem',display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:'-1rem'}}>
 
-        {/* Description — tous les plans */}
+        {/* Description */}
         {company.description && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:6}}>À PROPOS</p>
@@ -136,20 +190,18 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
                 ))}
               </div>
             )}
-            {/* Bouton contacter — bloqué pour Starter */}
             {isStarter ? (
               <div style={{background:'#f5f5f5',borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:16}}>🔒</span>
-                <div style={{flex:1}}>
-                  <p style={{fontSize:12,color:'#666',margin:0}}>Passez en <strong>Basic ou Premium</strong> pour répondre à ces besoins</p>
-                </div>
+                <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>Passez en <strong>Basic ou Premium</strong> pour répondre à ces besoins</p>
                 <button onClick={() => setActiveTab && setActiveTab('pricing')}
                   style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
                   Upgrader →
                 </button>
               </div>
             ) : (
-              <button style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+              <button onClick={handleContact}
+                style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
                 Répondre à ce besoin →
               </button>
             )}
@@ -189,9 +241,9 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
                 {company.contact_phone && <p style={{fontSize:13,color:'#444',margin:'4px 0 0'}}>{company.contact_phone}</p>}
                 <div style={{marginTop:8,background:'#f0f0f0',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:12}}>🔒</span>
-                  <span style={{fontSize:12,color:'#999'}}>Photo et LinkedIn disponibles en Premium</span>
+                  <span style={{fontSize:12,color:'#999',flex:1}}>Photo et LinkedIn disponibles en Premium</span>
                   <button onClick={() => setActiveTab && setActiveTab('pricing')}
-                    style={{marginLeft:'auto',background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
+                    style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
                     Upgrader →
                   </button>
                 </div>
@@ -209,12 +261,23 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           </div>
         )}
 
-        {/* Infos de base — tous les plans */}
+        {/* Infos */}
         <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
           <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>INFORMATIONS</p>
           {company.city && <InfoRow label="Ville" value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
           {company.website && <InfoRow label="Site web" value={company.website} color="#185FA5" />}
         </div>
+
+        {/* Bouton Contacter */}
+        <button onClick={handleContact} disabled={contacting}
+          style={{width:'100%',padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          {contacting ? 'Connexion...' : `💬 Contacter ${company.name}`}
+        </button>
+        {isStarter && (
+          <p style={{fontSize:11,color:'#999',textAlign:'center',marginTop:-8}}>
+            🔒 La messagerie est disponible dès le plan Basic
+          </p>
+        )}
 
       </div>
     </div>
