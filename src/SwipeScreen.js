@@ -261,8 +261,9 @@ const handleSwipe = async (direction) => {
 }
 
   useEffect(() => {
+    if (filteredCompanies.length === 0) return
     const card = cardRef.current
-    if (!card || filteredCompanies.length === 0) return
+    if (!card) return
 
     if (hammerRef.current) hammerRef.current.destroy()
 
