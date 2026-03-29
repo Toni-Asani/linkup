@@ -139,31 +139,50 @@ const handleContactPhotoUpload = async (e) => {
   }
 
   const handleSave = async () => {
-    setSaving(true)
-    const { error } = await supabase.from('companies').update({
-      name: form.name,
-      sector: form.sector,
-      canton: form.canton,
-      city: form.city,
-      description: form.description,
-      website: form.website,
-      contact_linkedin: form.contact_linkedin,
-      contact_photo_url: form.contact_photo_url,
-      contact_name: form.contact_name,
-      contact_title: form.contact_title,
-      contact_phone: form.contact_phone,
-      address: form.address,
-      needs_description: form.needs_description,
-      needs_tags: JSON.stringify(tags),
-    }).eq('user_id', user.id)
-    if (!error) {
-      setCompany({ ...company, ...form, needs_tags: JSON.stringify(tags) })
-      setEditing(false)
-      setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
+  setSaving(true)
+
+  // Géocodage de l'adresse
+  let lat = form.lat || null
+  let lng = form.lng || null
+  try {
+    const address = `${form.address}, ${form.city}, ${form.canton}, Switzerland`
+    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+    const geoData = await geoRes.json()
+    if (geoData && geoData.length > 0) {
+      lat = parseFloat(geoData[0].lat)
+      lng = parseFloat(geoData[0].lon)
     }
-    setSaving(false)
+  } catch (e) {
+    console.log('Géocodage échoué', e)
   }
+
+  const { error } = await supabase.from('companies').update({
+    name: form.name,
+    sector: form.sector,
+    canton: form.canton,
+    city: form.city,
+    description: form.description,
+    website: form.website,
+    contact_linkedin: form.contact_linkedin,
+    contact_photo_url: form.contact_photo_url,
+    contact_name: form.contact_name,
+    contact_title: form.contact_title,
+    contact_phone: form.contact_phone,
+    address: form.address,
+    needs_description: form.needs_description,
+    needs_tags: JSON.stringify(tags),
+    lat,
+    lng,
+  }).eq('user_id', user.id)
+
+  if (!error) {
+    setCompany({ ...company, ...form, needs_tags: JSON.stringify(tags), lat, lng })
+    setEditing(false)
+    setSuccess(true)
+    setTimeout(() => setSuccess(false), 3000)
+  }
+  setSaving(false)
+}
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
       <p style={{color:'#999'}}>Chargement...</p>
