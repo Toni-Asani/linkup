@@ -391,7 +391,7 @@ useEffect(() => {
           transform: getCardTransform(),
           transition: decision ? 'transform 0.4s ease' : 'none',
           cursor:'grab', zIndex:2, overflow:'hidden',
-          touchAction:'manipulation',
+          touchAction:'none',
         }}>
           <div style={{height:100,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',flexShrink:0}}>
             {company.logo_url ? (
