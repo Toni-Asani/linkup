@@ -440,11 +440,9 @@ setRatings(avgRatings)
               <span style={{background:'#f5f5f5',color:'#666',padding:'3px 10px',borderRadius:20,fontSize:12}}>
                 📍 {company.city}, {company.canton}
               </span>
-              {ratings[company.id] && (
-  <span style={{background:'#FFF9F0',color:'#E67E22',padding:'3px 10px',borderRadius:20,fontSize:12,fontWeight:600}}>
-    ★ {ratings[company.id]}
-  </span>
-)}
+              <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'3px 10px',borderRadius:20,fontSize:12,fontWeight:600}}>
+  ★ {ratings[company.id] ? ratings[company.id] : 'Nouveau'}
+</span>
               {myCompanyCoords && company.lat && company.lng && (
                 <span style={{background:'#f0f9ff',color:'#0284c7',padding:'3px 10px',borderRadius:20,fontSize:12}}>
                   📏 {Math.round(haversine(myCompanyCoords.lat, myCompanyCoords.lng, company.lat, company.lng))} km
