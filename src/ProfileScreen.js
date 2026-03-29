@@ -54,6 +54,7 @@ const cantons = [
 ]
 
 export default function ProfileScreen({ user, setActiveTab }) {
+  const [uploadingContact, setUploadingContact] = useState(false)
   const [company, setCompany] = useState(null)
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -89,25 +90,23 @@ export default function ProfileScreen({ user, setActiveTab }) {
     setStats({ matches: count || 0 })
   }
 
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    setUploadingLogo(true)
-    try {
-      const ext = file.name.split('.').pop()
-      const fileName = `${user.id}-logo.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from('logos').upload(fileName, file, { upsert: true })
-      if (uploadError) throw uploadError
-      const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName)
-      await supabase.from('companies').update({ logo_url: urlData.publicUrl }).eq('user_id', user.id)
-      setCompany({ ...company, logo_url: urlData.publicUrl })
-      setForm({ ...form, logo_url: urlData.publicUrl })
-    } catch (e) {
-      alert('Erreur lors du téléchargement.')
-    }
-    setUploadingLogo(false)
+  const handleContactPhotoUpload = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  setUploadingContact(true)
+  try {
+    const ext = file.name.split('.').pop()
+    const fileName = `${user.id}-contact.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('logos').upload(fileName, file, { upsert: true })
+    if (uploadError) throw uploadError
+    const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName)
+    setForm({ ...form, contact_photo_url: urlData.publicUrl })
+  } catch (e) {
+    alert('Erreur lors du téléchargement.')
   }
+  setUploadingContact(false)
+}
 
   const addTag = () => {
     if (!newTag.trim() || tags.includes(newTag.trim())) return
@@ -128,6 +127,8 @@ export default function ProfileScreen({ user, setActiveTab }) {
       city: form.city,
       description: form.description,
       website: form.website,
+      contact_linkedin: form.contact_linkedin,
+      contact_photo_url: form.contact_photo_url,
       contact_name: form.contact_name,
       contact_title: form.contact_title,
       contact_phone: form.contact_phone,
@@ -213,10 +214,27 @@ export default function ProfileScreen({ user, setActiveTab }) {
       <Input value={form.website||''} onChange={e => setForm({...form,website:e.target.value})} placeholder="Site web (https://...)" />
 
       <Label>DÉCIDEUR / CONTACT PRINCIPAL</Label>
-      <Input value={form.contact_name||''} onChange={e => setForm({...form,contact_name:e.target.value})} placeholder="Nom et prénom *" />
-      <Input value={form.contact_title||''} onChange={e => setForm({...form,contact_title:e.target.value})} placeholder="Titre (CEO, Directeur, Gérant...)" />
-      <Input value={form.contact_phone||''} onChange={e => setForm({...form,contact_phone:e.target.value})} placeholder="Téléphone direct" />
+<Input value={form.contact_name||''} onChange={e => setForm({...form,contact_name:e.target.value})} placeholder="Nom et prénom *" />
+<Input value={form.contact_title||''} onChange={e => setForm({...form,contact_title:e.target.value})} placeholder="Titre (CEO, Directeur, Gérant...)" />
+<Input value={form.contact_phone||''} onChange={e => setForm({...form,contact_phone:e.target.value})} placeholder="Téléphone direct" />
+<Input value={form.contact_linkedin||''} onChange={e => setForm({...form,contact_linkedin:e.target.value})} placeholder="LinkedIn (https://linkedin.com/in/...)" />
 
+{/* Photo décisionnaire */}
+<p style={{fontSize:12,color:'#666'}}>Photo du décisionnaire :</p>
+<div style={{display:'flex',alignItems:'center',gap:12}}>
+  {form.contact_photo_url ? (
+    <img src={form.contact_photo_url} alt="contact"
+      style={{width:56,height:56,borderRadius:'50%',objectFit:'cover',border:'2px solid #ddd'}} />
+  ) : (
+    <div style={{width:56,height:56,borderRadius:'50%',background:'#f0f0f0',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <span style={{fontSize:24}}>👤</span>
+    </div>
+  )}
+  <label style={{padding:'10px 16px',background:'#f0f0f0',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+    {uploadingContact ? 'Upload...' : 'Choisir une photo'}
+    <input type="file" accept="image/*" style={{display:'none'}} onChange={handleContactPhotoUpload} />
+  </label>
+</div>
       <Label>NOS BESOINS</Label>
       <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
         rows={3} placeholder="Décrivez vos besoins en détail... (ex: Cherche ingénieur civil freelance pour chantiers résidentiels à Lausanne)"
@@ -345,12 +363,27 @@ export default function ProfileScreen({ user, setActiveTab }) {
 
         {/* Décideur */}
         {company.contact_name && (
-          <InfoCard title="DÉCIDEUR / CONTACT PRINCIPAL">
-            <InfoRow label="Nom" value={company.contact_name} />
-            {company.contact_title && <InfoRow label="Titre" value={company.contact_title} />}
-            {company.contact_phone && <InfoRow label="Téléphone" value={company.contact_phone} />}
-          </InfoCard>
-        )}
+  <InfoCard title="DÉCIDEUR / CONTACT PRINCIPAL">
+    <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
+      {company.contact_photo_url ? (
+        <img src={company.contact_photo_url} alt="contact"
+          style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:'2px solid #eee'}} />
+      ) : (
+        <div style={{width:52,height:52,borderRadius:'50%',background:'#f0f0f0',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <span style={{fontSize:22}}>👤</span>
+        </div>
+      )}
+      <div>
+        <p style={{fontSize:15,fontWeight:700,margin:0}}>{company.contact_name}</p>
+        {company.contact_title && <p style={{fontSize:13,color:'#666',margin:0}}>{company.contact_title}</p>}
+      </div>
+    </div>
+    {company.contact_phone && <InfoRow label="Téléphone" value={company.contact_phone} />}
+    {company.contact_linkedin && (
+      <InfoRow label="LinkedIn" value="Voir le profil →" color="#0A66C2" />
+    )}
+  </InfoCard>
+)}
 
         {/* Description */}
         {company.description && (

@@ -205,17 +205,42 @@ export default function SwipeScreen({ user, setScreen }) {
           </div>
 
           <div style={{padding:'1.25rem'}}>
-            <h3 style={{fontSize:20,fontWeight:700,marginBottom:4}}>{company.name}</h3>
-            <div style={{display:'flex',gap:8,marginBottom:'0.75rem',flexWrap:'wrap'}}>
-              <span style={{background:color+'15',color:color,padding:'3px 10px',borderRadius:20,fontSize:12,fontWeight:600}}>
-                {company.sector}
-              </span>
-              <span style={{background:'#f5f5f5',color:'#666',padding:'3px 10px',borderRadius:20,fontSize:12}}>
-                📍 {company.city}, {company.canton}
-              </span>
-            </div>
-            <p style={{color:'#666',fontSize:14,lineHeight:1.6}}>{company.description}</p>
-          </div>
+  <h3 style={{fontSize:20,fontWeight:700,marginBottom:4}}>{company.name}</h3>
+  <div style={{display:'flex',gap:8,marginBottom:'0.75rem',flexWrap:'wrap'}}>
+    <span style={{background:color+'15',color:color,padding:'3px 10px',borderRadius:20,fontSize:12,fontWeight:600}}>
+      {company.sector}
+    </span>
+    <span style={{background:'#f5f5f5',color:'#666',padding:'3px 10px',borderRadius:20,fontSize:12}}>
+      📍 {company.city}, {company.canton}
+    </span>
+  </div>
+
+  {/* Photo + infos décisionnaire */}
+  {company.contact_name && (
+    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:'0.75rem',background:'#f9f9f9',borderRadius:10,padding:'8px 10px'}}>
+      {company.contact_photo_url ? (
+        <img src={company.contact_photo_url} alt="contact"
+          style={{width:38,height:38,borderRadius:'50%',objectFit:'cover',border:'2px solid #eee',flexShrink:0}} />
+      ) : (
+        <div style={{width:38,height:38,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <span style={{fontSize:18}}>👤</span>
+        </div>
+      )}
+      <div style={{flex:1,minWidth:0}}>
+        <p style={{fontSize:13,fontWeight:600,margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{company.contact_name}</p>
+        {company.contact_title && <p style={{fontSize:11,color:'#999',margin:0}}>{company.contact_title}</p>}
+      </div>
+      {company.contact_linkedin && (
+        <a href={company.contact_linkedin} target="_blank" rel="noreferrer"
+          style={{flexShrink:0,background:'#0A66C2',color:'white',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:600,textDecoration:'none'}}>
+          in
+        </a>
+      )}
+    </div>
+  )}
+
+  <p style={{color:'#666',fontSize:14,lineHeight:1.6}}>{company.description}</p>
+</div>
         </div>
       </div>
 
