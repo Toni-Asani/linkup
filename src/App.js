@@ -850,6 +850,28 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('home')
   const [selectedCompanyId, setSelectedCompanyId] = useState(null)
   const [userPlan, setUserPlan] = useState('Starter')
+  const [unreadCount, setUnreadCount] = useState(0)
+
+useEffect(() => {
+  loadUnreadCount()
+  const sub = supabase
+    .channel('notifications-' + user.id)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'notifications',
+      filter: `user_id=eq.${user.id}`
+    }, () => { loadUnreadCount() })
+    .subscribe()
+  return () => supabase.removeChannel(sub)
+}, [user])
+
+const loadUnreadCount = async () => {
+  const { count } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('read', false)
+  setUnreadCount(count || 0)
+}
   useEffect(() => {
   supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
     .then(({ data }) => {
@@ -928,18 +950,26 @@ const handleTabChange = (tab) => {
 </div>
 
       <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white'}}>
-        {[
-          {id:'home',label:'Accueil',icon:'🏠'},
-          {id:'swipe',label:'Swipe',icon:'💼'},
-          {id:'map',label:'Carte',icon:'🗺️'},
-          {id:'messages',label:'Messages',icon:'💬'},
-          {id:'profile',label:'Profil',icon:'👤'},
-        ].map(tab => (
-<button key={tab.id} onClick={() => handleTabChange(tab.id)} style={tabStyle(tab.id)}>            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
-            {tab.label}
-          </button>
-        ))}
+  {[
+    {id:'home',label:'Accueil',icon:'🏠'},
+    {id:'swipe',label:'Swipe',icon:'💼'},
+    {id:'map',label:'Carte',icon:'🗺️'},
+    {id:'messages',label:'Messages',icon:'💬'},
+    {id:'profile',label:'Profil',icon:'👤'},
+  ].map(tab => (
+    <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={tabStyle(tab.id)}>
+      <div style={{position:'relative',display:'inline-block',fontSize:20,marginBottom:2}}>
+        {tab.icon}
+        {tab.id === 'messages' && unreadCount > 0 && (
+          <div style={{position:'absolute',top:-4,right:-6,background:'#E24B4A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </div>
+        )}
       </div>
+      {tab.label}
+    </button>
+  ))}
+</div>
     </div>
   )
 }
