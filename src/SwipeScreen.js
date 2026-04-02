@@ -201,7 +201,6 @@ useEffect(() => {
   
   const timer = setTimeout(() => {
     const card = cardRef.current
-    console.log('card ref after timeout:', card)
     if (!card) return
 
     let startX = 0
@@ -238,7 +237,6 @@ useEffect(() => {
     let isMouseDragging = false
 
     const onMouseDown = (e) => {
-  console.log('mousedown detected!', e.clientX)
   mouseStartX = e.clientX
   isMouseDragging = true
 }
