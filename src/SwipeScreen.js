@@ -57,6 +57,13 @@ const haversine = (lat1, lng1, lat2, lng2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
+const getActiveTags = (needs_tags) => {
+  try {
+    const tags = needs_tags ? JSON.parse(needs_tags) : []
+    return tags.filter(t => !t.expires || new Date(t.expires) > new Date())
+  } catch { return [] }
+}
+
 export default function SwipeScreen({ user, setScreen }) {
   const [companies, setCompanies] = useState([])
   const [filteredCompanies, setFilteredCompanies] = useState([])
@@ -73,11 +80,8 @@ export default function SwipeScreen({ user, setScreen }) {
   const [ratings, setRatings] = useState({})
   const cardRef = useRef(null)
   const cardCallbackRef = useCallback((node) => {
-  if (node) {
-    cardRef.current = node
-  }
-}, [])
-  const hammerRef = useRef(null)
+    if (node) cardRef.current = node
+  }, [])
   const decisionRef = useRef(null)
   const currentRef = useRef(0)
   const companiesRef = useRef([])
@@ -196,91 +200,71 @@ export default function SwipeScreen({ user, setScreen }) {
     setDecision(direction)
     setTimeout(() => { setCurrent(c => c + 1); setOffset({ x: 0, y: 0 }); setDecision(null); decisionRef.current = null }, 400)
   }
-useEffect(() => {
-  if (filteredCompanies.length === 0) return
-  
-  const timer = setTimeout(() => {
-    const card = cardRef.current
-    if (!card) return
 
-    let startX = 0
-    let startY = 0
-    let isDragging = false
+  useEffect(() => {
+    if (filteredCompanies.length === 0) return
+    const timer = setTimeout(() => {
+      const card = cardRef.current
+      if (!card) return
 
-    const onTouchStart = (e) => {
-      startX = e.touches[0].clientX
-      startY = e.touches[0].clientY
-      isDragging = true
-    }
+      let startX = 0, startY = 0, isDragging = false
+      let mouseStartX = 0, isMouseDragging = false
 
-    const onTouchMove = (e) => {
-      if (!isDragging || decisionRef.current) return
-      const deltaX = e.touches[0].clientX - startX
-      const deltaY = e.touches[0].clientY - startY
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        e.preventDefault()
-        setOffset({ x: deltaX, y: deltaY * 0.1 })
+      const onTouchStart = (e) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; isDragging = true }
+      const onTouchMove = (e) => {
+        if (!isDragging || decisionRef.current) return
+        const deltaX = e.touches[0].clientX - startX
+        const deltaY = e.touches[0].clientY - startY
+        if (Math.abs(deltaX) > Math.abs(deltaY)) { e.preventDefault(); setOffset({ x: deltaX, y: deltaY * 0.1 }) }
       }
+      const onTouchEnd = (e) => {
+        if (!isDragging || decisionRef.current) return
+        isDragging = false
+        const deltaX = e.changedTouches[0].clientX - startX
+        if (deltaX > 60) handleSwipe('right')
+        else if (deltaX < -60) handleSwipe('left')
+        else setOffset({ x: 0, y: 0 })
+      }
+      const onMouseDown = (e) => { mouseStartX = e.clientX; isMouseDragging = true }
+      const onMouseMove = (e) => {
+        if (!isMouseDragging || decisionRef.current) return
+        setOffset({ x: e.clientX - mouseStartX, y: 0 })
+      }
+      const onMouseUp = (e) => {
+        if (!isMouseDragging || decisionRef.current) return
+        isMouseDragging = false
+        const deltaX = e.clientX - mouseStartX
+        if (deltaX > 80) handleSwipe('right')
+        else if (deltaX < -80) handleSwipe('left')
+        else setOffset({ x: 0, y: 0 })
+      }
+
+      card.addEventListener('touchstart', onTouchStart, { passive: true })
+      card.addEventListener('touchmove', onTouchMove, { passive: false })
+      card.addEventListener('touchend', onTouchEnd, { passive: true })
+      card.addEventListener('mousedown', onMouseDown)
+      card.addEventListener('mousemove', onMouseMove)
+      card.addEventListener('mouseup', onMouseUp)
+      card.addEventListener('mouseleave', onMouseUp)
+
+      card._cleanup = () => {
+        card.removeEventListener('touchstart', onTouchStart)
+        card.removeEventListener('touchmove', onTouchMove)
+        card.removeEventListener('touchend', onTouchEnd)
+        card.removeEventListener('mousedown', onMouseDown)
+        card.removeEventListener('mousemove', onMouseMove)
+        card.removeEventListener('mouseup', onMouseUp)
+        card.removeEventListener('mouseleave', onMouseUp)
+      }
+    }, 300)
+
+    return () => {
+      clearTimeout(timer)
+      const card = cardRef.current
+      if (card && card._cleanup) card._cleanup()
     }
+  }, [filteredCompanies.length, current])
 
-    const onTouchEnd = (e) => {
-      if (!isDragging || decisionRef.current) return
-      isDragging = false
-      const deltaX = e.changedTouches[0].clientX - startX
-      if (deltaX > 60) handleSwipe('right')
-      else if (deltaX < -60) handleSwipe('left')
-      else setOffset({ x: 0, y: 0 })
-    }
-
-    // Mouse events pour desktop
-    let mouseStartX = 0
-    let isMouseDragging = false
-
-    const onMouseDown = (e) => {
-  mouseStartX = e.clientX
-  isMouseDragging = true
-}
-
-    const onMouseMove = (e) => {
-      if (!isMouseDragging || decisionRef.current) return
-      const deltaX = e.clientX - mouseStartX
-      setOffset({ x: deltaX, y: 0 })
-    }
-
-    const onMouseUp = (e) => {
-      if (!isMouseDragging || decisionRef.current) return
-      isMouseDragging = false
-      const deltaX = e.clientX - mouseStartX
-      if (deltaX > 80) handleSwipe('right')
-      else if (deltaX < -80) handleSwipe('left')
-      else setOffset({ x: 0, y: 0 })
-    }
-
-    card.addEventListener('touchstart', onTouchStart, { passive: true })
-    card.addEventListener('touchmove', onTouchMove, { passive: false })
-    card.addEventListener('touchend', onTouchEnd, { passive: true })
-    card.addEventListener('mousedown', onMouseDown)
-    card.addEventListener('mousemove', onMouseMove)
-    card.addEventListener('mouseup', onMouseUp)
-    card.addEventListener('mouseleave', onMouseUp)
-
-    card._cleanup = () => {
-      card.removeEventListener('touchstart', onTouchStart)
-      card.removeEventListener('touchmove', onTouchMove)
-      card.removeEventListener('touchend', onTouchEnd)
-      card.removeEventListener('mousedown', onMouseDown)
-      card.removeEventListener('mousemove', onMouseMove)
-      card.removeEventListener('mouseup', onMouseUp)
-      card.removeEventListener('mouseleave', onMouseUp)
-    }
-  }, 300)
-
-  return () => {
-    clearTimeout(timer)
-    const card = cardRef.current
-    if (card && card._cleanup) card._cleanup()
-  }
-}, [filteredCompanies.length, current])
   const rotate = offset.x * 0.08
   const likeOpacity = Math.max(0, Math.min(offset.x / 80, 1))
   const passOpacity = Math.max(0, Math.min(-offset.x / 80, 1))
@@ -313,6 +297,8 @@ useEffect(() => {
   const company = filteredCompanies[current]
   const nextCompany = filteredCompanies[current + 1]
   const color = sectorColors[company.sector] || '#E24B4A'
+  const activeTags = getActiveTags(company.needs_tags)
+  const hasNeeds = company.needs_description || activeTags.length > 0
 
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'0.75rem 1rem',gap:'0.75rem',userSelect:'none',overflow:'hidden'}}>
@@ -377,7 +363,6 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Zone de swipe */}
       <div style={{position:'relative',width:'100%',flex:1,minHeight:0}}>
         {nextCompany && (
           <div style={{position:'absolute',top:8,left:8,right:8,bottom:0,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
@@ -410,6 +395,7 @@ useEffect(() => {
               <span style={{background:'#f5f5f5',color:'#666',padding:'2px 8px',borderRadius:20,fontSize:11}}>📍 {company.city}, {company.canton}</span>
               <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>★ {ratings[company.id] || 'Nouveau'}</span>
             </div>
+
             {company.contact_name && (
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:'0.5rem',background:'#f9f9f9',borderRadius:10,padding:'6px 8px'}}>
                 {company.contact_photo_url ? (
@@ -428,12 +414,30 @@ useEffect(() => {
                 )}
               </div>
             )}
-            <p style={{color:'#666',fontSize:13,lineHeight:1.5}}>{company.description}</p>
+
+            <p style={{color:'#666',fontSize:13,lineHeight:1.5,marginBottom: hasNeeds ? '0.5rem' : 0}}>{company.description}</p>
+
+            {hasNeeds && (
+              <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:10,padding:'8px 10px'}}>
+                <p style={{fontSize:11,color:'#E67E22',fontWeight:700,marginBottom:4}}>💼 BESOINS</p>
+                {company.needs_description && (
+                  <p style={{fontSize:12,color:'#444',lineHeight:1.4,marginBottom: activeTags.length > 0 ? 4 : 0}}>{company.needs_description}</p>
+                )}
+                {activeTags.length > 0 && (
+                  <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                    {activeTags.map((tag, i) => (
+                      <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:500,color:'#333'}}>
+                        {tag.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Boutons */}
       <div style={{display:'flex',gap:'2rem',alignItems:'center',flexShrink:0,paddingBottom:'0.25rem'}}>
         <button onClick={() => handleSwipe('left')} style={{width:56,height:56,borderRadius:'50%',background:'white',border:'2px solid #E24B4A',color:'#E24B4A',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>✗</button>
         <button onClick={() => handleSwipe('right')} style={{width:64,height:64,borderRadius:'50%',background:'#E24B4A',border:'none',color:'white',fontSize:24,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(226,75,74,0.4)'}}>✓</button>
