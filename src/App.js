@@ -598,9 +598,34 @@ function RegisterScreen({ setScreen, t }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
- const handleZefixLookup = async (ideNumber) => {
-    setZefix(ideNumber)
+ const [zefixStatus, setZefixStatus] = useState('idle') // idle, checking, valid, invalid
+const [zefixCompanyName, setZefixCompanyName] = useState('')
+
+const handleZefixLookup = async (ideNumber) => {
+  setZefix(ideNumber)
+  const clean = ideNumber.replace(/[^0-9]/g, '').trim()
+  if (clean.length !== 9) {
+    setZefixStatus('idle')
+    setZefixCompanyName('')
+    return
   }
+  setZefixStatus('checking')
+  try {
+    const uid = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
+    const res = await fetch(`https://www.uid-bfe.admin.ch/uid-pub/api/json/search/uidentity?uidOrName=${clean}&searchMode=1&maxEntries=1&language=fr`)
+    const data = await res.json()
+    if (data && data.data && data.data.length > 0) {
+      const entity = data.data[0]
+      setZefixStatus('valid')
+      setZefixCompanyName(entity.organisation?.commercialName || entity.organisation?.legalName || '')
+    } else {
+      setZefixStatus('invalid')
+      setZefixCompanyName('')
+    }
+  } catch (e) {
+    setZefixStatus('idle')
+  }
+}
 
   const handleRegister = async () => {
     setLoading(true)
@@ -623,7 +648,11 @@ if (!email || !password || !company || !zefix || !contactName || !contactTitle |
       setLoading(false)
       return
     }
-
+if (zefixStatus === 'invalid') {
+  setError(t.errorZefix)
+  setLoading(false)
+  return
+}
     const clean = zefix.replace(/[^0-9]/g, '').trim()
     if (clean.length !== 9) {
       setError('Format IDE invalide. Utilisez le format CHE-xxx.xxx.xxx')
@@ -675,7 +704,11 @@ if (!email || !password || !company || !zefix || !contactName || !contactTitle |
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.5rem'}}>{t.companyInfo}</p>
       <input value={company} onChange={e => setCompany(e.target.value)} placeholder={t.companyName}
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
-      <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+      <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}
+  style={{padding:'14px',border:`1px solid ${zefixStatus === 'valid' ? '#22c55e' : zefixStatus === 'invalid' ? '#E24B4A' : '#ddd'}`,borderRadius:10,fontSize:15,outline:'none'}} />
+{zefixStatus === 'checking' && <p style={{fontSize:12,color:'#999'}}>🔍 Vérification en cours...</p>}
+{zefixStatus === 'valid' && <p style={{fontSize:12,color:'#22c55e'}}>✅ Entreprise trouvée : {zefixCompanyName}</p>}
+{zefixStatus === 'invalid' && <p style={{fontSize:12,color:'#E24B4A'}}>❌ Numéro IDE introuvable dans le registre suisse</p>}
       <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rue et numéro *"
   style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
 <div style={{display:'flex',gap:8}}>
