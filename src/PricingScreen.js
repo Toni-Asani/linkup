@@ -84,7 +84,7 @@ export default function PricingScreen({ user, setActiveTab }) {
     const { data: { session } } = await supabase.auth.getSession()
     
     const response = await fetch(
-      `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/create-checkout-session`,
+      `https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/create-checkout-session`,
       {
         method: 'POST',
         headers: {
