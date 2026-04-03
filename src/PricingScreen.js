@@ -99,6 +99,7 @@ export default function PricingScreen({ user, setActiveTab }) {
 )
 
     const { url, error } = await response.json()
+    alert('url: ' + url + ' error: ' + error)
     console.log('Stripe response:', url, error)
     if (error) throw new Error(error)
     
