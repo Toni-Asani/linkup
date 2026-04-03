@@ -947,12 +947,6 @@ const handleTabChange = (tab) => {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <div style={{display:'flex',gap:4}}>
-            {langs.map(l => (
-              <button key={l.code} onClick={() => setLang(l.code)}
-                style={{background: lang === l.code ? '#FFF5F5' : 'none', border: lang === l.code ? '1px solid #FECACA' : '1px solid transparent', borderRadius:8, padding:'4px 6px', cursor:'pointer', fontSize:16}}>
-                {l.label}
-              </button>
-            ))}
           </div>
           <button onClick={() => setActiveTab('pricing')}
             style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:20,padding:'5px 12px',cursor:'pointer'}}>
