@@ -99,6 +99,7 @@ export default function PricingScreen({ user, setActiveTab }) {
 )
 
     const { url, error } = await response.json()
+    console.log('Stripe response:', url, error)
     if (error) throw new Error(error)
     
     // Rediriger vers Stripe Checkout
