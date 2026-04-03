@@ -100,7 +100,6 @@ const response = await fetch(
 )
 
     const { url, error } = await response.json()
-    alert('url: ' + url + ' error: ' + error)
     console.log('Stripe response:', url, error)
     if (error) throw new Error(error)
     

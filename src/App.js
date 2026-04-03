@@ -794,24 +794,40 @@ function VisitorMode({ setScreen, t }) {
       {showModal && <Modal />}
 
       {/* Header */}
-      <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <span style={{color:'white',fontWeight:700,fontSize:12}}>HB</span>
-          </div>
-          <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
+      <div style={{padding:'0.875rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+  <div style={{display:'flex',alignItems:'center',gap:8}}>
+    <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <span style={{color:'white',fontWeight:700,fontSize:12}}>HB</span>
+    </div>
+    <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
+  </div>
+  <div style={{display:'flex',alignItems:'center',gap:6}}>
+    <div style={{position:'relative'}}>
+      <button onClick={() => setShowLangMenu(!showLangMenu)}
+        style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+        {lang.toUpperCase()} ▾
+      </button>
+      {showLangMenu && (
+        <div style={{position:'absolute',right:0,top:'110%',background:'white',border:'1px solid #eee',borderRadius:12,boxShadow:'0 4px 20px rgba(0,0,0,0.1)',overflow:'hidden',zIndex:100,minWidth:120}}>
+          {[{code:'fr',label:'Français'},{code:'de',label:'Deutsch'},{code:'it',label:'Italiano'},{code:'en',label:'English'}].map(l => (
+            <button key={l.code} onClick={() => { setLang(l.code); setShowLangMenu(false) }}
+              style={{display:'block',width:'100%',padding:'8px 16px',background: lang === l.code ? '#FFF5F5' : 'white',border:'none',cursor:'pointer',fontSize:13,textAlign:'left',fontFamily:'Plus Jakarta Sans',color: lang === l.code ? '#E24B4A' : '#333',fontWeight: lang === l.code ? 600 : 400}}>
+              {l.label}
+            </button>
+          ))}
         </div>
-        <div style={{display:'flex',gap:8}}>
-          <button onClick={() => setScreen('register')}
-            style={{background:'#E24B4A',color:'white',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
-            S'inscrire
-          </button>
-          <button onClick={() => setScreen('login')}
-            style={{background:'white',color:'#E24B4A',border:'1px solid #E24B4A',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
-            Connexion
-          </button>
-        </div>
-      </div>
+      )}
+    </div>
+    <button onClick={() => setActiveTab('pricing')}
+      style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:20,padding:'5px 10px',cursor:'pointer'}}>
+      <PlanBadge user={user} />
+    </button>
+    <button onClick={handleLogout}
+      style={{background:'#f5f5f5',border:'none',borderRadius:20,padding:'5px 10px',cursor:'pointer',fontSize:12,color:'#666',fontWeight:500,whiteSpace:'nowrap'}}>
+      {t.logout}
+    </button>
+  </div>
+</div>
 
       {/* Contenu */}
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
@@ -877,6 +893,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [selectedCompanyId, setSelectedCompanyId] = useState(null)
   const [userPlan, setUserPlan] = useState('Starter')
   const [unreadCount, setUnreadCount] = useState(0)
+  const [showLangMenu, setShowLangMenu] = useState(false)
 
 useEffect(() => {
   loadUnreadCount()
@@ -918,13 +935,6 @@ const handleTabChange = (tab) => {
     borderTop: activeTab === tab ? '2px solid #E24B4A' : '2px solid transparent',
     fontFamily:'Plus Jakarta Sans'
   })
-
-  const langs = [
-    { code: 'fr', label: '🇫🇷' },
-    { code: 'de', label: '🇩🇪' },
-    { code: 'it', label: '🇮🇹' },
-    { code: 'en', label: '🇬🇧' },
-  ]
 
   return (
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
