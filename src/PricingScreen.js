@@ -89,7 +89,7 @@ const response = await fetch(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
+      'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`,
     },
     body: JSON.stringify({
       priceId: plan.priceId,
