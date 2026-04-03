@@ -84,20 +84,19 @@ export default function PricingScreen({ user, setActiveTab }) {
     const { data: { session } } = await supabase.auth.getSession()
     
     const response = await fetch(
-      `https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/create-checkout-session`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          priceId: plan.priceId,
-          userId: user.id,
-          planName: plan.id,
-        }),
-      }
-    )
+  `https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/create-checkout-session`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      priceId: plan.priceId,
+      userId: user.id,
+      planName: plan.id,
+    }),
+  }
+)
 
     const { url, error } = await response.json()
     if (error) throw new Error(error)
