@@ -604,29 +604,13 @@ const [zefixCompanyName, setZefixCompanyName] = useState('')
 const handleZefixLookup = (ideNumber) => {
   setZefix(ideNumber)
   const clean = ideNumber.replace(/[^0-9]/g, '').trim()
-  if (clean.length !== 9) {
+  if (clean.length === 9) {
+    setZefixStatus('valid')
+  } else if (ideNumber.length > 3) {
+    setZefixStatus('invalid')
+  } else {
     setZefixStatus('idle')
-    setZefixCompanyName('')
-    return
   }
-  setZefixStatus('checking')
-  try {
-    const formatted = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
-    // Validation du checksum IDE suisse
-const digits = clean.split('').map(Number)
-const weights = [5, 4, 3, 2, 7, 6, 5, 4]
-const sum = digits.slice(0, 8).reduce((acc, d, i) => acc + d * weights[i], 0)
-const remainder = sum % 11
-const checkDigit = remainder === 0 ? 0 : 11 - remainder
-if (checkDigit === 10 || checkDigit !== digits[8]) {
-  setZefixStatus('invalid')
-} else {
-  setZefixStatus('valid')
-  setZefixCompanyName('')
-}
-} catch (e) {
-  setZefixStatus('idle')
-}
 }
 
 const handleRegister = async () => {
@@ -656,11 +640,11 @@ if (zefixStatus === 'invalid') {
   return
 }
     const clean = zefix.replace(/[^0-9]/g, '').trim()
-    if (clean.length !== 9) {
-      setError('Format IDE invalide. Utilisez le format CHE-xxx.xxx.xxx')
-      setLoading(false)
-      return
-    }
+    if (clean.length === 9) {
+  setZefixStatus('valid')
+} else {
+  setZefixStatus('idle')
+}
 
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
@@ -708,9 +692,8 @@ if (zefixStatus === 'invalid') {
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
       <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}
   style={{padding:'14px',border:`1px solid ${zefixStatus === 'valid' ? '#22c55e' : zefixStatus === 'invalid' ? '#E24B4A' : '#ddd'}`,borderRadius:10,fontSize:15,outline:'none'}} />
-{zefixStatus === 'checking' && <p style={{fontSize:12,color:'#999'}}>🔍 Vérification en cours...</p>}
-{zefixStatus === 'valid' && <p style={{fontSize:12,color:'#22c55e'}}>✅ Entreprise trouvée : {zefixCompanyName}</p>}
-{zefixStatus === 'invalid' && <p style={{fontSize:12,color:'#E24B4A'}}>❌ Numéro IDE introuvable dans le registre suisse</p>}
+{zefixStatus === 'valid' && <p style={{fontSize:12,color:'#F39C12'}}>⏳ Numéro à vérifier — un email de confirmation vous sera envoyé dans les 24h</p>}
+{zefixStatus === 'invalid' && <p style={{fontSize:12,color:'#E24B4A'}}>❌ Format invalide. Utilisez le format CHE-xxx.xxx.xxx (9 chiffres)</p>}
       <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rue et numéro *"
   style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
 <div style={{display:'flex',gap:8}}>
