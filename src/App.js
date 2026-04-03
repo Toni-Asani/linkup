@@ -885,62 +885,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
     </div>
   )
 }
-      {/* Contenu */}
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-        {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
-        {activeTab === 'map' && <MapScreen user={null} setScreen={setScreen} />}
-        {activeTab === 'messages' && (
-          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
-            <div style={{fontSize:48}}>💬</div>
-            <h3 style={{fontSize:18,fontWeight:700}}>{t.messagesTitle}</h3>
-            <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>{t.messagesDesc}</p>
-            <button onClick={() => setShowModal(true)}
-              style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-              {t.accessMessages}
-            </button>
-          </div>
-        )}
-        {activeTab === 'pricing' && (
-          <div style={{flex:1,overflowY:'auto',padding:'1.5rem 1rem'}}>
-            <div style={{textAlign:'center',marginBottom:'1.25rem'}}>
-              <h2 style={{fontSize:20,fontWeight:700,marginBottom:4}}>{t.pricing}</h2>
-              <p style={{fontSize:13,color:'#666'}}>{t.pricingDesc}</p>
-            </div>
-            {[
-              {name:'Starter',price:'Gratuit',color:'#666',features:['Profil entreprise','5 swipes/jour','Visible sur la carte']},
-              {name:'Basic',price:'CHF 19/mois',color:'#185FA5',features:['Swipes illimités','Messagerie B2B','Statistiques']},
-              {name:'Premium',price:'CHF 39/mois',color:'#E24B4A',features:['Tout Basic inclus','Badge Fondateur ⭐','Visibilité prioritaire','2 mois offerts'],highlight:true},
-            ].map(plan => (
-              <div key={plan.name} onClick={() => setShowModal(true)}
-                style={{border: plan.highlight ? `2px solid ${plan.color}` : '1px solid #eee',borderRadius:12,padding:'1rem',marginBottom:'0.75rem',cursor:'pointer',background:'white'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                  <h3 style={{fontSize:16,fontWeight:700,color:plan.color,margin:0}}>{plan.name}</h3>
-                  <span style={{fontSize:14,fontWeight:600,color:'#1a1a1a'}}>{plan.price}</span>
-                </div>
-                {plan.features.map((f,i) => (
-                  <p key={i} style={{fontSize:12,color:'#666',margin:'3px 0'}}>✓ {f}</p>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Barre de navigation */}
-      <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white',flexShrink:0}}>
-        {[
-          {id:'swipe',label:'Swipe',icon:'💼'},
-          {id:'map',label:'Carte',icon:'🗺️'},
-          {id:'messages',label:'Messages',icon:'💬'},
-          {id:'pricing',label:'Tarifs',icon:'💳'},
-        ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}>
-            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-  
+ 
 
 function Dashboard({ user, setUser, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('home')
