@@ -601,7 +601,7 @@ function RegisterScreen({ setScreen, t }) {
  const [zefixStatus, setZefixStatus] = useState('idle') // idle, checking, valid, invalid
 const [zefixCompanyName, setZefixCompanyName] = useState('')
 
-const handleZefixLookup = async (ideNumber) => {
+const handleZefixLookup = (ideNumber) => {
   setZefix(ideNumber)
   const clean = ideNumber.replace(/[^0-9]/g, '').trim()
   if (clean.length !== 9) {
@@ -612,13 +612,16 @@ const handleZefixLookup = async (ideNumber) => {
   setZefixStatus('checking')
   try {
     const formatted = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
-    const res = await fetch(`https://www.uid-bfe.admin.ch/uid-pub/api/json/search/uidentity?uidOrName=${clean}&searchMode=0&maxEntries=1&language=fr`)
-const data = await res.json()
-if (data && data.data && data.data.length > 0) {
-  setZefixStatus('valid')
-  setZefixCompanyName(data.data[0].organisation?.commercialName || data.data[0].organisation?.legalName || '')
-} else {
+    // Validation du checksum IDE suisse
+const digits = clean.split('').map(Number)
+const weights = [5, 4, 3, 2, 7, 6, 5, 4]
+const sum = digits.slice(0, 8).reduce((acc, d, i) => acc + d * weights[i], 0)
+const remainder = sum % 11
+const checkDigit = remainder === 0 ? 0 : 11 - remainder
+if (checkDigit === 10 || checkDigit !== digits[8]) {
   setZefixStatus('invalid')
+} else {
+  setZefixStatus('valid')
   setZefixCompanyName('')
 }
 } catch (e) {
