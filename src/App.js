@@ -270,18 +270,34 @@ export default function App() {
   const t = translations[lang]
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('admin') === 'true') setScreen('admin')
-      setLoading(false)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
+    setUser(session?.user ?? null)
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('admin') === 'true') setScreen('admin')
+    
+    // Vérifier si retour de Stripe
+    const paymentStatus = params.get('payment')
+    const paymentPlan = params.get('plan')
+    if (paymentStatus === 'success' && paymentPlan && session?.user) {
+      const isFounder = paymentPlan === 'premium'
+      await supabase.from('subscriptions').upsert({
+        user_id: session.user.id,
+        plan: paymentPlan,
+        status: 'active',
+        is_founder: isFounder,
+        current_period_ends_at: new Date(Date.now() + (isFounder ? 90 : 30) * 24 * 60 * 60 * 1000).toISOString()
+      }, { onConflict: 'user_id' })
+      alert(`✅ Abonnement ${paymentPlan} activé avec succès !`)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+    
+    setLoading(false)
+  })
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null)
+  })
+  return () => subscription.unsubscribe()
+}, [])
   if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'Plus Jakarta Sans'}}>Chargement...</div>
 if (isProduction) return (
     <>
