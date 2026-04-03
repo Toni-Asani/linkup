@@ -612,7 +612,11 @@ const handleZefixLookup = async (ideNumber) => {
   setZefixStatus('checking')
   try {
     const uid = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
-    const res = await fetch(`https://www.uid-bfe.admin.ch/uid-pub/api/json/search/uidentity?uidOrName=${clean}&searchMode=1&maxEntries=1&language=fr`)
+    const res = await fetch(`https://www.zefix.admin.ch/ZefixREST/api/v1/firm/search.json`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: '', uid: { uidOrganisationIdCategorie: 'CHE', uidOrganisationId: parseInt(clean) }, maxEntries: 1, languageKey: 'fr' })
+})
     const data = await res.json()
     if (data && data.data && data.data.length > 0) {
       const entity = data.data[0]
