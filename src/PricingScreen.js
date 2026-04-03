@@ -77,40 +77,39 @@ export default function PricingScreen({ user, setActiveTab }) {
   }
 
   const handleSubscribe = async (plan) => {
-    if (plan.disabled || currentPlan === plan.id) return
-    setLoading(plan.id)
+  if (plan.disabled || currentPlan === plan.id) return
+  setLoading(plan.id)
 
-    // Créer la session Stripe Checkout
-    try {
-      const { data: company } = await supabase
-        .from('companies').select('id').eq('user_id', user.id).single()
-
-      // Pour l'instant on simule — en production il faudra un backend
-      // On sauvegarde l'abonnement directement en test
-      const isFounder = plan.id === 'premium' && founderSlots.used < founderSlots.max
-
-      await supabase.from('subscriptions').upsert({
-        user_id: user.id,
-        plan: plan.id,
-        status: 'active',
-        is_founder: isFounder,
-        current_period_ends_at: new Date(Date.now() + (isFounder ? 90 : 30) * 24 * 60 * 60 * 1000).toISOString()
-      }, { onConflict: 'user_id' })
-
-      if (isFounder) {
-        await supabase.from('founder_slots').update({ used: founderSlots.used + 1 }).eq('id', 1)
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    const response = await fetch(
+      `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/create-checkout-session`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          priceId: plan.priceId,
+          userId: user.id,
+          planName: plan.id,
+        }),
       }
+    )
 
-      setCurrentPlan(plan.id)
-      alert(isFounder
-        ? `🎉 Bienvenue Membre Fondateur ! 2 mois Premium offerts activés.`
-        : `✅ Abonnement ${plan.name} activé !`
-      )
-    } catch (e) {
-      alert('Une erreur est survenue, veuillez réessayer.')
-    }
-    setLoading(null)
+    const { url, error } = await response.json()
+    if (error) throw new Error(error)
+    
+    // Rediriger vers Stripe Checkout
+    window.location.href = url
+
+  } catch (e) {
+    alert('Une erreur est survenue : ' + e.message)
   }
+  setLoading(null)
+}
 
   const remaining = founderSlots.max - founderSlots.used
 
