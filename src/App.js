@@ -612,20 +612,15 @@ const handleZefixLookup = async (ideNumber) => {
   setZefixStatus('checking')
   try {
     const uid = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
-    const res = await fetch(`https://www.zefix.admin.ch/ZefixREST/api/v1/firm/search.json`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ name: '', uid: clean, maxEntries: 1, languageKey: 'fr' })
-})
-    const data = await res.json()
-    if (data && data.data && data.data.length > 0) {
-      const entity = data.data[0]
-      setZefixStatus('valid')
-      setZefixCompanyName(entity.organisation?.commercialName || entity.organisation?.legalName || '')
-    } else {
-      setZefixStatus('invalid')
-      setZefixCompanyName('')
-    }
+    const res = await fetch(`https://www.zefix.admin.ch/ZefixREST/api/v1/firm/${clean}.json`)
+const data = await res.json()
+if (data && data.uid) {
+  setZefixStatus('valid')
+  setZefixCompanyName(data.name || '')
+} else {
+  setZefixStatus('invalid')
+  setZefixCompanyName('')
+}
   } catch (e) {
     setZefixStatus('idle')
   }
