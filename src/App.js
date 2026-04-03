@@ -774,26 +774,10 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
         <div style={{fontSize:40,marginBottom:'0.75rem'}}>🔒</div>
         <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>{t.lockTitle}</h3>
         <p style={{fontSize:14,color:'#666',lineHeight:1.6,marginBottom:'1.25rem'}}>{t.lockDesc}</p>
-        <div style={{position:'relative'}}>
-  <button onClick={() => setShowLangMenu(!showLangMenu)}
-    style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
-    {lang.toUpperCase()} ▾
-  </button>
-  {showLangMenu && (
-    <div style={{position:'absolute',right:0,top:'110%',background:'white',border:'1px solid #eee',borderRadius:12,boxShadow:'0 4px 20px rgba(0,0,0,0.1)',overflow:'hidden',zIndex:100,minWidth:120}}>
-      {[{code:'fr',label:'Français'},{code:'de',label:'Deutsch'},{code:'it',label:'Italiano'},{code:'en',label:'English'}].map(l => (
-        <button key={l.code} onClick={() => { setLang(l.code); setShowLangMenu(false) }}
-          style={{display:'block',width:'100%',padding:'8px 16px',background: lang === l.code ? '#FFF5F5' : 'white',border:'none',cursor:'pointer',fontSize:13,textAlign:'left',color: lang === l.code ? '#E24B4A' : '#333',fontWeight: lang === l.code ? 600 : 400}}>
-          {l.label}
+        <button onClick={() => setScreen('register')}
+          style={{width:'100%',padding:'13px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:'0.75rem'}}>
+          {t.createFree}
         </button>
-      ))}
-    </div>
-  )}
-</div>
-<button onClick={() => setScreen('register')}
-  style={{background:'#E24B4A',color:'white',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
-  {t.createAccount}
-</button>
         <button onClick={() => setScreen('login')}
           style={{width:'100%',padding:'13px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:'0.75rem'}}>
           {t.login}
@@ -810,42 +794,97 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
       {showModal && <Modal />}
 
-      {/* Header */}
-      <div style={{padding:'0.875rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-  <div style={{display:'flex',alignItems:'center',gap:8}}>
-    <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <span style={{color:'white',fontWeight:700,fontSize:12}}>HB</span>
-    </div>
-    <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
-  </div>
-  <div style={{display:'flex',alignItems:'center',gap:6}}>
-    <div style={{position:'relative'}}>
-      <button onClick={() => setShowLangMenu(!showLangMenu)}
-        style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
-        {lang.toUpperCase()} ▾
-      </button>
-      {showLangMenu && (
-        <div style={{position:'absolute',right:0,top:'110%',background:'white',border:'1px solid #eee',borderRadius:12,boxShadow:'0 4px 20px rgba(0,0,0,0.1)',overflow:'hidden',zIndex:100,minWidth:120}}>
-          {[{code:'fr',label:'Français'},{code:'de',label:'Deutsch'},{code:'it',label:'Italiano'},{code:'en',label:'English'}].map(l => (
-            <button key={l.code} onClick={() => { setLang(l.code); setShowLangMenu(false) }}
-              style={{display:'block',width:'100%',padding:'8px 16px',background: lang === l.code ? '#FFF5F5' : 'white',border:'none',cursor:'pointer',fontSize:13,textAlign:'left',fontFamily:'Plus Jakarta Sans',color: lang === l.code ? '#E24B4A' : '#333',fontWeight: lang === l.code ? 600 : 400}}>
-              {l.label}
-            </button>
-          ))}
+      <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <span style={{color:'white',fontWeight:700,fontSize:12}}>HB</span>
+          </div>
+          <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
         </div>
-      )}
-    </div>
-    <button onClick={() => setActiveTab('pricing')}
-      style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:20,padding:'5px 10px',cursor:'pointer'}}>
-      <PlanBadge user={user} />
-    </button>
-    <button onClick={handleLogout}
-      style={{background:'#f5f5f5',border:'none',borderRadius:20,padding:'5px 10px',cursor:'pointer',fontSize:12,color:'#666',fontWeight:500,whiteSpace:'nowrap'}}>
-      {t.logout}
-    </button>
-  </div>
-</div>
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <div style={{position:'relative'}}>
+            <button onClick={() => setShowLangMenu(!showLangMenu)}
+              style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+              {lang.toUpperCase()} ▾
+            </button>
+            {showLangMenu && (
+              <div style={{position:'absolute',right:0,top:'110%',background:'white',border:'1px solid #eee',borderRadius:12,boxShadow:'0 4px 20px rgba(0,0,0,0.1)',overflow:'hidden',zIndex:100,minWidth:120}}>
+                {[{code:'fr',label:'Français'},{code:'de',label:'Deutsch'},{code:'it',label:'Italiano'},{code:'en',label:'English'}].map(l => (
+                  <button key={l.code} onClick={() => { setLang(l.code); setShowLangMenu(false) }}
+                    style={{display:'block',width:'100%',padding:'8px 16px',background: lang === l.code ? '#FFF5F5' : 'white',border:'none',cursor:'pointer',fontSize:13,textAlign:'left',color: lang === l.code ? '#E24B4A' : '#333',fontWeight: lang === l.code ? 600 : 400}}>
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button onClick={() => setScreen('register')}
+            style={{background:'#E24B4A',color:'white',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+            {t.createAccount}
+          </button>
+          <button onClick={() => setScreen('login')}
+            style={{background:'white',color:'#E24B4A',border:'1px solid #E24B4A',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+            {t.login}
+          </button>
+        </div>
+      </div>
 
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
+        {activeTab === 'map' && <MapScreen user={null} setScreen={setScreen} />}
+        {activeTab === 'messages' && (
+          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
+            <div style={{fontSize:48}}>💬</div>
+            <h3 style={{fontSize:18,fontWeight:700}}>{t.messagesTitle}</h3>
+            <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>{t.messagesDesc}</p>
+            <button onClick={() => setShowModal(true)}
+              style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+              {t.accessMessages}
+            </button>
+          </div>
+        )}
+        {activeTab === 'pricing' && (
+          <div style={{flex:1,overflowY:'auto',padding:'1.5rem 1rem'}}>
+            <div style={{textAlign:'center',marginBottom:'1.25rem'}}>
+              <h2 style={{fontSize:20,fontWeight:700,marginBottom:4}}>{t.pricing}</h2>
+              <p style={{fontSize:13,color:'#666'}}>{t.pricingDesc}</p>
+            </div>
+            {[
+              {name:'Starter',price:'Gratuit',color:'#666',features:['Profil entreprise','5 swipes/jour','Visible sur la carte']},
+              {name:'Basic',price:'CHF 19/mois',color:'#185FA5',features:['Swipes illimités','Messagerie B2B','Statistiques']},
+              {name:'Premium',price:'CHF 39/mois',color:'#E24B4A',features:['Tout Basic inclus','Badge Fondateur ⭐','Visibilité prioritaire','2 mois offerts'],highlight:true},
+            ].map(plan => (
+              <div key={plan.name} onClick={() => setShowModal(true)}
+                style={{border: plan.highlight ? `2px solid ${plan.color}` : '1px solid #eee',borderRadius:12,padding:'1rem',marginBottom:'0.75rem',cursor:'pointer',background:'white'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                  <h3 style={{fontSize:16,fontWeight:700,color:plan.color,margin:0}}>{plan.name}</h3>
+                  <span style={{fontSize:14,fontWeight:600,color:'#1a1a1a'}}>{plan.price}</span>
+                </div>
+                {plan.features.map((f,i) => (
+                  <p key={i} style={{fontSize:12,color:'#666',margin:'3px 0'}}>✓ {f}</p>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white',flexShrink:0}}>
+        {[
+          {id:'swipe',label:'Swipe',icon:'💼'},
+          {id:'map',label:'Carte',icon:'🗺️'},
+          {id:'messages',label:'Messages',icon:'💬'},
+          {id:'pricing',label:'Tarifs',icon:'💳'},
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}>
+            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
       {/* Contenu */}
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
@@ -901,9 +940,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
           </button>
         ))}
       </div>
-    </div>
-  )
-}
+  
 
 function Dashboard({ user, setUser, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('home')
