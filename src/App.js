@@ -326,7 +326,7 @@ if (isProduction) return (
         ) : screen === 'register' ? (
           <RegisterScreen setScreen={setScreen} t={t} />
         ) : screen === 'visitor' ? (
-          <VisitorMode setScreen={setScreen} t={t} />
+          <VisitorMode setScreen={setScreen} t={t} lang={lang} setLang={setLang} />
         ) : screen === 'legal' ? (
           <LegalScreen setScreen={setScreen} lang={lang} />
         ) : screen === 'admin' ? (
@@ -755,9 +755,10 @@ if (zefixStatus === 'invalid') {
   )
 }
 
-function VisitorMode({ setScreen, t }) {
+function VisitorMode({ setScreen, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('swipe')
   const [showModal, setShowModal] = useState(false)
+  const [showLangMenu, setShowLangMenu] = useState(false)
 
   const tabStyle = (tab) => ({
     flex:1, padding:'12px 0', background:'none', border:'none', cursor:'pointer',
@@ -773,10 +774,26 @@ function VisitorMode({ setScreen, t }) {
         <div style={{fontSize:40,marginBottom:'0.75rem'}}>🔒</div>
         <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>{t.lockTitle}</h3>
         <p style={{fontSize:14,color:'#666',lineHeight:1.6,marginBottom:'1.25rem'}}>{t.lockDesc}</p>
-        <button onClick={() => setScreen('register')}
-          style={{width:'100%',padding:'13px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:'0.75rem'}}>
-          {t.createFree}
+        <div style={{position:'relative'}}>
+  <button onClick={() => setShowLangMenu(!showLangMenu)}
+    style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+    {lang.toUpperCase()} ▾
+  </button>
+  {showLangMenu && (
+    <div style={{position:'absolute',right:0,top:'110%',background:'white',border:'1px solid #eee',borderRadius:12,boxShadow:'0 4px 20px rgba(0,0,0,0.1)',overflow:'hidden',zIndex:100,minWidth:120}}>
+      {[{code:'fr',label:'Français'},{code:'de',label:'Deutsch'},{code:'it',label:'Italiano'},{code:'en',label:'English'}].map(l => (
+        <button key={l.code} onClick={() => { setLang(l.code); setShowLangMenu(false) }}
+          style={{display:'block',width:'100%',padding:'8px 16px',background: lang === l.code ? '#FFF5F5' : 'white',border:'none',cursor:'pointer',fontSize:13,textAlign:'left',color: lang === l.code ? '#E24B4A' : '#333',fontWeight: lang === l.code ? 600 : 400}}>
+          {l.label}
         </button>
+      ))}
+    </div>
+  )}
+</div>
+<button onClick={() => setScreen('register')}
+  style={{background:'#E24B4A',color:'white',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+  {t.createAccount}
+</button>
         <button onClick={() => setScreen('login')}
           style={{width:'100%',padding:'13px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:'0.75rem'}}>
           {t.login}
