@@ -611,22 +611,22 @@ const handleZefixLookup = async (ideNumber) => {
   }
   setZefixStatus('checking')
   try {
-    const uid = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
-    const res = await fetch(`https://www.zefix.admin.ch/ZefixREST/api/v1/firm/${clean}.json`)
-const data = await res.json()
-if (data && data.uid) {
-  setZefixStatus('valid')
-  setZefixCompanyName(data.name || '')
-} else {
+    const formatted = `CHE-${clean.substring(0,3)}.${clean.substring(3,6)}.${clean.substring(6,9)}`
+    const res = await fetch(`https://www.zefix.admin.ch/ZefixREST/api/v1/firm/uid/${formatted}.json`)
+    const data = await res.json()
+    if (data && Array.isArray(data) && data.length > 0) {
+    setZefixStatus('valid')
+    setZefixCompanyName(data[0].name || '')
+  } else {
   setZefixStatus('invalid')
   setZefixCompanyName('')
-}
-  } catch (e) {
-    setZefixStatus('idle')
   }
+} catch (e) {
+  setZefixStatus('idle')
+}
 }
 
-  const handleRegister = async () => {
+const handleRegister = async () => {
     setLoading(true)
     setError('')
 
