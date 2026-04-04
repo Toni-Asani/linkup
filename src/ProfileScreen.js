@@ -478,10 +478,12 @@ notif_email: form.notif_email ?? true,
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
           Modifier mon profil
         </button>
-        <button onClick={() => window.location.href = window.location.pathname + '?admin=true'}
-          style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#eee',textAlign:'center',padding:'4px',width:'100%'}}>
-          ···
-        </button>
+        <DeleteAccountButton user={user} />
+
+<button onClick={() => window.location.href = window.location.pathname + '?admin=true'}
+  style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#eee',textAlign:'center',padding:'4px',width:'100%'}}>
+  ···
+</button>
       </div>
     </div>
   )
@@ -489,6 +491,82 @@ notif_email: form.notif_email ?? true,
 
 function Label({ children }) {
   return <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{children}</p>
+}
+
+function DeleteAccountButton({ user }) {
+  const [step, setStep] = useState(0)
+  const [loading, setLoading] = useState(false)
+
+  const handleDelete = async () => {
+    setLoading(true)
+    try {
+      // Envoyer email de confirmation
+      await supabase.functions.invoke('send-delete-confirmation', {
+        body: { userId: user.id, email: user.email }
+      })
+      // Marquer le compte pour suppression
+      await supabase.from('companies').update({ 
+        deletion_requested: true,
+        deletion_requested_at: new Date().toISOString()
+      }).eq('user_id', user.id)
+      setStep(3)
+    } catch(e) {
+      alert('Une erreur est survenue.')
+    }
+    setLoading(false)
+  }
+
+  if (step === 0) return (
+    <button onClick={() => setStep(1)}
+      style={{padding:'12px',background:'white',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',width:'100%'}}>
+      🗑️ Supprimer mon compte
+    </button>
+  )
+
+  if (step === 1) return (
+    <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem'}}>
+      <p style={{fontSize:15,fontWeight:700,color:'#E24B4A',marginBottom:8}}>⚠️ Attention</p>
+      <p style={{fontSize:13,color:'#666',lineHeight:1.6,marginBottom:'1rem'}}>
+        Vous êtes sur le point de supprimer votre compte Hubbing. Cette action supprimera définitivement votre profil, vos matchs et vos messages.
+      </p>
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={() => setStep(0)}
+          style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+          Abandonner
+        </button>
+        <button onClick={() => setStep(2)}
+          style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+          Poursuivre
+        </button>
+      </div>
+    </div>
+  )
+
+  if (step === 2) return (
+    <div style={{background:'#FFF5F5',border:'2px solid #E24B4A',borderRadius:12,padding:'1rem'}}>
+      <p style={{fontSize:15,fontWeight:700,color:'#E24B4A',marginBottom:8}}>🔴 Confirmation finale</p>
+      <p style={{fontSize:13,color:'#666',lineHeight:1.6,marginBottom:'1rem'}}>
+        Un email de confirmation sera envoyé à <strong>{user.email}</strong>. Votre compte sera supprimé définitivement dans les 24h.
+      </p>
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={() => setStep(0)}
+          style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+          Abandonner
+        </button>
+        <button onClick={handleDelete} disabled={loading}
+          style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+          {loading ? 'Envoi...' : 'Confirmer'}
+        </button>
+      </div>
+    </div>
+  )
+
+  if (step === 3) return (
+    <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:12,padding:'1rem',textAlign:'center'}}>
+      <p style={{fontSize:15,fontWeight:700,color:'#166534',marginBottom:4}}>✅ Demande envoyée</p>
+      <p style={{fontSize:13,color:'#666'}}>Un email de confirmation a été envoyé à {user.email}. Votre compte sera supprimé dans les 24h.</p>
+    </div>
+  )
 }
 
 function Input({ value, onChange, placeholder, style }) {
