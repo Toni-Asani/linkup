@@ -53,7 +53,7 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
   })
 
   const sectors = [...new Set(companies.map(c => c.sector).filter(Boolean))]
-const cantons = [...new Set(companies.map(c => c.canton).filter(Boolean))].sort()
+const cantons = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH']
 
   const createIcon = (color) => L.divIcon({
     className: '',
