@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 
-export default function MessagesScreen({ user, plan, setSelectedCompanyId }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab }) {
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [messages, setMessages] = useState([])
@@ -285,7 +285,7 @@ const loadMyCompanyAndMatches = async () => {
 ) : (
   <div style={{padding:'1rem',borderTop:'1px solid #f0f0f0',background:'#FFF5F5',textAlign:'center'}}>
     <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,marginBottom:6}}>💬 Messagerie disponible dès le plan Basic</p>
-    <button onClick={() => window.location.href = '/?tab=pricing'}
+    <button onClick={() => setActiveTab && setActiveTab('pricing')}
       style={{padding:'8px 20px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
       Passer au plan Basic →
     </button>
