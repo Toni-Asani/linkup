@@ -27,6 +27,7 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
   const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState('')
   const [search, setSearch] = useState('')
+  const [filterCanton, setFilterCanton] = useState('')
 
   useEffect(() => { loadCompanies() }, [])
 
@@ -52,7 +53,6 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
   })
 
   const sectors = [...new Set(companies.map(c => c.sector).filter(Boolean))]
-  const [filterCanton, setFilterCanton] = useState('')
 const cantons = [...new Set(companies.map(c => c.canton).filter(Boolean))].sort()
 
   const createIcon = (color) => L.divIcon({
