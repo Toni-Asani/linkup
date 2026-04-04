@@ -191,9 +191,11 @@ const handleFileUpload = async (e) => {
       alert('⚠️ Message non envoyé\n\nVotre message contient du contenu inapproprié (sexuel, raciste ou abusif).\n\nTout abus peut entraîner la suspension de votre compte.')
       return
     }
-    const msg = { match_id: selectedMatch.id, sender_id: myCompany.id, content: newMessage.trim() }
-    setNewMessage('')
-    await supabase.from('messages').insert(msg)
+    const content = newMessage.trim()
+setNewMessage('')
+const msg = { match_id: selectedMatch.id, sender_id: myCompany.id, content }
+const { data } = await supabase.from('messages').insert(msg).select().single()
+if (data) setMessages(prev => [...prev, data])
   }
 
   const getOtherCompany = (match) => {
@@ -296,9 +298,20 @@ const handleFileUpload = async (e) => {
           {messages.map(msg => {
             const isMe = msg.sender_id === myCompany?.id
             return (
-              <div key={msg.id} style={{display:'flex',justifyContent: isMe ? 'flex-end' : 'flex-start'}}>
-                <div style={{
-                  maxWidth:'75%',padding:'10px 14px',
+              <div key={msg.id} style={{display:'flex',justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems:'flex-end', gap:4}}>
+  {isMe && (
+    <button onClick={async () => {
+      if (window.confirm('Supprimer ce message ?')) {
+        await supabase.from('messages').delete().eq('id', msg.id)
+        setMessages(prev => prev.filter(m => m.id !== msg.id))
+      }
+    }}
+      style={{background:'none',border:'none',cursor:'pointer',color:'#ccc',fontSize:14,padding:'0 4px',flexShrink:0}}>
+      🗑️
+    </button>
+  )}
+  <div style={{
+    maxWidth:'75%',padding:'10px 14px',
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                   background: isMe ? '#E24B4A' : 'white',
                   color: isMe ? 'white' : '#1a1a1a',
