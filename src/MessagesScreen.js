@@ -158,6 +158,7 @@ const loadMyCompanyAndMatches = async () => {
   const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' })
 
   const isBasicOrPremium = plan === 'Basic' || plan === 'Premium'
+  const canSendMessages = plan === 'Basic' || plan === 'Premium'
   const canLeaveReview = isBasicOrPremium && messages.length >= 1
 
   // Vue conversation
@@ -267,19 +268,29 @@ const loadMyCompanyAndMatches = async () => {
         </div>
 
         {/* Input message */}
-        <div style={{padding:'0.75rem 1rem',borderTop:'1px solid #f0f0f0',background:'white',display:'flex',gap:8,alignItems:'center'}}>
-          <input
-            value={newMessage}
-            onChange={e => setNewMessage(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage()}
-            placeholder="Votre message..."
-            style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans'}}
-          />
-          <button onClick={sendMessage} disabled={!newMessage.trim()}
-            style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            ↑
-          </button>
-        </div>
+{canSendMessages ? (
+  <div style={{padding:'0.75rem 1rem',borderTop:'1px solid #f0f0f0',background:'white',display:'flex',gap:8,alignItems:'center'}}>
+    <input
+      value={newMessage}
+      onChange={e => setNewMessage(e.target.value)}
+      onKeyDown={e => e.key === 'Enter' && sendMessage()}
+      placeholder="Votre message..."
+      style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans'}}
+    />
+    <button onClick={sendMessage} disabled={!newMessage.trim()}
+      style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+      ↑
+    </button>
+  </div>
+) : (
+  <div style={{padding:'1rem',borderTop:'1px solid #f0f0f0',background:'#FFF5F5',textAlign:'center'}}>
+    <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,marginBottom:6}}>💬 Messagerie disponible dès le plan Basic</p>
+    <button onClick={() => window.location.href = '/?tab=pricing'}
+      style={{padding:'8px 20px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+      Passer au plan Basic →
+    </button>
+  </div>
+)}
       </div>
     )
   }
