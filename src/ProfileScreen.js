@@ -503,6 +503,10 @@ notif_email: form.notif_email ?? true,
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
           Modifier mon profil
         </button>
+        <a href="mailto:contact@hubbing.ch"
+  style={{padding:'14px',background:'white',color:'#666',border:'1px solid #eee',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',textDecoration:'none',display:'block'}}>
+  ✉️ Contacter Hubbing
+</a>
         <DeleteAccountButton user={user} />
 
 <button onClick={() => window.location.href = window.location.pathname + '?admin=true'}
