@@ -14,6 +14,8 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
   const messagesEndRef = useRef(null)
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const fileAttachRef = useRef(null)
 
   useEffect(() => { loadMyCompanyAndMatches() }, [])
 
@@ -138,6 +140,50 @@ const loadMyCompanyAndMatches = async () => {
     return forbiddenWords.some(word => lower.includes(word))
   }
 
+  const allowedTypes = [
+  'image/jpeg','image/png','image/gif','image/webp',
+  'application/pdf',
+  'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'
+]
+
+const handleFileUpload = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+
+  if (!allowedTypes.includes(file.type)) {
+    alert('❌ Type de fichier non autorisé.\n\nFormats acceptés : images (jpg, png, gif, webp), PDF, Word, Excel, PowerPoint.')
+    return
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('❌ Fichier trop lourd. Taille maximum : 10 MB.')
+    return
+  }
+
+  setUploadingFile(true)
+  try {
+    const ext = file.name.split('.').pop()
+    const fileName = `${myCompany.id}-${Date.now()}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('attachments').upload(fileName, file)
+    if (uploadError) throw uploadError
+    const { data: urlData } = supabase.storage.from('attachments').getPublicUrl(fileName)
+    
+    await supabase.from('messages').insert({
+      match_id: selectedMatch.id,
+      sender_id: myCompany.id,
+      content: `📎 ${file.name}`,
+      attachment_url: urlData.publicUrl,
+      attachment_name: file.name,
+      attachment_type: file.type
+    })
+  } catch(e) {
+    alert('Erreur lors de l\'envoi du fichier.')
+  }
+  setUploadingFile(false)
+}
   const sendMessage = async () => {
     if (!newMessage.trim() || !myCompany) return
     if (containsForbiddenContent(newMessage)) {
@@ -258,7 +304,15 @@ const loadMyCompanyAndMatches = async () => {
                   boxShadow:'0 1px 4px rgba(0,0,0,0.08)',
                   fontSize:14,lineHeight:1.5
                 }}>
-                  <p style={{margin:0}}>{msg.content}</p>
+                  {msg.attachment_url ? (
+  <a href={msg.attachment_url} target="_blank" rel="noreferrer"
+    style={{color: 'inherit', display:'flex', alignItems:'center', gap:6, textDecoration:'none'}}>
+    <span style={{fontSize:18}}>📎</span>
+    <span style={{textDecoration:'underline', fontSize:13}}>{msg.attachment_name || msg.content}</span>
+  </a>
+) : (
+  <p style={{margin:0}}>{msg.content}</p>
+)}
                   <p style={{fontSize:10,margin:'4px 0 0',opacity:0.7,textAlign:'right'}}>{formatTime(msg.created_at)}</p>
                 </div>
               </div>
@@ -270,10 +324,18 @@ const loadMyCompanyAndMatches = async () => {
         {/* Input message */}
 {canSendMessages ? (
   <div style={{padding:'0.75rem 1rem',borderTop:'1px solid #f0f0f0',background:'white',display:'flex',gap:8,alignItems:'center'}}>
-    <input
-      value={newMessage}
-      onChange={e => setNewMessage(e.target.value)}
-      onKeyDown={e => e.key === 'Enter' && sendMessage()}
+    {plan === 'Premium' && (
+  <label style={{cursor:'pointer',flexShrink:0}}>
+    <span style={{fontSize:22}}>{uploadingFile ? '⏳' : '📎'}</span>
+    <input ref={fileAttachRef} type="file" style={{display:'none'}}
+      accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+      onChange={handleFileUpload} />
+  </label>
+)}
+<input
+  value={newMessage}
+  onChange={e => setNewMessage(e.target.value)}
+  onKeyDown={e => e.key === 'Enter' && sendMessage()}
       placeholder="Votre message..."
       style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans'}}
     />
