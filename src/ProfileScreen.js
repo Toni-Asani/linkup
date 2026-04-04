@@ -90,6 +90,23 @@ export default function ProfileScreen({ user, setActiveTab }) {
     setStats({ matches: count || 0 })
   }
 
+  const handleBackgroundUpload = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  try {
+    const ext = file.name.split('.').pop()
+    const fileName = `${user.id}-background.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('logos').upload(fileName, file, { upsert: true })
+    if (uploadError) throw uploadError
+    const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName)
+    await supabase.from('companies').update({ background_url: urlData.publicUrl }).eq('user_id', user.id)
+    setCompany({ ...company, background_url: urlData.publicUrl })
+    setForm({ ...form, background_url: urlData.publicUrl })
+  } catch (e) {
+    alert('Erreur lors du téléchargement.')
+  }
+}
 const handleLogoUpload = async (e) => {
   const file = e.target.files[0]
   if (!file) return
@@ -361,7 +378,15 @@ notif_email: form.notif_email ?? true,
     <div style={{flex:1,overflowY:'auto'}}>
 
       {/* Header */}
-      <div style={{background:color,padding:'2rem 1.5rem 3rem',position:'relative',textAlign:'center'}}>
+      <div style={{
+  background: company.background_url ? `url(${company.background_url}) center/cover` : color,
+  padding:'2rem 1.5rem 3rem',position:'relative',textAlign:'center'
+}}>
+  {/* Bouton changer fond */}
+  <label style={{position:'absolute',top:10,right:10,background:'rgba(0,0,0,0.4)',borderRadius:20,padding:'4px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:4}}>
+    <span style={{fontSize:12,color:'white'}}>🖼️ Fond</span>
+    <input type="file" accept="image/*" style={{display:'none'}} onChange={handleBackgroundUpload} />
+  </label>
         <div style={{position:'relative',width:88,height:88,margin:'0 auto',cursor:'pointer'}}
           onClick={() => fileInputRef.current?.click()}>
           {company.logo_url ? (
