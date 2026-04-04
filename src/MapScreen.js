@@ -42,15 +42,18 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
 
   const filtered = companies.filter(c => {
     const matchSector = !filter || c.sector === filter
+    const matchCanton = !filterCanton || c.canton === filterCanton
     const matchSearch = !search ||
       c.name?.toLowerCase().includes(search.toLowerCase()) ||
       c.sector?.toLowerCase().includes(search.toLowerCase()) ||
       c.city?.toLowerCase().includes(search.toLowerCase()) ||
       c.canton?.toLowerCase().includes(search.toLowerCase())
-    return matchSector && matchSearch
+    return matchSector && matchCanton && matchSearch
   })
 
   const sectors = [...new Set(companies.map(c => c.sector).filter(Boolean))]
+  const [filterCanton, setFilterCanton] = useState('')
+const cantons = [...new Set(companies.map(c => c.canton).filter(Boolean))].sort()
 
   const createIcon = (color) => L.divIcon({
     className: '',
@@ -93,6 +96,13 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
         </div>
       </div>
 
+<div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
+  <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)}
+    style={{width:'100%',padding:'8px 12px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans'}}>
+    <option value="">Tous les cantons</option>
+    {cantons.map(c => <option key={c} value={c}>{c}</option>)}
+  </select>
+</div>
       <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',display:'flex',gap:8,overflowX:'auto',flexShrink:0}}>
         <button onClick={() => setFilter('')}
           style={{padding:'6px 14px',borderRadius:20,border:'none',background:filter==='' ? '#E24B4A' : '#f5f5f5',color:filter==='' ? 'white' : '#666',fontSize:12,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
