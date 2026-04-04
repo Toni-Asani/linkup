@@ -295,21 +295,31 @@ if (data) setMessages(prev => [...prev, data])
               <p style={{fontSize:12,marginTop:4}}>Présentez-vous !</p>
             </div>
           )}
-          {messages.map(msg => {
-            const isMe = msg.sender_id === myCompany?.id
-            return (
+          {messages.filter(msg => {
+  if (msg.deleted_for_all) return false
+  if (msg.deleted_for && msg.deleted_for.includes(myCompany?.id)) return false
+  return true
+}).map(msg => {
+  const isMe = msg.sender_id === myCompany?.id
+  return (
               <div key={msg.id} style={{display:'flex',justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems:'flex-end', gap:4}}>
-  {isMe && (
-    <button onClick={async () => {
-      if (window.confirm('Supprimer ce message ?')) {
-        await supabase.from('messages').delete().eq('id', msg.id)
-        setMessages(prev => prev.filter(m => m.id !== msg.id))
-      }
-    }}
-      style={{background:'none',border:'none',cursor:'pointer',color:'#ccc',fontSize:14,padding:'0 4px',flexShrink:0}}>
-      🗑️
-    </button>
-  )}
+  <button onClick={async () => {
+  if (isMe) {
+    if (window.confirm('Supprimer ce message pour tout le monde ?')) {
+      await supabase.from('messages').update({ deleted_for_all: true }).eq('id', msg.id)
+      setMessages(prev => prev.map(m => m.id === msg.id ? {...m, deleted_for_all: true} : m))
+    }
+  } else {
+    if (window.confirm('Supprimer ce message pour vous uniquement ?')) {
+      const newDeletedFor = [...(msg.deleted_for || []), myCompany.id]
+      await supabase.from('messages').update({ deleted_for: newDeletedFor }).eq('id', msg.id)
+      setMessages(prev => prev.map(m => m.id === msg.id ? {...m, deleted_for: newDeletedFor} : m))
+    }
+  }
+}}
+  style={{background:'none',border:'none',cursor:'pointer',color:'#ccc',fontSize:14,padding:'0 4px',flexShrink:0}}>
+  🗑️
+</button>
   <div style={{
     maxWidth:'75%',padding:'10px 14px',
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
