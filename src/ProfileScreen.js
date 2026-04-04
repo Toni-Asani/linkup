@@ -266,8 +266,8 @@ notif_email: form.notif_email ?? true,
         <Input style={{flex:2}} value={form.city||''} onChange={e => setForm({...form,city:e.target.value})} placeholder="Ville" />
       </div>
       <Input value={form.address||''} onChange={e => setForm({...form,address:e.target.value})} placeholder="Adresse complète *" />
-      <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
-        rows={5} placeholder="Décrivez vos besoins en détail..."
+<textarea value={form.description||''} onChange={e => setForm({...form,description:e.target.value})}
+        rows={5} placeholder="Description de l'entreprise..."
         style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical'}} />
       <Input value={form.website||''} onChange={e => setForm({...form,website:e.target.value})} placeholder="Site web (https://...)" />
 
