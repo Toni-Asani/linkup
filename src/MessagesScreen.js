@@ -179,6 +179,7 @@ const handleFileUpload = async (e) => {
       attachment_name: file.name,
       attachment_type: file.type
     })
+    await loadMessages(selectedMatch.id)
   } catch(e) {
     alert('Erreur lors de l\'envoi du fichier.')
   }
@@ -330,6 +331,7 @@ const handleFileUpload = async (e) => {
     <input ref={fileAttachRef} type="file" style={{display:'none'}}
       accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
       onChange={handleFileUpload} />
+      await loadMessages(selectedMatch.id)
   </label>
 )}
 <input
