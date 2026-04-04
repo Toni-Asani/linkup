@@ -331,7 +331,6 @@ const handleFileUpload = async (e) => {
     <input ref={fileAttachRef} type="file" style={{display:'none'}}
       accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
       onChange={handleFileUpload} />
-      await loadMessages(selectedMatch.id)
   </label>
 )}
 <input
