@@ -945,8 +945,22 @@ const handleTabChange = (tab) => {
           <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{display:'flex',gap:4}}>
-          </div>
+          <div style={{position:'relative'}}>
+  <button onClick={() => setShowLangMenu(!showLangMenu)}
+    style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'}}>
+    {lang.toUpperCase()} ▾
+  </button>
+  {showLangMenu && (
+    <div style={{position:'absolute',right:0,top:'110%',background:'white',border:'1px solid #eee',borderRadius:12,boxShadow:'0 4px 20px rgba(0,0,0,0.1)',overflow:'hidden',zIndex:100,minWidth:120}}>
+      {[{code:'fr',label:'Français'},{code:'de',label:'Deutsch'},{code:'it',label:'Italiano'},{code:'en',label:'English'}].map(l => (
+        <button key={l.code} onClick={() => { setLang(l.code); setShowLangMenu(false) }}
+          style={{display:'block',width:'100%',padding:'8px 16px',background: lang === l.code ? '#FFF5F5' : 'white',border:'none',cursor:'pointer',fontSize:13,textAlign:'left',color: lang === l.code ? '#E24B4A' : '#333',fontWeight: lang === l.code ? 600 : 400}}>
+          {l.label}
+        </button>
+      ))}
+    </div>
+  )}
+</div>
           <button onClick={() => setActiveTab('pricing')}
             style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:20,padding:'5px 12px',cursor:'pointer'}}>
             <PlanBadge user={user} />
