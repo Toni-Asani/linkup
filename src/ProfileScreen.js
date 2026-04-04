@@ -295,7 +295,7 @@ notif_email: form.notif_email ?? true,
 </div>
       <Label>NOS BESOINS</Label>
       <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
-        rows={3} placeholder="Décrivez vos besoins en détail... (ex: Cherche ingénieur civil freelance pour chantiers résidentiels à Lausanne)"
+        rows={5} placeholder="Décrivez vos besoins en détail... (ex: Cherche ingénieur civil freelance pour chantiers résidentiels à Lausanne)"
         style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical'}} />
 
       <p style={{fontSize:12,color:'#666'}}>Ajoutez des besoins spécifiques avec une date d'échéance :</p>
