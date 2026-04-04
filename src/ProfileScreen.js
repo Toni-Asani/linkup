@@ -498,23 +498,32 @@ function DeleteAccountButton({ user }) {
   const [loading, setLoading] = useState(false)
 
   const handleDelete = async () => {
-    setLoading(true)
-    try {
-      // Envoyer email de confirmation
-      await supabase.functions.invoke('send-delete-confirmation', {
-        body: { userId: user.id, email: user.email }
+  setLoading(true)
+  try {
+    const { data: company } = await supabase
+      .from('companies').select('name').eq('user_id', user.id).single()
+
+    await fetch('https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/delete-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        email: user.email,
+        companyName: company?.name || 'Inconnu'
       })
-      // Marquer le compte pour suppression
-      await supabase.from('companies').update({ 
-        deletion_requested: true,
-        deletion_requested_at: new Date().toISOString()
-      }).eq('user_id', user.id)
-      setStep(3)
-    } catch(e) {
-      alert('Une erreur est survenue.')
-    }
-    setLoading(false)
+    })
+
+    await supabase.from('companies').update({
+      deletion_requested: true,
+      deletion_requested_at: new Date().toISOString()
+    }).eq('user_id', user.id)
+
+    setStep(3)
+  } catch(e) {
+    alert('Une erreur est survenue.')
   }
+  setLoading(false)
+}
 
   if (step === 0) return (
     <button onClick={() => setStep(1)}
