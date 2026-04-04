@@ -765,7 +765,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
     fontSize:11, color: activeTab === tab ? '#E24B4A' : '#999',
     fontWeight: activeTab === tab ? 600 : 400,
     borderTop: activeTab === tab ? '2px solid #E24B4A' : '2px solid transparent',
-    fontFamily:'Plus Jakarta Sans'
+    fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   })
 
   const Modal = () => (
@@ -932,7 +932,7 @@ const handleTabChange = (tab) => {
     fontSize:11, color: activeTab === tab ? '#E24B4A' : '#999',
     fontWeight: activeTab === tab ? 600 : 400,
     borderTop: activeTab === tab ? '2px solid #E24B4A' : '2px solid transparent',
-    fontFamily:'Plus Jakarta Sans'
+    fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   })
 
   return (
