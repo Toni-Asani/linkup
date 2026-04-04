@@ -268,7 +268,7 @@ notif_email: form.notif_email ?? true,
       <Input value={form.address||''} onChange={e => setForm({...form,address:e.target.value})} placeholder="Adresse complète *" />
 <textarea value={form.description||''} onChange={e => setForm({...form,description:e.target.value})}
         rows={5} placeholder="Description de l'entreprise..."
-        style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical'}} />
+        style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
       <Input value={form.website||''} onChange={e => setForm({...form,website:e.target.value})} placeholder="Site web (https://...)" />
 
       <Label>DÉCIDEUR / CONTACT PRINCIPAL</Label>
@@ -295,8 +295,7 @@ notif_email: form.notif_email ?? true,
 </div>
       <Label>NOS BESOINS</Label>
       <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
-        style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical'}} />
-
+style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
       <p style={{fontSize:12,color:'#666'}}>Ajoutez des besoins spécifiques avec une date d'échéance :</p>
 
       {/* Tags existants */}
