@@ -53,8 +53,34 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
   })
 
   const sectors = [...new Set(companies.map(c => c.sector).filter(Boolean))]
-const cantons = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH']
-
+const cantons = [
+  {code:'AG', name:'Argovie'},
+  {code:'AI', name:'Appenzell Rhodes-Intérieures'},
+  {code:'AR', name:'Appenzell Rhodes-Extérieures'},
+  {code:'BE', name:'Berne'},
+  {code:'BL', name:'Bâle-Campagne'},
+  {code:'BS', name:'Bâle-Ville'},
+  {code:'FR', name:'Fribourg'},
+  {code:'GE', name:'Genève'},
+  {code:'GL', name:'Glaris'},
+  {code:'GR', name:'Grisons'},
+  {code:'JU', name:'Jura'},
+  {code:'LU', name:'Lucerne'},
+  {code:'NE', name:'Neuchâtel'},
+  {code:'NW', name:'Nidwald'},
+  {code:'OW', name:'Obwald'},
+  {code:'SG', name:'Saint-Gall'},
+  {code:'SH', name:'Schaffhouse'},
+  {code:'SO', name:'Soleure'},
+  {code:'SZ', name:'Schwytz'},
+  {code:'TG', name:'Thurgovie'},
+  {code:'TI', name:'Tessin'},
+  {code:'UR', name:'Uri'},
+  {code:'VD', name:'Vaud'},
+  {code:'VS', name:'Valais'},
+  {code:'ZG', name:'Zoug'},
+  {code:'ZH', name:'Zurich'},
+]
   const createIcon = (color) => L.divIcon({
     className: '',
     html: `<div style="width:28px;height:28px;background:${color};border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,
@@ -100,7 +126,7 @@ const cantons = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE
   <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)}
     style={{width:'100%',padding:'8px 12px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans'}}>
     <option value="">Tous les cantons</option>
-    {cantons.map(c => <option key={c} value={c}>{c}</option>)}
+    {cantons.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
   </select>
 </div>
       <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',display:'flex',gap:8,overflowX:'auto',flexShrink:0}}>
