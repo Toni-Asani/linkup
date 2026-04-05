@@ -440,9 +440,7 @@ function WaitlistScreen() {
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',gap:'1.5rem',textAlign:'center',position:'relative',background:'white'}}>
 
       {/* Logo */}
-      <div style={{width:72,height:72,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',animation:'fadeUp 0.6s ease 0.1s both'}}>
-        <span style={{color:'white',fontWeight:800,fontSize:22}}>HB</span>
-      </div>
+      <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:72,height:72,borderRadius:'50%',animation:'fadeUp 0.6s ease 0.1s both'}} />
 
       <h1 style={{fontSize:32,fontWeight:800,letterSpacing:'-1px',animation:'fadeUp 0.6s ease 0.2s both'}}>Hubbing</h1>
 
@@ -601,9 +599,7 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
         )}
       </div>
 
-      <div style={{width:72,height:72,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <span style={{color:'white',fontWeight:700,fontSize:24}}>HB</span>
-      </div>
+      <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:72,height:72,borderRadius:'50%'}} />
       <h1 style={{fontSize:28,fontWeight:700,color:'#1a1a1a',textAlign:'center'}}>Hubbing</h1>
       <p style={{color:'#666',textAlign:'center',fontSize:15,lineHeight:1.6}}>{t.appTagline}</p>
       <div style={{width:'100%',background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
@@ -866,9 +862,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
 
       <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <span style={{color:'white',fontWeight:700,fontSize:12}}>HB</span>
-          </div>
+          <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
           <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:6}}>
@@ -1009,9 +1003,7 @@ const handleTabChange = (tab) => {
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
       <div style={{padding:'0.875rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <span style={{color:'white',fontWeight:700,fontSize:12}}>HB</span>
-          </div>
+          <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
           <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
