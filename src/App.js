@@ -442,7 +442,7 @@ function WaitlistScreen() {
       {/* Logo */}
       <img src="/LOGO-HUBBING-ICON.svg" alt="Hubbing" style={{width:72,height:72,borderRadius:'50%',animation:'fadeUp 0.6s ease 0.1s both'}} />
 
-<h1 style={{fontSize:32,fontWeight:700,letterSpacing:'-1px',animation:'fadeUp 0.6s ease 0.2s both',fontFamily:'Playfair Display, Georgia, serif'}}>hubbing</h1>
+<h1 style={{fontSize:32,fontWeight:700,letterSpacing:'-1px',animation:'fadeUp 0.6s ease 0.2s both',fontFamily:'Georgia, serif'}}>hubbing</h1>
       {/* Badge lancement */}
       <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:100,padding:'8px 20px',animation:'fadeUp 0.6s ease 0.3s both'}}>
         <div style={{width:7,height:7,borderRadius:'50%',background:'#E24B4A',animation:'pulse 2s ease infinite'}}></div>
