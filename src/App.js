@@ -452,6 +452,14 @@ function WaitlistScreen() {
         <span style={{fontSize:13,fontWeight:600,color:'#E24B4A'}}>Lancement le 1er mai 2026 🎉</span>
       </div>
 
+{/* Compte à rebours */}
+      <div style={{display:'flex',gap:'0.75rem',animation:'fadeUp 0.6s ease 0.6s both'}}>
+        <CountBox value={timeLeft.days ?? '--'} label="Jours" />
+        <CountBox value={timeLeft.hours ?? '--'} label="Heures" />
+        <CountBox value={timeLeft.minutes ?? '--'} label="Minutes" />
+        <CountBox value={timeLeft.seconds ?? '--'} label="Secondes" />
+      </div>
+
       {/* Headline forte */}
       <div style={{animation:'fadeUp 0.6s ease 0.4s both'}}>
         <h2 style={{fontSize:26,fontWeight:800,letterSpacing:'-0.5px',lineHeight:1.2,marginBottom:'0.75rem'}}>
@@ -513,14 +521,6 @@ function WaitlistScreen() {
           </div>
           <p style={{fontSize:8,color:'#22c55e',fontWeight:600,marginTop:6,textAlign:'center'}}>🗺️ CARTE</p>
         </div>
-      </div>
-
-      {/* Compte à rebours */}
-      <div style={{display:'flex',gap:'0.75rem',animation:'fadeUp 0.6s ease 0.6s both'}}>
-        <CountBox value={timeLeft.days ?? '--'} label="Jours" />
-        <CountBox value={timeLeft.hours ?? '--'} label="Heures" />
-        <CountBox value={timeLeft.minutes ?? '--'} label="Minutes" />
-        <CountBox value={timeLeft.seconds ?? '--'} label="Secondes" />
       </div>
 
       {/* Features */}
