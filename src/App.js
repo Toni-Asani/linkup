@@ -413,6 +413,29 @@ function WaitlistScreen() {
     </div>
   )
 
+  const Feature = ({ icon, title, desc }) => (
+    <div style={{background:'#f9f9f9',borderRadius:16,padding:'1.25rem',textAlign:'left',width:'100%',maxWidth:340}}>
+      <div style={{fontSize:28,marginBottom:8}}>{icon}</div>
+      <p style={{fontSize:14,fontWeight:700,color:'#1a1a1a',margin:'0 0 4px'}}>{title}</p>
+      <p style={{fontSize:13,color:'#666',margin:0,lineHeight:1.5}}>{desc}</p>
+    </div>
+  )
+
+  const MockupCard = ({ emoji, title, subtitle, badge, badgeColor }) => (
+    <div style={{background:'white',borderRadius:20,padding:'1rem',boxShadow:'0 8px 30px rgba(0,0,0,0.1)',width:140,flexShrink:0}}>
+      <div style={{width:48,height:48,borderRadius:'50%',background:badgeColor||'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 8px'}}>
+        <span style={{fontSize:22}}>{emoji}</span>
+      </div>
+      <p style={{fontSize:12,fontWeight:700,margin:'0 0 2px',textAlign:'center'}}>{title}</p>
+      <p style={{fontSize:10,color:'#999',margin:'0 0 8px',textAlign:'center'}}>{subtitle}</p>
+      {badge && (
+        <div style={{background:'#FFF5F5',borderRadius:20,padding:'3px 8px',textAlign:'center'}}>
+          <span style={{fontSize:10,color:'#E24B4A',fontWeight:600}}>{badge}</span>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',gap:'1.5rem',textAlign:'center',position:'relative',background:'white'}}>
 
@@ -422,14 +445,74 @@ function WaitlistScreen() {
       </div>
 
       <h1 style={{fontSize:32,fontWeight:800,letterSpacing:'-1px',animation:'fadeUp 0.6s ease 0.2s both'}}>Hubbing</h1>
-      <p style={{color:'#666',fontSize:15,animation:'fadeUp 0.6s ease 0.3s both'}}>Le réseau B2B pour les entreprises suisses</p>
 
-      <div style={{width:40,height:2,background:'#E24B4A',borderRadius:2,animation:'fadeUp 0.6s ease 0.4s both'}}></div>
-
-      {/* Badge */}
-      <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:100,padding:'8px 20px',animation:'fadeUp 0.6s ease 0.5s both'}}>
+      {/* Badge lancement */}
+      <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:100,padding:'8px 20px',animation:'fadeUp 0.6s ease 0.3s both'}}>
         <div style={{width:7,height:7,borderRadius:'50%',background:'#E24B4A',animation:'pulse 2s ease infinite'}}></div>
         <span style={{fontSize:13,fontWeight:600,color:'#E24B4A'}}>Lancement le 1er mai 2026 🎉</span>
+      </div>
+
+      {/* Headline forte */}
+      <div style={{animation:'fadeUp 0.6s ease 0.4s both'}}>
+        <h2 style={{fontSize:26,fontWeight:800,letterSpacing:'-0.5px',lineHeight:1.2,marginBottom:'0.75rem'}}>
+          Trouvez vos partenaires<br />
+          business en Suisse<br />
+          <span style={{color:'#E24B4A'}}>en 30 secondes</span>
+        </h2>
+        <p style={{color:'#666',fontSize:14,lineHeight:1.7,maxWidth:300,margin:'0 auto'}}>
+          Hubbing est la première app de mise en relation B2B locale en Suisse. Swipez, matchez et collaborez avec les bonnes entreprises près de chez vous.
+        </p>
+      </div>
+
+      {/* Mockup screenshots */}
+      <div style={{display:'flex',gap:12,justifyContent:'center',animation:'fadeUp 0.6s ease 0.5s both',overflow:'hidden',width:'100%',maxWidth:340}}>
+        {/* Screenshot 1 - Swipe */}
+        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:100,flexShrink:0,border:'1px solid #f0f0f0'}}>
+          <div style={{background:'#E24B4A',borderRadius:12,padding:'0.75rem',marginBottom:8,textAlign:'center'}}>
+            <span style={{fontSize:28}}>🏢</span>
+          </div>
+          <p style={{fontSize:9,fontWeight:700,margin:'0 0 2px',color:'#1a1a1a'}}>Fiduciaire Rochat</p>
+          <p style={{fontSize:8,color:'#999',margin:'0 0 6px'}}>Lausanne, VD</p>
+          <div style={{display:'flex',justifyContent:'center',gap:6}}>
+            <div style={{width:24,height:24,borderRadius:'50%',border:'2px solid #E24B4A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10}}>✗</div>
+            <div style={{width:28,height:28,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'white'}}>✓</div>
+          </div>
+          <p style={{fontSize:8,color:'#E24B4A',fontWeight:600,marginTop:6,textAlign:'center'}}>💼 SWIPE</p>
+        </div>
+
+        {/* Screenshot 2 - Match */}
+        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:100,flexShrink:0,border:'1px solid #f0f0f0',transform:'scale(1.05)'}}>
+          <div style={{background:'#22c55e',borderRadius:12,padding:'0.5rem',marginBottom:6,textAlign:'center'}}>
+            <p style={{color:'white',fontWeight:800,fontSize:11,margin:0}}>🎉 MATCH !</p>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:6}}>
+            <div style={{width:20,height:20,borderRadius:'50%',background:'#185FA5',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'white',fontWeight:700}}>TE</div>
+            <div style={{width:20,height:20,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'white',fontWeight:700}}>HB</div>
+          </div>
+          <p style={{fontSize:8,color:'#666',margin:'0 0 6px',lineHeight:1.4}}>TechSoft Zürich AG vous a matché !</p>
+          <div style={{background:'#E24B4A',borderRadius:8,padding:'4px',textAlign:'center'}}>
+            <p style={{color:'white',fontSize:8,fontWeight:600,margin:0}}>💬 Contacter</p>
+          </div>
+          <p style={{fontSize:8,color:'#185FA5',fontWeight:600,marginTop:6,textAlign:'center'}}>💬 MESSAGES</p>
+        </div>
+
+        {/* Screenshot 3 - Carte */}
+        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:100,flexShrink:0,border:'1px solid #f0f0f0'}}>
+          <div style={{background:'#f0f9ff',borderRadius:12,padding:'0.5rem',marginBottom:6,position:'relative',overflow:'hidden',height:50}}>
+            {/* Mini carte simulée */}
+            <div style={{position:'absolute',top:8,left:12,width:8,height:8,borderRadius:'50%',background:'#E24B4A'}}></div>
+            <div style={{position:'absolute',top:20,left:30,width:6,height:6,borderRadius:'50%',background:'#185FA5'}}></div>
+            <div style={{position:'absolute',top:12,left:50,width:7,height:7,borderRadius:'50%',background:'#22c55e'}}></div>
+            <div style={{position:'absolute',top:25,left:20,width:5,height:5,borderRadius:'50%',background:'#F39C12'}}></div>
+            <div style={{position:'absolute',top:8,left:60,width:6,height:6,borderRadius:'50%',background:'#E24B4A'}}></div>
+          </div>
+          <p style={{fontSize:9,fontWeight:700,margin:'0 0 2px',color:'#1a1a1a'}}>9 entreprises</p>
+          <p style={{fontSize:8,color:'#999',margin:'0 0 4px'}}>près de vous</p>
+          <div style={{background:'#f5f5f5',borderRadius:6,padding:'3px',textAlign:'center'}}>
+            <p style={{fontSize:7,color:'#666',margin:0}}>🔍 VD · Informatique</p>
+          </div>
+          <p style={{fontSize:8,color:'#22c55e',fontWeight:600,marginTop:6,textAlign:'center'}}>🗺️ CARTE</p>
+        </div>
       </div>
 
       {/* Compte à rebours */}
@@ -440,28 +523,23 @@ function WaitlistScreen() {
         <CountBox value={timeLeft.seconds ?? '--'} label="Secondes" />
       </div>
 
-      {/* Message */}
-      <div style={{animation:'fadeUp 0.6s ease 0.7s both'}}>
-        <h2 style={{fontSize:22,fontWeight:700,letterSpacing:'-0.5px',lineHeight:1.3,marginBottom:'0.5rem'}}>
-          Le networking B2B<br />
-          <span style={{color:'#E24B4A'}}>réinventé</span> pour la Suisse
-        </h2>
-        <p style={{color:'#666',fontSize:14,lineHeight:1.7,maxWidth:300,margin:'0 auto'}}>
-          Nous préparons quelque chose de grand.<br />
-          Soyez parmi les premiers à rejoindre Hubbing.
-        </p>
+      {/* Features */}
+      <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.7s both'}}>
+        <Feature icon="💼" title="Swipe B2B" desc="Découvrez des entreprises locales et matchez avec celles qui correspondent à vos besoins en un seul geste." />
+        <Feature icon="🗺️" title="Carte interactive" desc="Visualisez toutes les entreprises autour de vous, filtrez par secteur et canton." />
+        <Feature icon="💬" title="Messagerie pro" desc="Échangez directement avec vos connexions B2B et partagez des documents en toute sécurité." />
       </div>
 
       {/* Offre fondateur */}
       <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.8s both'}}>
-        <p style={{fontSize:13,color:'#E24B4A',fontWeight:700}}>🎉 Offre Fondateurs</p>
-        <p style={{fontSize:12,color:'#666',marginTop:4}}>2 mois offerts pour les 100 premiers abonnés Premium</p>
+        <p style={{fontSize:13,color:'#E24B4A',fontWeight:700}}>🎉 Offre Fondateurs — 100 places</p>
+        <p style={{fontSize:12,color:'#666',marginTop:4}}>2 mois Premium offerts pour les 100 premiers abonnés. Ne manquez pas cette opportunité unique !</p>
       </div>
 
       {/* Formulaire waitlist */}
       {!success ? (
         <div style={{width:'100%',maxWidth:340,display:'flex',flexDirection:'column',gap:'0.75rem',animation:'fadeUp 0.6s ease 0.9s both'}}>
-          <p style={{fontSize:13,fontWeight:600,color:'#1a1a1a'}}>Inscrivez-vous pour être notifié au lancement :</p>
+          <p style={{fontSize:13,fontWeight:600,color:'#1a1a1a'}}>Soyez notifié dès le lancement :</p>
           <input
             className="waitlist-input"
             value={email}
@@ -477,7 +555,7 @@ function WaitlistScreen() {
             onClick={handleWaitlist}
             disabled={loading}
             style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',transition:'background 0.2s',fontFamily:'Plus Jakarta Sans'}}>
-            {loading ? 'Inscription...' : "M'inscrire sur la liste d'attente →"}
+            {loading ? 'Inscription...' : "Rejoindre la liste d'attente →"}
           </button>
         </div>
       ) : (
@@ -488,17 +566,9 @@ function WaitlistScreen() {
         </div>
       )}
 
-      {/* Features */}
-      <div style={{display:'flex',gap:'0.75rem',flexWrap:'wrap',justifyContent:'center',animation:'fadeUp 0.6s ease 1s both'}}>
-        {['💼 Swipe B2B','🗺️ Carte interactive','✅ Vérification Zefix','💬 Messagerie pro'].map(f => (
-          <span key={f} style={{background:'#f5f5f5',borderRadius:100,padding:'7px 14px',fontSize:12,fontWeight:500,color:'#666'}}>{f}</span>
-        ))}
-      </div>
-
-      <p style={{fontSize:13,color:'#bbb',animation:'fadeUp 0.6s ease 1.1s both'}}>
+      <p style={{fontSize:13,color:'#bbb',animation:'fadeUp 0.6s ease 1s both'}}>
         Des questions ? <a href="mailto:contact@hubbing.ch" style={{color:'#E24B4A',textDecoration:'none',fontWeight:500}}>contact@hubbing.ch</a>
       </p>
-
       <p style={{fontSize:12,color:'#ccc',textAlign:'center'}}>🇨🇭 Made in Switzerland</p>
     </div>
   )
