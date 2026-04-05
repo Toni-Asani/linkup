@@ -129,18 +129,13 @@ const cantons = [
     {cantons.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
   </select>
 </div>
-      <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',display:'flex',gap:8,overflowX:'auto',flexShrink:0}}>
-        <button onClick={() => setFilter('')}
-          style={{padding:'6px 14px',borderRadius:20,border:'none',background:filter==='' ? '#E24B4A' : '#f5f5f5',color:filter==='' ? 'white' : '#666',fontSize:12,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
-          Tous ({companies.length})
-        </button>
-        {sectors.map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            style={{padding:'6px 14px',borderRadius:20,border:'none',background:filter===s ? '#E24B4A' : '#f5f5f5',color:filter===s ? 'white' : '#666',fontSize:12,fontWeight:500,cursor:'pointer',whiteSpace:'nowrap'}}>
-            {s}
-          </button>
-        ))}
-      </div>
+      <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
+  <select value={filter} onChange={e => setFilter(e.target.value)}
+    style={{width:'100%',padding:'8px 12px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans'}}>
+    <option value="">Tous les secteurs ({companies.length} entreprises)</option>
+    {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+  </select>
+</div>
 
       <div style={{flex:1,position:'relative'}}>
         <MapContainer
@@ -218,8 +213,8 @@ const cantons = [
       )}
 
       <div style={{padding:'6px',textAlign:'center',background:'#f9f9f9',borderTop:'1px solid #f0f0f0',flexShrink:0}}>
-        <span style={{fontSize:12,color:'#999'}}>{filtered.length} entreprise{filtered.length > 1 ? 's' : ''} sur la carte</span>
-      </div>
+  <span style={{fontSize:12,color:'#999'}}>🏢 {companies.length} entreprise{companies.length > 1 ? 's' : ''} inscrite{companies.length > 1 ? 's' : ''} sur Hubbing</span>
+</div>
     </div>
   )
 }
