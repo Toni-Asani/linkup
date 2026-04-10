@@ -617,6 +617,24 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
         style={{width:'100%',padding:'12px',background:'none',color:'#999',border:'none',fontSize:14,cursor:'pointer',textDecoration:'underline'}}>
         {t.visitorMode}
       </button>
+      {/* Bannière App Store / Google Play */}
+      <div style={{background:'#1a1a1a',borderRadius:12,padding:'1rem',width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+        <div>
+          <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>📱 Application mobile</p>
+          <p style={{color:'rgba(255,255,255,0.6)',fontSize:12,marginTop:3}}>Bientôt disponible sur</p>
+          <div style={{display:'flex',gap:8,marginTop:8}}>
+            <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:16}}></span>
+              <span style={{color:'white',fontSize:11,fontWeight:600}}>App Store</span>
+            </div>
+            <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:16}}>🤖</span>
+              <span style={{color:'white',fontSize:11,fontWeight:600}}>Google Play</span>
+            </div>
+          </div>
+        </div>
+        <span style={{fontSize:32}}>📲</span>
+      </div>
       <button onClick={() => setScreen('legal')}
         style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#bbb',textDecoration:'underline'}}>
         {t.legal}
