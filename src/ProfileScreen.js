@@ -380,6 +380,10 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
   background: company.background_url ? `url(${company.background_url}) center/cover` : color,
   padding:'2rem 1.5rem 3rem',position:'relative',textAlign:'center'
 }}>
+  {company.background_url && (
+    <div style={{position:'absolute',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.4)'}} />
+  )}
+  <div style={{position:'relative',zIndex:1}}>
   {/* Bouton changer fond */}
   <label style={{position:'absolute',top:10,right:10,background:'rgba(0,0,0,0.4)',borderRadius:20,padding:'4px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:4}}>
     <span style={{fontSize:12,color:'white'}}>🖼️ Fond</span>
@@ -404,6 +408,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem'}}>{company.name}</h2>
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
         {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}      </div>
+  </div>
 
       {/* Stats */}
       <div style={{display:'flex',margin:'-1.25rem 1rem 0',gap:12,position:'relative',zIndex:1}}>

@@ -80,8 +80,17 @@ export default function HomeScreen({ user, setActiveTab }) {
   return (
     <div style={{flex:1,overflowY:'auto'}}>
 
-      {/* Header coloré */}
-      <div style={{background:color,padding:'1.5rem',paddingBottom:'2.5rem'}}>
+{/* Header coloré */}
+      <div style={{
+        background: company?.background_url ? `url(${company.background_url}) center/cover no-repeat` : color,
+        padding:'1.5rem',
+        paddingBottom:'2.5rem',
+        position:'relative'
+      }}>
+        {company?.background_url && (
+          <div style={{position:'absolute',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.35)',borderRadius:0}} />
+        )}
+        <div style={{position:'relative',zIndex:1}}>
         <p style={{color:'rgba(255,255,255,0.8)',fontSize:14,marginBottom:4}}>{getGreeting()} 👋</p>
         <h2 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.2}}>
           {company?.name || user.email}
@@ -95,6 +104,7 @@ export default function HomeScreen({ user, setActiveTab }) {
           <span style={{color:'white',fontSize:12,fontWeight:600}}>
             🏢 {stats.totalCompanies} entreprises sur Hubbing
           </span>
+        </div>
         </div>
       </div>
 
