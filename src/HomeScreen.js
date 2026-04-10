@@ -197,6 +197,27 @@ export default function HomeScreen({ user, setActiveTab }) {
           </div>
         )}
 
+        {/* Bannière App Store / Google Play */}
+        <div style={{background:'#1a1a1a',borderRadius:12,padding:'1rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+          <div>
+            <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>📱 Application mobile</p>
+            <p style={{color:'rgba(255,255,255,0.6)',fontSize:12,marginTop:3}}>Bientôt disponible sur</p>
+            <div style={{display:'flex',gap:8,marginTop:8}}>
+              <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
+                <span style={{fontSize:16}}></span>
+                <span style={{color:'white',fontSize:11,fontWeight:600}}>App Store</span>
+              </div>
+              <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
+                <span style={{fontSize:16}}>🤖</span>
+                <span style={{color:'white',fontSize:11,fontWeight:600}}>Google Play</span>
+              </div>
+            </div>
+          </div>
+          <div style={{background:'rgba(255,255,255,0.05)',borderRadius:10,padding:'8px',textAlign:'center',flexShrink:0}}>
+            <span style={{fontSize:32}}>📲</span>
+          </div>
+        </div>
+
         {/* Raccourci swipe */}
         <div onClick={() => setActiveTab('swipe')}
           style={{background:color,borderRadius:12,padding:'1.25rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
