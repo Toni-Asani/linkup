@@ -398,6 +398,12 @@ function WaitlistScreen() {
       setLoading(false)
       return
     }
+    await fetch('https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/waitlist-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+
     setSuccess(true)
     setLoading(false)
   }
