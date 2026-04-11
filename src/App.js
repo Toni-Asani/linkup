@@ -577,6 +577,7 @@ const handleWaitlist = async () => {
         Des questions ? <a href="mailto:contact@hubbing.ch" style={{color:'#E24B4A',textDecoration:'none',fontWeight:500}}>contact@hubbing.ch</a>
       </p>
       <p style={{fontSize:12,color:'#ccc',textAlign:'center'}}>🇨🇭 Made in Switzerland</p>
+      <p style={{fontSize:11,color:'#ddd',textAlign:'center'}}>© {new Date().getFullYear()} Hubbing — Tous droits réservés</p>
     </div>
   )
 }
@@ -649,6 +650,7 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
         style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#bbb',textDecoration:'underline'}}>
         {t.legal}
       </button>
+      <p style={{fontSize:11,color:'#ccc',textAlign:'center',margin:0}}>© {new Date().getFullYear()} Hubbing — Tous droits réservés</p>
     </div>
   )
 }
