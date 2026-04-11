@@ -398,15 +398,13 @@ const handleWaitlist = async () => {
       setLoading(false)
       return
     }
-    try {
-      await fetch('https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/waitlist-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      })
-    } catch(e) {
-      console.log('Email error:', e)
-    }
+    // Envoi email en arrière-plan sans bloquer
+    fetch('https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/waitlist-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    }).catch(e => console.log('Email error:', e))
+
     setSuccess(true)
     setLoading(false)
   }
