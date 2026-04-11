@@ -401,7 +401,10 @@ const handleWaitlist = async () => {
     // Envoi email en arrière-plan sans bloquer
     fetch('https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/waitlist-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+      },
       body: JSON.stringify({ email })
     }).catch(e => console.log('Email error:', e))
 
