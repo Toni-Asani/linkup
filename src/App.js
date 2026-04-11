@@ -380,8 +380,8 @@ function WaitlistScreen() {
     return () => clearInterval(interval)
   }, [])
 
-  const handleWaitlist = async () => {
-    setLoading(true)
+const handleWaitlist = async () => { 
+     setLoading(true)
     setError('')
     if (!email || !email.includes('@')) {
       setError('Veuillez entrer un email valide')
@@ -391,7 +391,7 @@ function WaitlistScreen() {
     const { error } = await supabase.from('waitlist').insert({ email })
     if (error) {
       if (error.code === '23505') {
-        setError('Cet email est déjà inscrit !')
+        setError('Cet email est déjà inscrit sur la liste !')
       } else {
         setError('Une erreur est survenue. Réessayez.')
       }
@@ -407,7 +407,6 @@ function WaitlistScreen() {
     } catch(e) {
       console.log('Email error:', e)
     }
-
     setSuccess(true)
     setLoading(false)
   }
