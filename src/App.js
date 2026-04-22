@@ -263,7 +263,8 @@ const translations = {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState('home')
+  const params = new URLSearchParams(window.location.search)
+const [screen, setScreen] = useState(params.get('page') === 'privacy' ? 'privacy' : 'home')
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
@@ -275,7 +276,6 @@ export default function App() {
     setUser(session?.user ?? null)
     const params = new URLSearchParams(window.location.search)
     if (params.get('admin') === 'true') setScreen('admin')
-      if (params.get('page') === 'privacy') setScreen('privacy')
     
     // Vérifier si retour de Stripe
     const paymentStatus = params.get('payment')
