@@ -10,6 +10,8 @@ workflows:
         BUNDLE_ID: "ch.hubbing.app"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
+        APP_STORE_APPLE_ID: $APP_STORE_APPLE_ID
+        APP_SPECIFIC_PASSWORD: $APP_SPECIFIC_PASSWORD
     scripts:
       - name: Install dependencies
         script: npm install
@@ -38,5 +40,6 @@ workflows:
       - build/ios/ipa/*.ipa
     publishing:
       app_store_connect:
-        auth: integration
+        apple_id: $APP_STORE_APPLE_ID
+        password: $APP_SPECIFIC_PASSWORD
         submit_to_testflight: true
