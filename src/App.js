@@ -9,6 +9,7 @@ import PricingScreen from './PricingScreen'
 import LegalScreen from './LegalScreen'
 import AdminScreen from './AdminScreen'
 import CompanyProfileScreen from './CompanyProfileScreen'
+import PrivacyPolicy from './PrivacyPolicy'
 
 const styles = `
   @keyframes pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.8); } }
@@ -329,6 +330,8 @@ if (isProduction) return (
           <VisitorMode setScreen={setScreen} t={t} lang={lang} setLang={setLang} />
         ) : screen === 'legal' ? (
           <LegalScreen setScreen={setScreen} lang={lang} />
+          ) : screen === 'privacy' ? (
+  <PrivacyPolicy setScreen={setScreen} />
         ) : screen === 'admin' ? (
           <AdminScreen user={user} setScreen={setScreen} />
         ) : null}

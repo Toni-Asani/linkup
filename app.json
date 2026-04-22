@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Hubbing",
+    "slug": "hubbing-ch",
+    "extra": {
+      "eas": {
+        "projectId": "80029977-2be2-4de9-af88-f2f972da4db7"
+      }
+    }
+  }
+}
