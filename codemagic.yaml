@@ -3,6 +3,8 @@ workflows:
     name: Hubbing iOS Distribution
     max_build_duration: 60
     environment:
+      groups:
+        - ios
       ios_signing:
         distribution_type: app_store
         bundle_identifier: ch.hubbing.app
@@ -10,8 +12,6 @@ workflows:
         BUNDLE_ID: "ch.hubbing.app"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_STORE_APPLE_ID: $APP_STORE_APPLE_ID
-        APP_SPECIFIC_PASSWORD: $APP_SPECIFIC_PASSWORD
     scripts:
       - name: Install dependencies
         script: npm install
