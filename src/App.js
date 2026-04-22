@@ -275,8 +275,8 @@ const [screen, setScreen] = useState(params.get('page') === 'privacy' ? 'privacy
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     setUser(session?.user ?? null)
     const params = new URLSearchParams(window.location.search)
-    if (params.get('admin') === 'true') setScreen('admin')
-    
+if (params.get('admin') === 'true') setScreen('admin')
+if (params.get('page') === 'privacy') setScreen('privacy')    
     // Vérifier si retour de Stripe
     const paymentStatus = params.get('payment')
     const paymentPlan = params.get('plan')
@@ -319,9 +319,11 @@ if (isProduction) return (
     <>
       <style>{styles}</style>
       <div className="app">
-        {user ? (
-          <Dashboard user={user} setUser={setUser} t={t} lang={lang} setLang={setLang} />
-        ) : screen === 'home' ? (
+        {screen === 'privacy' ? (
+  <PrivacyPolicy setScreen={setScreen} />
+) : user ? (
+  <Dashboard user={user} setUser={setUser} t={t} lang={lang} setLang={setLang} />
+) : screen === 'home' ? (
           <LandingScreen setScreen={setScreen} t={t} lang={lang} setLang={setLang} />
         ) : screen === 'login' ? (
           <LoginScreen setScreen={setScreen} t={t} />
