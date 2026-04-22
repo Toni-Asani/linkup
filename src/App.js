@@ -938,11 +938,9 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
 
       <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div onClick={() => handleTabChange('home')} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
-  <div onClick={() => setScreen('home')} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+          <div onClick={() => setScreen('home')} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
   <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
   <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
-</div>
 </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:6}}>
