@@ -275,6 +275,7 @@ export default function App() {
     setUser(session?.user ?? null)
     const params = new URLSearchParams(window.location.search)
     if (params.get('admin') === 'true') setScreen('admin')
+      if (params.get('page') === 'privacy') setScreen('privacy')
     
     // Vérifier si retour de Stripe
     const paymentStatus = params.get('payment')
@@ -937,8 +938,10 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
 
       <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
-          <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
+          <div onClick={() => handleTabChange('home')} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+  <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
+  <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
+</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:6}}>
           <div style={{position:'relative'}}>
@@ -1078,8 +1081,10 @@ const handleTabChange = (tab) => {
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
       <div style={{padding:'0.875rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
-          <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
+          <div onClick={() => handleTabChange('home')} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+  <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
+  <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
+</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <div style={{position:'relative'}}>
