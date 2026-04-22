@@ -38,8 +38,3 @@ workflows:
             --config Release
     artifacts:
       - build/ios/ipa/*.ipa
-    publishing:
-      app_store_connect:
-        apple_id: $APP_STORE_APPLE_ID
-        password: $APP_SPECIFIC_PASSWORD
-        submit_to_testflight: true
