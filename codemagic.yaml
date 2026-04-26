@@ -16,7 +16,7 @@ workflows:
       - name: Build web assets
         script: npm run build
       - name: Capacitor sync
-        script: npx cap sync ios
+        script: npx cap sync ios --no-deps
       - name: Install CocoaPods
         script: |
           cd ios/App
