@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Hubbing',
   webDir: 'build',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    iosScheme: 'capacitor'
   }
 };
 
