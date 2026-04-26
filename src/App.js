@@ -274,6 +274,7 @@ export default function App() {
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     setUser(session?.user ?? null)    
     // Vérifier si retour de Stripe
+    const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')
     const paymentPlan = params.get('plan')
     if (paymentStatus === 'success' && paymentPlan && session?.user) {
