@@ -263,8 +263,7 @@ const translations = {
 }
 
 export default function App() {
-  const params = new URLSearchParams(window.location.search)
-const [screen, setScreen] = useState(params.get('page') === 'privacy' ? 'privacy' : 'home')
+  const [screen, setScreen] = useState('home')
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
@@ -273,10 +272,7 @@ const [screen, setScreen] = useState(params.get('page') === 'privacy' ? 'privacy
 
   useEffect(() => {
   supabase.auth.getSession().then(async ({ data: { session } }) => {
-    setUser(session?.user ?? null)
-    const params = new URLSearchParams(window.location.search)
-if (params.get('admin') === 'true') setScreen('admin')
-if (params.get('page') === 'privacy') setScreen('privacy')    
+    setUser(session?.user ?? null)    
     // Vérifier si retour de Stripe
     const paymentStatus = params.get('payment')
     const paymentPlan = params.get('plan')
