@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 
-export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId }) {
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [messages, setMessages] = useState([])
@@ -18,6 +18,16 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const fileAttachRef = useRef(null)
 
   useEffect(() => { loadMyCompanyAndMatches() }, [])
+
+useEffect(() => {
+  if (openMatchWithCompanyId && matches.length > 0) {
+    const match = matches.find(m => 
+      m.company_a?.id === openMatchWithCompanyId || 
+      m.company_b?.id === openMatchWithCompanyId
+    )
+    if (match) setSelectedMatch(match)
+  }
+}, [openMatchWithCompanyId, matches])
 
   useEffect(() => {
     if (selectedMatch) {
