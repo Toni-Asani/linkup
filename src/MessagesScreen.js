@@ -371,7 +371,7 @@ if (data) setMessages(prev => [...prev, data])
   onChange={e => setNewMessage(e.target.value)}
   onKeyDown={e => e.key === 'Enter' && sendMessage()}
       placeholder="Votre message..."
-      style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans'}}
+      style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans'}}
     />
     <button onClick={sendMessage} disabled={!newMessage.trim()}
       style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>

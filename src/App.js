@@ -558,7 +558,7 @@ const handleWaitlist = async () => {
             onKeyDown={e => e.key === 'Enter' && handleWaitlist()}
             placeholder="votre@email.ch"
             type="email"
-            style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,width:'100%',fontFamily:'Plus Jakarta Sans'}}
+            style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,width:'100%',fontFamily:'Plus Jakarta Sans'}}
           />
           {error && <p style={{color:'#E24B4A',fontSize:13}}>{error}</p>}
           <button
@@ -679,9 +679,9 @@ function LoginScreen({ setScreen, t }) {
       </button>
       <h2 style={{fontSize:24,fontWeight:700,marginBottom:'0.5rem'}}>{t.loginTitle}</h2>
       <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email"
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type="password"
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       {error && <p style={{color:'#E24B4A',fontSize:13}}>{error}</p>}
       <button onClick={handleLogin} disabled={loading}
         style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
@@ -847,21 +847,21 @@ if (zefixStatus === 'invalid') {
 
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.5rem'}}>{t.companyInfo}</p>
       <input value={company} onChange={e => setCompany(e.target.value)} placeholder={t.companyName}
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}
-  style={{padding:'14px',border:`1px solid ${zefixStatus === 'valid' ? '#22c55e' : zefixStatus === 'invalid' ? '#E24B4A' : '#ddd'}`,borderRadius:10,fontSize:15,outline:'none'}} />
+  style={{padding:'14px',border:`1px solid ${zefixStatus === 'valid' ? '#22c55e' : zefixStatus === 'invalid' ? '#E24B4A' : '#ddd'}`,borderRadius:10,fontSize:16,outline:'none'}} />
 {zefixStatus === 'valid' && <p style={{fontSize:12,color:'#F39C12'}}>⏳ Numéro à vérifier — un email de confirmation vous sera envoyé dans les 24h</p>}
 {zefixStatus === 'invalid' && <p style={{fontSize:12,color:'#E24B4A'}}>❌ Format invalide. Utilisez le format CHE-xxx.xxx.xxx (9 chiffres)</p>}
       <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rue et numéro *"
-  style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+  style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 <div style={{display:'flex',gap:8}}>
   <input value={npa} onChange={e => setNpa(e.target.value)} placeholder="NPA *"
-    style={{width:100,padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+    style={{width:100,padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
   <input value={city} onChange={e => setCity(e.target.value)} placeholder="Ville *"
-    style={{flex:1,padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+    style={{flex:1,padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 </div>
 <select value={canton} onChange={e => setCanton(e.target.value)}
-  style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
+  style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
   <option value="">Canton *</option>
   {['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH'].map(c => (
     <option key={c} value={c}>{c}</option>
@@ -870,15 +870,15 @@ if (zefixStatus === 'invalid') {
 
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{t.contactInfo}</p>
       <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder={t.contactName}
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <input value={contactTitle} onChange={e => setContactTitle(e.target.value)} placeholder={t.contactTitle}
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{t.access}</p>
       <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email"
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type="password"
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none'}} />
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 
       <div style={{display:'flex',alignItems:'flex-start',gap:10,marginTop:'0.25rem'}}>
         <input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}

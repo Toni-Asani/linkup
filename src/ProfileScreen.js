@@ -61,6 +61,7 @@ export default function ProfileScreen({ user, setActiveTab }) {
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [stats, setStats] = useState({ matches: 0 })
+  const [currentPlan, setCurrentPlan] = useState('Starter')
   const [form, setForm] = useState({})
   const [success, setSuccess] = useState(false)
   const [newTag, setNewTag] = useState('')
@@ -76,6 +77,8 @@ export default function ProfileScreen({ user, setActiveTab }) {
       setCompany(data)
       setForm(data)
       loadStats(data.id)
+      const { data: sub } = await supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
+      if (sub) setCurrentPlan(sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1))
       try {
         setTags(data.needs_tags ? JSON.parse(data.needs_tags) : [])
       } catch { setTags([]) }
@@ -416,7 +419,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         <StatCard value="0" label="Messages" color="#E24B4A" />
         <div style={{flex:1,background:'white',borderRadius:12,padding:'1rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}
           onClick={() => setActiveTab && setActiveTab('pricing')}>
-          <p style={{fontSize:13,fontWeight:700,color:'#3B6D11',margin:0}}>Starter</p>
+          <p style={{fontSize:13,fontWeight:700,color:'#3B6D11',margin:0}}>{currentPlan}</p>
           <p style={{fontSize:11,color:'#999',marginTop:3}}>Mon plan →</p>
         </div>
       </div>
@@ -488,6 +491,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         <InfoCard title="INFORMATIONS ENTREPRISE">
           {company.zefix_uid && <InfoRow label="Numéro IDE" value={company.zefix_uid} />}
           {company.address && <InfoRow label="Adresse" value={company.address} />}
+          {company.city && <InfoRow label="Ville" value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
           {company.website && <InfoRow label="Site web" value={company.website} color="#185FA5" />}
           <InfoRow label="Email" value={user.email} />
         </InfoCard>
@@ -613,7 +617,7 @@ function DeleteAccountButton({ user }) {
 function Input({ value, onChange, placeholder, style }) {
   return (
     <input value={value} onChange={onChange} placeholder={placeholder}
-      style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',fontFamily:'Plus Jakarta Sans',width:'100%',...style}} />
+      style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',width:'100%',...style}} />
   )
 }
 

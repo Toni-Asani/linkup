@@ -12,6 +12,8 @@ export default function HomeScreen({ user, setActiveTab }) {
   const [company, setCompany] = useState(null)
   const [stats, setStats] = useState({ matches: 0, messages: 0, followers: 0, totalCompanies: 0 })
   const [matchedCompanies, setMatchedCompanies] = useState([])
+  const [followerCompanies, setFollowerCompanies] = useState([])
+  const [showFollowers, setShowFollowers] = useState(false)
   const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const [loading, setLoading] = useState(true)
 
@@ -32,11 +34,13 @@ export default function HomeScreen({ user, setActiveTab }) {
         .eq('status', 'pending')
       setMatchedCompanies(myMatches || [])
 
-      // Nombre d'entreprises qui me suivent
-      const { count: followers } = await supabase
+      // Entreprises qui me suivent
+      const { data: followersData, count: followers } = await supabase
         .from('matches')
-        .select('*', { count: 'exact', head: true })
+        .select('*, company_a(*)', { count: 'exact' })
         .eq('company_b', comp.id)
+        .eq('status', 'pending')
+      setFollowerCompanies(followersData || [])
 
       // Messages envoyés
       const { count: msgCount } = await supabase
@@ -78,6 +82,37 @@ export default function HomeScreen({ user, setActiveTab }) {
   )
 
   return (
+    <>
+    {showFollowers && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200}}>
+          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:430,maxHeight:'70vh',overflowY:'auto',padding:'1.5rem'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+              <h3 style={{fontSize:18,fontWeight:700,margin:0}}>Entreprises qui me suivent</h3>
+              <button onClick={() => setShowFollowers(false)} style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'#999'}}>✕</button>
+            </div>
+            {followerCompanies.length === 0 ? (
+              <p style={{color:'#999',textAlign:'center',padding:'2rem'}}>Personne ne vous suit encore</p>
+            ) : (
+              followerCompanies.map(match => {
+                const other = match.company_a
+                if (!other) return null
+                const c = sectorColors[other.sector] || '#E24B4A'
+                return (
+                  <div key={match.id} style={{padding:'0.75rem 0',display:'flex',alignItems:'center',gap:12,borderBottom:'1px solid #f5f5f5'}}>
+                    <div style={{width:44,height:44,borderRadius:'50%',background:c,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{color:'white',fontWeight:700,fontSize:14}}>{other.name?.substring(0,2).toUpperCase()}</span>
+                    </div>
+                    <div style={{flex:1}}>
+                      <p style={{fontWeight:600,fontSize:14,margin:0}}>{other.name}</p>
+                      <p style={{fontSize:12,color:'#999',margin:0}}>{other.sector} · {other.city}</p>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
     <div style={{flex:1,overflowY:'auto'}}>
 
 {/* Header coloré */}
@@ -114,7 +149,7 @@ export default function HomeScreen({ user, setActiveTab }) {
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.matches}</p>
           <p style={{fontSize:11,color:'#999',marginTop:3}}>Je suis</p>
         </div>
-        <div style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)'}}>
+        <div onClick={() => setShowFollowers(true)} style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}>
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.followers}</p>
           <p style={{fontSize:11,color:'#999',marginTop:3}}>Me suivent</p>
         </div>
@@ -230,5 +265,6 @@ export default function HomeScreen({ user, setActiveTab }) {
 
       </div>
     </div>
+    </>
   )
 }
