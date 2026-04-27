@@ -13,11 +13,41 @@ import PrivacyPolicy from './PrivacyPolicy'
 const MapScreen = React.lazy(() => import('./MapScreen'))
 
 const styles = `
-  @keyframes pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.8); } }
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+  @keyframes pulse { 
+    0%, 100% { opacity:1; transform:scale(1); } 
+    50% { opacity:0.5; transform:scale(0.8); } 
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f5f5f5; }
-  
+
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #f5f5f5;
+    overscroll-behavior: none;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 430px;
+    height: 100dvh;
+    min-height: 100dvh;
+    margin: 0 auto;
+    background: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  input, textarea, select {
+    font-size: 16px;
+  }
 `
 
 const translations = {
@@ -933,10 +963,25 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   )
 
   return (
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+    <div style={{
+  height:'100dvh',
+  display:'flex',
+  flexDirection:'column',
+  overflow:'hidden',
+  background:'white'
+}}>
       {showModal && <Modal />}
 
-      <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+      <div style={{
+  padding:'calc(env(safe-area-inset-top) + 0.75rem) 1rem 0.75rem',
+  borderBottom:'1px solid #f0f0f0',
+  display:'flex',
+  alignItems:'center',
+  justifyContent:'space-between',
+  flexShrink:0,
+  background:'white',
+  zIndex:20
+}}>
         <div onClick={() => setScreen('home')} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
   <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
   <span style={{fontWeight:700,fontSize:16}}>Hubbing</span>
@@ -969,7 +1014,13 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
         </div>
       </div>
 
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{
+  flex:1,
+  minHeight:0,
+  display:'flex',
+  flexDirection:'column',
+  overflow:'hidden'
+}}>
         {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
        {activeTab === 'map' && <Suspense fallback={<div>Chargement...</div>}><MapScreen user={null} setScreen={setScreen} /></Suspense>}
         {activeTab === 'messages' && (
@@ -1009,7 +1060,14 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
         )}
       </div>
 
-      <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white',flexShrink:0}}>
+      <div style={{
+  borderTop:'1px solid #f0f0f0',
+  display:'flex',
+  background:'white',
+  flexShrink:0,
+  paddingBottom:'env(safe-area-inset-bottom)',
+  zIndex:20
+}}>
         {[
           {id:'swipe',label:'Swipe',icon:'💼'},
           {id:'map',label:'Carte',icon:'🗺️'},
@@ -1077,8 +1135,23 @@ const handleTabChange = (tab) => {
 
   return (
     <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>Chargement...</div>}>
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
-      <div style={{padding:'0.875rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+    <div style={{
+  height:'100dvh',
+  display:'flex',
+  flexDirection:'column',
+  overflow:'hidden',
+  background:'white'
+}}>
+      <div style={{
+  padding:'calc(env(safe-area-inset-top) + 0.75rem) 1rem 0.75rem',
+  borderBottom:'1px solid #f0f0f0',
+  display:'flex',
+  alignItems:'center',
+  justifyContent:'space-between',
+  flexShrink:0,
+  background:'white',
+  zIndex:20
+}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <div onClick={() => handleTabChange('home')} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
   <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:32,height:32,borderRadius:'50%'}} />
@@ -1112,7 +1185,16 @@ const handleTabChange = (tab) => {
         </div>
       </div>
 
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflowY:'auto',position:'relative'}}>
+      <div style={{
+  flex:1,
+  minHeight:0,
+  display:'flex',
+  flexDirection:'column',
+  overflowY:'auto',
+  overflowX:'hidden',
+  WebkitOverflowScrolling:'touch',
+  position:'relative'
+}}>
   {selectedCompanyId ? (
     <CompanyProfileScreen
   companyId={selectedCompanyId}
@@ -1133,7 +1215,14 @@ const handleTabChange = (tab) => {
   )}
 </div>
 
-      <div style={{borderTop:'1px solid #f0f0f0',display:'flex',background:'white'}}>
+      <div style={{
+  borderTop:'1px solid #f0f0f0',
+  display:'flex',
+  background:'white',
+  flexShrink:0,
+  paddingBottom:'env(safe-area-inset-bottom)',
+  zIndex:20
+}}>
   {[
     {id:'home',label:'Accueil',icon:'🏠'},
     {id:'swipe',label:'Swipe',icon:'💼'},
