@@ -5,43 +5,35 @@ workflows:
 
     environment:
       groups:
-        - iOS
-      vars:
-        BUNDLE_ID: "ch.hubbing.app"
-        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
-        XCODE_SCHEME: "App"
+        - ios
       ios_signing:
         distribution_type: app_store
         bundle_identifier: ch.hubbing.app
 
     scripts:
       - name: Install dependencies
-        script: npm install
+        script: |
+          npm install
 
       - name: Build web assets
-        script: npm run build
+        script: |
+          npm run build
 
       - name: Capacitor sync
-        script: npx cap copy ios
+        script: |
+          npx cap copy ios
 
       - name: Install CocoaPods
         script: |
           cd ios/App
-          pod repo update
           pod install
 
-      - name: Build iOS
+      - name: Build IPA
         script: |
           xcode-project use-profiles
           xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME" \
-            --config Release
+            --workspace "ios/App/App.xcworkspace" \
+            --scheme "App"
 
     artifacts:
       - build/ios/ipa/*.ipa
-
-    publishing:
-      app_store_connect:
-        api_key: Codemagic
-        submit_to_testflight: true
