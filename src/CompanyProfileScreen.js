@@ -112,6 +112,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           status: 'pending'
         })
       }
+      setSelectedCompanyId && setSelectedCompanyId(null)
       setActiveTab && setActiveTab('messages')
     } catch (e) {
       console.error(e)
