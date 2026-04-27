@@ -1,7 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react'
 import { supabase } from './supabaseClient'
 import SwipeScreen from './SwipeScreen'
-const MapScreen = React.lazy(() => import('./MapScreen'))
 import ProfileScreen from './ProfileScreen'
 import MessagesScreen from './MessagesScreen'
 import HomeScreen from './HomeScreen'
@@ -10,6 +9,8 @@ import LegalScreen from './LegalScreen'
 import AdminScreen from './AdminScreen'
 import CompanyProfileScreen from './CompanyProfileScreen'
 import PrivacyPolicy from './PrivacyPolicy'
+
+const MapScreen = React.lazy(() => import('./MapScreen'))
 
 const styles = `
   @keyframes pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.8); } }
