@@ -273,24 +273,30 @@ export default function App() {
 
   useEffect(() => {
   supabase.auth.getSession().then(async ({ data: { session } }) => {
-    setUser(session?.user ?? null)    
-    // Vérifier si retour de Stripe
-    const params = new URLSearchParams(window.location.search)
-    const paymentStatus = params.get('payment')
-    const paymentPlan = params.get('plan')
-    if (paymentStatus === 'success' && paymentPlan && session?.user) {
-      const isFounder = paymentPlan === 'premium'
-      await supabase.from('subscriptions').upsert({
-        user_id: session.user.id,
-        plan: paymentPlan,
-        status: 'active',
-        is_founder: isFounder,
-        current_period_ends_at: new Date(Date.now() + (isFounder ? 90 : 30) * 24 * 60 * 60 * 1000).toISOString()
-      }, { onConflict: 'user_id' })
-      alert(`✅ Abonnement ${paymentPlan} activé avec succès !`)
-      window.history.replaceState({}, '', window.location.pathname)
+    try {
+      setUser(session?.user ?? null)    
+      const params = new URLSearchParams(window.location.search)
+      const paymentStatus = params.get('payment')
+      const paymentPlan = params.get('plan')
+      if (paymentStatus === 'success' && paymentPlan && session?.user) {
+        const isFounder = paymentPlan === 'premium'
+        await supabase.from('subscriptions').upsert({
+          user_id: session.user.id,
+          plan: paymentPlan,
+          status: 'active',
+          is_founder: isFounder,
+          current_period_ends_at: new Date(Date.now() + (isFounder ? 90 : 30) * 24 * 60 * 60 * 1000).toISOString()
+        }, { onConflict: 'user_id' })
+        alert(`✅ Abonnement ${paymentPlan} activé avec succès !`)
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+      setLoading(false)
+    } catch(e) {
+      alert('ERREUR: ' + e.message)
+      setLoading(false)
     }
-    
+  }).catch(e => {
+    alert('SUPABASE ERREUR: ' + e.message)
     setLoading(false)
   })
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
