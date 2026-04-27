@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { supabase } from './supabaseClient'
 import SwipeScreen from './SwipeScreen'
-import MapScreen from './MapScreen'
+const MapScreen = React.lazy(() => import('./MapScreen'))
 import ProfileScreen from './ProfileScreen'
 import MessagesScreen from './MessagesScreen'
 import HomeScreen from './HomeScreen'
@@ -970,7 +970,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
 
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
-        {activeTab === 'map' && <MapScreen user={null} setScreen={setScreen} />}
+        {activeTab === 'map' && <Suspense fallback={<div>Chargement...</div>}><MapScreen user={null} setScreen={setScreen} /></Suspense>}
         {activeTab === 'messages' && (
           <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
             <div style={{fontSize:48}}>💬</div>
@@ -1075,6 +1075,7 @@ const handleTabChange = (tab) => {
   })
 
   return (
+    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>Chargement...</div>}>
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
       <div style={{padding:'0.875rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -1153,5 +1154,6 @@ const handleTabChange = (tab) => {
   ))}
 </div>
     </div>
+    </Suspense>
   )
 }
