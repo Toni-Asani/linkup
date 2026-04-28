@@ -483,7 +483,7 @@ const handleWaitlist = async () => {
   )
 
   return (
-    <div style={{minHeight:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1.5rem',textAlign:'center',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
+    <div style={{minHeight:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 9rem)',gap:'1.5rem',textAlign:'center',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
 
       {/* Logo */}
       <img src="/LOGO-HUBBING-ICON.svg" alt="Hubbing" style={{width:72,height:72,borderRadius:'50%',animation:'fadeUp 0.6s ease 0.1s both'}} />
@@ -576,44 +576,50 @@ const handleWaitlist = async () => {
       {/* Offre fondateur */}
       <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.8s both'}}>
         <p style={{fontSize:13,color:'#E24B4A',fontWeight:700}}>🎉 Offre Fondateurs — 100 places</p>
-        <p style={{fontSize:12,color:'#666',marginTop:4}}>2 mois Premium offerts pour les 100 premiers abonnés. Ne manquez pas cette opportunité unique !</p>
+        <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>
+          Les 100 premiers abonnés Premium recevront <strong>2 mois d'abonnement Premium offerts</strong>. Ne manquez pas cette opportunité unique !
+        </p>
       </div>
-
-      {/* Formulaire waitlist */}
-      {!success ? (
-        <div style={{width:'100%',maxWidth:340,display:'flex',flexDirection:'column',gap:'0.75rem',animation:'fadeUp 0.6s ease 0.9s both'}}>
-          <p style={{fontSize:13,fontWeight:600,color:'#1a1a1a'}}>Soyez notifié dès le lancement :</p>
-          <input
-            className="waitlist-input"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleWaitlist()}
-            placeholder="votre@email.ch"
-            type="email"
-            style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,width:'100%',fontFamily:'Plus Jakarta Sans'}}
-          />
-          {error && <p style={{color:'#E24B4A',fontSize:13}}>{error}</p>}
-          <button
-            className="waitlist-btn"
-            onClick={handleWaitlist}
-            disabled={loading}
-            style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',transition:'background 0.2s',fontFamily:'Plus Jakarta Sans'}}>
-            {loading ? 'Inscription...' : "Rejoindre la liste d'attente →"}
-          </button>
-        </div>
-      ) : (
-        <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:12,padding:'1.25rem',width:'100%',maxWidth:340,textAlign:'center',animation:'fadeUp 0.4s ease both'}}>
-          <div style={{fontSize:32,marginBottom:8}}>🎉</div>
-          <p style={{fontWeight:700,fontSize:15,color:'#166534'}}>Vous êtes sur la liste !</p>
-          <p style={{fontSize:13,color:'#15803d',marginTop:4}}>Nous vous contacterons dès le lancement le 1er mai.</p>
-        </div>
-      )}
 
       <p style={{fontSize:13,color:'#bbb',animation:'fadeUp 0.6s ease 1s both'}}>
         Des questions ? <a href="mailto:contact@hubbing.ch" style={{color:'#E24B4A',textDecoration:'none',fontWeight:500}}>contact@hubbing.ch</a>
       </p>
       <p style={{fontSize:12,color:'#ccc',textAlign:'center'}}>🇨🇭 Made in Switzerland</p>
       <p style={{fontSize:11,color:'#ddd',textAlign:'center'}}>© {new Date().getFullYear()} Hubbing — Tous droits réservés</p>
+
+      <div style={{position:'fixed',left:'50%',bottom:0,transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'white',borderTop:'1px solid #f0f0f0',boxShadow:'0 -8px 30px rgba(0,0,0,0.08)',padding:'0.9rem 1rem calc(env(safe-area-inset-bottom) + 0.9rem)',zIndex:20}}>
+        {!success ? (
+          <div style={{display:'flex',flexDirection:'column',gap:'0.6rem'}}>
+            <p style={{fontSize:12,fontWeight:600,color:'#1a1a1a',lineHeight:1.4}}>
+              Entrez votre adresse email et nous vous informerons du lancement.
+            </p>
+            <div style={{display:'flex',gap:8}}>
+              <input
+                className="waitlist-input"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleWaitlist()}
+                placeholder="votre@email.ch"
+                type="email"
+                style={{flex:1,minWidth:0,padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,fontFamily:'Plus Jakarta Sans'}}
+              />
+              <button
+                className="waitlist-btn"
+                onClick={handleWaitlist}
+                disabled={loading}
+                style={{padding:'12px 14px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',transition:'background 0.2s',fontFamily:'Plus Jakarta Sans',whiteSpace:'nowrap'}}>
+                {loading ? '...' : "M'informer"}
+              </button>
+            </div>
+            {error && <p style={{color:'#E24B4A',fontSize:12,textAlign:'left'}}>{error}</p>}
+          </div>
+        ) : (
+          <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:12,padding:'0.8rem',textAlign:'center'}}>
+            <p style={{fontWeight:700,fontSize:14,color:'#166534'}}>Vous êtes sur la liste !</p>
+            <p style={{fontSize:12,color:'#15803d',marginTop:3}}>Nous vous contacterons dès le lancement le 1er mai.</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
