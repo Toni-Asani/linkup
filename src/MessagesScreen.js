@@ -15,6 +15,7 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const [submittingReview, setSubmittingReview] = useState(false)
   const messagesEndRef = useRef(null)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [longPressMatch, setLongPressMatch] = useState(null)
   const fileAttachRef = useRef(null)
 
   useEffect(() => { loadMyCompanyAndMatches() }, [])
@@ -394,6 +395,25 @@ if (data) setMessages(prev => [...prev, data])
   // Vue liste des conversations
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column'}}>
+      {longPressMatch && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'1rem'}}>
+          <div style={{background:'white',borderRadius:16,padding:'1.5rem',width:'100%',maxWidth:340,textAlign:'center'}}>
+            <p style={{fontWeight:700,fontSize:16,marginBottom:'1rem'}}>{getOtherCompany(longPressMatch)?.name}</p>
+            <button onClick={async () => {
+              await supabase.from('matches').delete().eq('id', longPressMatch.id)
+              setMatches(prev => prev.filter(m => m.id !== longPressMatch.id))
+              setLongPressMatch(null)
+            }}
+              style={{width:'100%',padding:'13px',background:'#FFF5F5',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:8}}>
+              🗑️ Supprimer la conversation
+            </button>
+            <button onClick={() => setLongPressMatch(null)}
+              style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
       <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0'}}>
         <h2 style={{fontSize:20,fontWeight:700}}>Messages</h2>
         <p style={{fontSize:13,color:'#999',marginTop:2}}>Vos connexions B2B</p>
@@ -415,7 +435,10 @@ if (data) setMessages(prev => [...prev, data])
             const other = getOtherCompany(match)
             if (!other) return null
             return (
-              <div key={match.id} onClick={() => setSelectedMatch(match)}
+              <div key={match.id} 
+                onClick={() => setSelectedMatch(match)}
+                onContextMenu={e => { e.preventDefault(); setLongPressMatch(match) }}
+                onTouchStart={() => { const t = setTimeout(() => setLongPressMatch(match), 500); return () => clearTimeout(t) }}
                 style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f5f5f5',display:'flex',alignItems:'center',gap:12,cursor:'pointer',background:'white'}}
                 onMouseEnter={e => e.currentTarget.style.background='#fafafa'}
                 onMouseLeave={e => e.currentTarget.style.background='white'}

@@ -198,6 +198,11 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           )}
         </div>
         <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem'}}>{company.name}</h2>
+        {company.is_suspended && (
+          <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:8,padding:'6px 12px',marginTop:8,display:'inline-block'}}>
+            <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>⚠️ Entreprise inactive</span>
+          </div>
+        )}
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
         {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}
         {avgRating && (

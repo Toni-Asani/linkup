@@ -142,7 +142,7 @@ export default function SwipeScreen({ user, setScreen }) {
         seenIds.push(myCompany.id)
       }
     }
-    let query = supabase.from('companies').select('*').limit(100)
+    let query = supabase.from('companies').select('*').eq('is_suspended', false).limit(100)
     if (seenIds.length > 0) query = query.not('id', 'in', `(${seenIds.join(',')})`)
     const { data } = await query
     if (!data || data.length === 0) {
