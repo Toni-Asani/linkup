@@ -1019,7 +1019,10 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   minHeight:0,
   display:'flex',
   flexDirection:'column',
-  overflow:'hidden'
+  overflowY:'auto',
+  overflowX:'hidden',
+  WebkitOverflowScrolling:'touch',
+  paddingBottom:'calc(72px + env(safe-area-inset-bottom))'
 }}>
         {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
        {activeTab === 'map' && <Suspense fallback={<div>Chargement...</div>}><MapScreen user={null} setScreen={setScreen} /></Suspense>}
@@ -1061,12 +1064,18 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
       </div>
 
       <div style={{
+  position:'fixed',
+  left:'50%',
+  bottom:0,
+  transform:'translateX(-50%)',
+  width:'100%',
+  maxWidth:430,
   borderTop:'1px solid #f0f0f0',
   display:'flex',
   background:'white',
-  flexShrink:0,
   paddingBottom:'env(safe-area-inset-bottom)',
-  zIndex:20
+  flexShrink:0,
+  zIndex:9999
 }}>
         {[
           {id:'swipe',label:'Swipe',icon:'💼'},
@@ -1134,7 +1143,7 @@ const handleTabChange = (tab) => {
   })
 
   return (
-    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>Chargement...</div>}>
+    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh'}}>Chargement...</div>}>
     <div style={{
   height:'100dvh',
   display:'flex',
@@ -1193,7 +1202,8 @@ const handleTabChange = (tab) => {
   overflowY:'auto',
   overflowX:'hidden',
   WebkitOverflowScrolling:'touch',
-  position:'relative'
+  position:'relative',
+  paddingBottom:'calc(72px + env(safe-area-inset-bottom))'
 }}>
   {selectedCompanyId ? (
     <CompanyProfileScreen
@@ -1216,12 +1226,18 @@ const handleTabChange = (tab) => {
 </div>
 
       <div style={{
+  position:'fixed',
+  left:'50%',
+  bottom:0,
+  transform:'translateX(-50%)',
+  width:'100%',
+  maxWidth:430,
   borderTop:'1px solid #f0f0f0',
   display:'flex',
   background:'white',
-  flexShrink:0,
   paddingBottom:'env(safe-area-inset-bottom)',
-  zIndex:20
+  flexShrink:0,
+  zIndex:9999
 }}>
   {[
     {id:'home',label:'Accueil',icon:'🏠'},
