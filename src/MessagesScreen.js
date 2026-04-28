@@ -17,8 +17,17 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const [uploadingFile, setUploadingFile] = useState(false)
   const [longPressMatch, setLongPressMatch] = useState(null)
   const fileAttachRef = useRef(null)
+  const longPressTimerRef = useRef(null)
+  const longPressTriggeredRef = useRef(false)
+  const touchStartPointRef = useRef(null)
 
   useEffect(() => { loadMyCompanyAndMatches() }, [])
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current)
+    }
+  }, [])
 
 useEffect(() => {
   if (openMatchWithCompanyId && matches.length > 0) {
@@ -220,6 +229,48 @@ if (data) setMessages(prev => [...prev, data])
   const isBasicOrPremium = plan === 'Basic' || plan === 'Premium'
   const canSendMessages = plan === 'Basic' || plan === 'Premium'
   const canLeaveReview = isBasicOrPremium && messages.length >= 1
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  const startConversationLongPress = (match, e) => {
+    clearLongPressTimer()
+    longPressTriggeredRef.current = false
+    const touch = e.touches?.[0]
+    touchStartPointRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTriggeredRef.current = true
+      setLongPressMatch(match)
+    }, 700)
+  }
+
+  const moveConversationLongPress = (e) => {
+    const start = touchStartPointRef.current
+    const touch = e.touches?.[0]
+    if (!start || !touch) return
+    const deltaX = Math.abs(touch.clientX - start.x)
+    const deltaY = Math.abs(touch.clientY - start.y)
+    if (deltaX > 10 || deltaY > 10) clearLongPressTimer()
+  }
+
+  const endConversationLongPress = () => {
+    clearLongPressTimer()
+    touchStartPointRef.current = null
+  }
+
+  const handleConversationClick = (match, e) => {
+    if (longPressTriggeredRef.current) {
+      e.preventDefault()
+      e.stopPropagation()
+      longPressTriggeredRef.current = false
+      return
+    }
+    setSelectedMatch(match)
+  }
 
   // Vue conversation
   if (selectedMatch) {
@@ -436,9 +487,12 @@ if (data) setMessages(prev => [...prev, data])
             if (!other) return null
             return (
               <div key={match.id} 
-                onClick={() => setSelectedMatch(match)}
+                onClick={e => handleConversationClick(match, e)}
                 onContextMenu={e => { e.preventDefault(); setLongPressMatch(match) }}
-                onTouchStart={() => { const t = setTimeout(() => setLongPressMatch(match), 500); return () => clearTimeout(t) }}
+                onTouchStart={e => startConversationLongPress(match, e)}
+                onTouchMove={moveConversationLongPress}
+                onTouchEnd={endConversationLongPress}
+                onTouchCancel={endConversationLongPress}
                 style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f5f5f5',display:'flex',alignItems:'center',gap:12,cursor:'pointer',background:'white'}}
                 onMouseEnter={e => e.currentTarget.style.background='#fafafa'}
                 onMouseLeave={e => e.currentTarget.style.background='white'}

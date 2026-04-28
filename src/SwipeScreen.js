@@ -151,6 +151,8 @@ export default function SwipeScreen({ user, setScreen }) {
       setFilteredCompanies([])
     } else {
       setCompanies(data)
+      setFilteredCompanies(data)
+      setCurrent(0)
       const avgRatings = await loadRatings(data)
       setRatings(avgRatings)
     }
@@ -203,65 +205,64 @@ export default function SwipeScreen({ user, setScreen }) {
 
   useEffect(() => {
     if (filteredCompanies.length === 0) return
-    const timer = setTimeout(() => {
-      const card = cardRef.current
-      if (!card) return
+    const card = cardRef.current
+    if (!card) return
 
-      let startX = 0, startY = 0, isDragging = false
-      let mouseStartX = 0, isMouseDragging = false
+    let startX = 0, startY = 0, isDragging = false
+    let mouseStartX = 0, isMouseDragging = false
 
-      const onTouchStart = (e) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; isDragging = true }
-      const onTouchMove = (e) => {
-        if (!isDragging || decisionRef.current) return
-        const deltaX = e.touches[0].clientX - startX
-        const deltaY = e.touches[0].clientY - startY
-        if (Math.abs(deltaX) > Math.abs(deltaY)) { e.preventDefault(); setOffset({ x: deltaX, y: deltaY * 0.1 }) }
+    const onTouchStart = (e) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; isDragging = true }
+    const onTouchMove = (e) => {
+      if (!isDragging || decisionRef.current) return
+      const deltaX = e.touches[0].clientX - startX
+      const deltaY = e.touches[0].clientY - startY
+      if (Math.abs(deltaX) > Math.abs(deltaY)) { e.preventDefault(); setOffset({ x: deltaX, y: deltaY * 0.1 }) }
+    }
+    const onTouchEnd = (e) => {
+      if (!isDragging || decisionRef.current) return
+      isDragging = false
+      const touch = e.changedTouches?.[0]
+      if (!touch) {
+        setOffset({ x: 0, y: 0 })
+        return
       }
-      const onTouchEnd = (e) => {
-        if (!isDragging || decisionRef.current) return
-        isDragging = false
-        const deltaX = e.changedTouches[0].clientX - startX
-        if (deltaX > 60) handleSwipe('right')
-        else if (deltaX < -60) handleSwipe('left')
-        else setOffset({ x: 0, y: 0 })
-      }
-      const onMouseDown = (e) => { mouseStartX = e.clientX; isMouseDragging = true }
-      const onMouseMove = (e) => {
-        if (!isMouseDragging || decisionRef.current) return
-        setOffset({ x: e.clientX - mouseStartX, y: 0 })
-      }
-      const onMouseUp = (e) => {
-        if (!isMouseDragging || decisionRef.current) return
-        isMouseDragging = false
-        const deltaX = e.clientX - mouseStartX
-        if (deltaX > 80) handleSwipe('right')
-        else if (deltaX < -80) handleSwipe('left')
-        else setOffset({ x: 0, y: 0 })
-      }
+      const deltaX = touch.clientX - startX
+      if (deltaX > 60) handleSwipe('right')
+      else if (deltaX < -60) handleSwipe('left')
+      else setOffset({ x: 0, y: 0 })
+    }
+    const onMouseDown = (e) => { mouseStartX = e.clientX; isMouseDragging = true }
+    const onMouseMove = (e) => {
+      if (!isMouseDragging || decisionRef.current) return
+      setOffset({ x: e.clientX - mouseStartX, y: 0 })
+    }
+    const onMouseUp = (e) => {
+      if (!isMouseDragging || decisionRef.current) return
+      isMouseDragging = false
+      const deltaX = e.clientX - mouseStartX
+      if (deltaX > 80) handleSwipe('right')
+      else if (deltaX < -80) handleSwipe('left')
+      else setOffset({ x: 0, y: 0 })
+    }
 
-      card.addEventListener('touchstart', onTouchStart, { passive: true })
-      card.addEventListener('touchmove', onTouchMove, { passive: false })
-      card.addEventListener('touchend', onTouchEnd, { passive: true })
-      card.addEventListener('mousedown', onMouseDown)
-      card.addEventListener('mousemove', onMouseMove)
-      card.addEventListener('mouseup', onMouseUp)
-      card.addEventListener('mouseleave', onMouseUp)
-
-      card._cleanup = () => {
-        card.removeEventListener('touchstart', onTouchStart)
-        card.removeEventListener('touchmove', onTouchMove)
-        card.removeEventListener('touchend', onTouchEnd)
-        card.removeEventListener('mousedown', onMouseDown)
-        card.removeEventListener('mousemove', onMouseMove)
-        card.removeEventListener('mouseup', onMouseUp)
-        card.removeEventListener('mouseleave', onMouseUp)
-      }
-    }, 300)
+    card.addEventListener('touchstart', onTouchStart, { passive: true })
+    card.addEventListener('touchmove', onTouchMove, { passive: false })
+    card.addEventListener('touchend', onTouchEnd, { passive: true })
+    card.addEventListener('touchcancel', onTouchEnd, { passive: true })
+    card.addEventListener('mousedown', onMouseDown)
+    card.addEventListener('mousemove', onMouseMove)
+    card.addEventListener('mouseup', onMouseUp)
+    card.addEventListener('mouseleave', onMouseUp)
 
     return () => {
-      clearTimeout(timer)
-      const card = cardRef.current
-      if (card && card._cleanup) card._cleanup()
+      card.removeEventListener('touchstart', onTouchStart)
+      card.removeEventListener('touchmove', onTouchMove)
+      card.removeEventListener('touchend', onTouchEnd)
+      card.removeEventListener('touchcancel', onTouchEnd)
+      card.removeEventListener('mousedown', onMouseDown)
+      card.removeEventListener('mousemove', onMouseMove)
+      card.removeEventListener('mouseup', onMouseUp)
+      card.removeEventListener('mouseleave', onMouseUp)
     }
   }, [filteredCompanies.length, current])
 
@@ -301,7 +302,7 @@ export default function SwipeScreen({ user, setScreen }) {
   const hasNeeds = company.needs_description || activeTags.length > 0
 
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'0.75rem 1rem',gap:'0.75rem',userSelect:'none',overflow:'hidden'}}>
+    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',alignItems:'center',padding:'0.5rem 1rem 1rem',gap:'0.5rem',userSelect:'none',overflow:'hidden'}}>
 
       {showMatchModal && (
         <div style={{position:'fixed',top:'15%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center',width:'80%',maxWidth:300}}>
@@ -438,7 +439,7 @@ export default function SwipeScreen({ user, setScreen }) {
         </div>
       </div>
 
-      <div style={{display:'flex',gap:'2rem',alignItems:'center',flexShrink:0,paddingBottom:'0.25rem'}}>
+      <div style={{display:'flex',gap:'2rem',alignItems:'center',flexShrink:0,paddingBottom:'0.9rem'}}>
         <button onClick={() => handleSwipe('left')} style={{width:56,height:56,borderRadius:'50%',background:'white',border:'2px solid #E24B4A',color:'#E24B4A',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>✗</button>
         <button onClick={() => handleSwipe('right')} style={{width:64,height:64,borderRadius:'50%',background:'#E24B4A',border:'none',color:'white',fontSize:24,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(226,75,74,0.4)'}}>✓</button>
       </div>
