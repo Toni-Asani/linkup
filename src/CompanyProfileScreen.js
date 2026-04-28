@@ -51,6 +51,8 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [contacting, setContacting] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
+  const [avgRating, setAvgRating] = useState(null)
+  const [reviewCount, setReviewCount] = useState(0)
   const [reportReason, setReportReason] = useState('')
   const [reportComment, setReportComment] = useState('')
   const [submittingReport, setSubmittingReport] = useState(false)
@@ -62,6 +64,16 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
       .from('companies').select('*').eq('id', companyId).single()
     setCompany(data)
     setLoading(false)
+    const { data: reviews } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('reviewed_company_id', companyId)
+      .eq('status', 'approved')
+    if (reviews && reviews.length > 0) {
+      const avg = reviews.reduce((a, b) => a + b.rating, 0) / reviews.length
+      setAvgRating(avg.toFixed(1))
+      setReviewCount(reviews.length)
+    }
   }
 
   const handleReport = async () => {
@@ -188,6 +200,13 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem'}}>{company.name}</h2>
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
         {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}
+        {avgRating && (
+          <div style={{marginTop:8,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+            <span style={{color:'#F39C12',fontSize:16}}>{'★'.repeat(Math.round(avgRating))}{'☆'.repeat(5-Math.round(avgRating))}</span>
+            <span style={{color:'rgba(255,255,255,0.9)',fontSize:13,fontWeight:600}}>{avgRating}/5</span>
+            <span style={{color:'rgba(255,255,255,0.7)',fontSize:12}}>({reviewCount} avis)</span>
+          </div>
+        )}
       </div>
 
       <div style={{padding:'1.5rem 1rem',display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:'-1rem'}}>

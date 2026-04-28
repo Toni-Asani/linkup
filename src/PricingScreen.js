@@ -39,10 +39,10 @@ const plans = [
     priceId: process.env.REACT_APP_STRIPE_PRICE_PREMIUM,
     features: [
       'Tout Basic inclus',
-      'Badge Membre Fondateur ⭐',
+      'Badge Compte Vérifié ⭐',
       'Visibilité prioritaire',
       'Accès anticipé nouveautés',
-      '2 mois offerts — offre fondateurs',
+      '2 mois offerts — jusqu\'au 30 juin 2026',
     ],
     cta: 'Choisir Premium',
     disabled: false,
@@ -125,12 +125,12 @@ const response = await fetch(
       {/* Compteur fondateurs */}
       <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.875rem',marginBottom:'1.25rem',textAlign:'center'}}>
         <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,margin:0}}>
-          🎉 Offre Fondateurs — {remaining} places restantes sur 100
+          🎉 Offre limitée — {remaining} places · Expire le 30 juin 2026
         </p>
         <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,margin:'8px 0 4px'}}>
           <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
         </div>
-        <p style={{fontSize:12,color:'#666',margin:0}}>2 mois Premium offerts pour les 100 premiers</p>
+        <p style={{fontSize:12,color:'#666',margin:0}}>2 mois Premium offerts — pour les 100 premiers inscrits avant le 30 juin</p>
       </div>
 
       {/* Plans */}
@@ -150,7 +150,7 @@ const response = await fetch(
               {isHighlighted && (
                 <div style={{background:plan.color,padding:'6px',textAlign:'center'}}>
                   <span style={{color:'white',fontSize:12,fontWeight:600}}>
-                    ⭐ RECOMMANDÉ — OFFRE FONDATEURS
+                    ⭐ RECOMMANDÉ — OFFRE LIMITÉE
                   </span>
                 </div>
               )}

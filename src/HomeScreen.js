@@ -8,7 +8,7 @@ const sectorColors = {
   'Transport & Logistique': '#444441', 'Services': '#993C1D',
 }
 
-export default function HomeScreen({ user, setActiveTab }) {
+export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId }) {
   const [company, setCompany] = useState(null)
   const [stats, setStats] = useState({ matches: 0, messages: 0, followers: 0, totalCompanies: 0 })
   const [matchedCompanies, setMatchedCompanies] = useState([])
@@ -98,7 +98,7 @@ export default function HomeScreen({ user, setActiveTab }) {
                 if (!other) return null
                 const c = sectorColors[other.sector] || '#E24B4A'
                 return (
-                  <div key={match.id} style={{padding:'0.75rem 0',display:'flex',alignItems:'center',gap:12,borderBottom:'1px solid #f5f5f5'}}>
+                  <div key={match.id} onClick={() => { setShowFollowers(false); setSelectedCompanyId && setSelectedCompanyId(other.id); setActiveTab('map') }} style={{padding:'0.75rem 0',display:'flex',alignItems:'center',gap:12,borderBottom:'1px solid #f5f5f5',cursor:'pointer'}}>
                     <div style={{width:44,height:44,borderRadius:'50%',background:c,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <span style={{color:'white',fontWeight:700,fontSize:14}}>{other.name?.substring(0,2).toUpperCase()}</span>
                     </div>
