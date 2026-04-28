@@ -89,7 +89,7 @@ const cantons = [
   })
 
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',height:'calc(100vh - 190px)'}}>
+    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column'}}>
 
       {!user && (
   <div style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -179,7 +179,7 @@ const cantons = [
       </div>
 
       {selected && (
-        <div style={{padding:'1rem',paddingBottom:'1.5rem',borderTop:'1px solid #f0f0f0',background:'white',flexShrink:0}}>
+        <div style={{padding:'1rem',paddingBottom:'calc(1rem + 72px + env(safe-area-inset-bottom))',borderTop:'1px solid #f0f0f0',background:'white',flexShrink:0}}>
           <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
             <div style={{width:44,height:44,borderRadius:'50%',background:sectorColors[selected.sector]||'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
               <span style={{color:'white',fontWeight:700,fontSize:14}}>{selected.name.substring(0,2).toUpperCase()}</span>
