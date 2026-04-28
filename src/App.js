@@ -516,9 +516,9 @@ const handleWaitlist = async () => {
       </div>
 
       {/* Mockup screenshots */}
-      <div style={{display:'flex',gap:12,justifyContent:'center',animation:'fadeUp 0.6s ease 0.5s both',overflow:'hidden',width:'100%',maxWidth:340}}>
+      <div style={{display:'flex',gap:10,justifyContent:'center',alignItems:'stretch',animation:'fadeUp 0.6s ease 0.5s both',overflow:'visible',width:'100%',maxWidth:340,minHeight:168,flexShrink:0}}>
         {/* Screenshot 1 - Swipe */}
-        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:100,flexShrink:0,border:'1px solid #f0f0f0'}}>
+        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:96,minHeight:160,flexShrink:0,border:'1px solid #f0f0f0',display:'flex',flexDirection:'column'}}>
           <div style={{background:'#E24B4A',borderRadius:12,padding:'0.75rem',marginBottom:8,textAlign:'center'}}>
             <span style={{fontSize:28}}>🏢</span>
           </div>
@@ -532,7 +532,7 @@ const handleWaitlist = async () => {
         </div>
 
         {/* Screenshot 2 - Match */}
-        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:100,flexShrink:0,border:'1px solid #f0f0f0',transform:'scale(1.05)'}}>
+        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:96,minHeight:160,flexShrink:0,border:'1px solid #f0f0f0',display:'flex',flexDirection:'column'}}>
           <div style={{background:'#22c55e',borderRadius:12,padding:'0.5rem',marginBottom:6,textAlign:'center'}}>
             <p style={{color:'white',fontWeight:800,fontSize:11,margin:0}}>🎉 MATCH !</p>
           </div>
@@ -548,7 +548,7 @@ const handleWaitlist = async () => {
         </div>
 
         {/* Screenshot 3 - Carte */}
-        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:100,flexShrink:0,border:'1px solid #f0f0f0'}}>
+        <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:96,minHeight:160,flexShrink:0,border:'1px solid #f0f0f0',display:'flex',flexDirection:'column'}}>
           <div style={{background:'#f0f9ff',borderRadius:12,padding:'0.5rem',marginBottom:6,position:'relative',overflow:'hidden',height:50}}>
             {/* Mini carte simulée */}
             <div style={{position:'absolute',top:8,left:12,width:8,height:8,borderRadius:'50%',background:'#E24B4A'}}></div>
