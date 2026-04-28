@@ -489,11 +489,13 @@ if (data) setMessages(prev => [...prev, data])
               <div key={match.id} 
                 onClick={e => handleConversationClick(match, e)}
                 onContextMenu={e => { e.preventDefault(); setLongPressMatch(match) }}
+                onMouseDown={e => e.preventDefault()}
                 onTouchStart={e => startConversationLongPress(match, e)}
                 onTouchMove={moveConversationLongPress}
                 onTouchEnd={endConversationLongPress}
                 onTouchCancel={endConversationLongPress}
-                style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f5f5f5',display:'flex',alignItems:'center',gap:12,cursor:'pointer',background:'white'}}
+                draggable={false}
+                style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f5f5f5',display:'flex',alignItems:'center',gap:12,cursor:'pointer',background:'white',userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none'}}
                 onMouseEnter={e => e.currentTarget.style.background='#fafafa'}
                 onMouseLeave={e => e.currentTarget.style.background='white'}
               >
