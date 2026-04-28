@@ -299,7 +299,8 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
-  const isProduction = false
+  const hostname = window.location.hostname.toLowerCase()
+  const isMarketingSite = hostname === 'hubbing.ch' || hostname === 'www.hubbing.ch'
   const t = translations[lang]
 
   useEffect(() => {
@@ -330,7 +331,7 @@ export default function App() {
   return () => subscription.unsubscribe()
 }, [])
   if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh',background:'white',fontFamily:'Plus Jakarta Sans'}}>Chargement...</div>
-if (isProduction) return (
+if (isMarketingSite) return (
     <>
       <style>{styles + `
         @keyframes pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.8); } }
