@@ -14,6 +14,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
   const [matchedCompanies, setMatchedCompanies] = useState([])
   const [followerCompanies, setFollowerCompanies] = useState([])
   const [showFollowers, setShowFollowers] = useState(false)
+  const [showFollowing, setShowFollowing] = useState(false)
   const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const [loading, setLoading] = useState(true)
 
@@ -29,18 +30,40 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
       // Matchs que j'ai initiés
       const { data: myMatches } = await supabase
         .from('matches')
-        .select('*, company_b(*)')
+        .select('id, company_a, company_b, status, created_at, company_b_profile:company_b(*)')
         .eq('company_a', comp.id)
         .eq('status', 'pending')
-      setMatchedCompanies(myMatches || [])
+      const followingMatchesRaw = myMatches || []
+      const missingFollowingIds = followingMatchesRaw.filter(m => !m.company_b_profile).map(m => m.company_b).filter(Boolean)
+      let followingCompaniesById = {}
+      if (missingFollowingIds.length > 0) {
+        const { data: companiesData } = await supabase.from('companies').select('*').in('id', missingFollowingIds)
+        followingCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
+      }
+      const followingMatches = followingMatchesRaw.map(m => ({
+        ...m,
+        company_b: m.company_b_profile || followingCompaniesById[m.company_b]
+      }))
+      setMatchedCompanies(followingMatches.filter(m => m.company_b))
 
       // Entreprises qui me suivent
       const { data: followersData, count: followers } = await supabase
         .from('matches')
-        .select('*, company_a(*)', { count: 'exact' })
+        .select('id, company_a, company_b, status, created_at, company_a_profile:company_a(*)', { count: 'exact' })
         .eq('company_b', comp.id)
         .eq('status', 'pending')
-      setFollowerCompanies(followersData || [])
+      const followerMatchesRaw = followersData || []
+      const missingFollowerIds = followerMatchesRaw.filter(m => !m.company_a_profile).map(m => m.company_a).filter(Boolean)
+      let followerCompaniesById = {}
+      if (missingFollowerIds.length > 0) {
+        const { data: companiesData } = await supabase.from('companies').select('*').in('id', missingFollowerIds)
+        followerCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
+      }
+      const followerMatches = followerMatchesRaw.map(m => ({
+        ...m,
+        company_a: m.company_a_profile || followerCompaniesById[m.company_a]
+      }))
+      setFollowerCompanies(followerMatches.filter(m => m.company_a))
 
       // Messages envoyés
       const { count: msgCount } = await supabase
@@ -52,9 +75,9 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
         .from('companies').select('*', { count: 'exact', head: true })
 
       setStats({
-        matches: myMatches?.length || 0,
+        matches: followingMatches.filter(m => m.company_b).length,
         messages: msgCount || 0,
-        followers: followers || 0,
+        followers: followerMatches.filter(m => m.company_a).length || followers || 0,
         totalCompanies: totalCompanies || 0
       })
     }
@@ -83,22 +106,22 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
 
   return (
     <>
-    {showFollowers && (
-        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200}}>
-          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:430,maxHeight:'70vh',overflowY:'auto',padding:'1.5rem'}}>
+    {(showFollowers || showFollowing) && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:10000}}>
+          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:430,maxHeight:'70vh',overflowY:'auto',padding:'1.5rem',paddingBottom:'calc(1.5rem + env(safe-area-inset-bottom))'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
-              <h3 style={{fontSize:18,fontWeight:700,margin:0}}>Entreprises qui me suivent</h3>
-              <button onClick={() => setShowFollowers(false)} style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'#999'}}>✕</button>
+              <h3 style={{fontSize:18,fontWeight:700,margin:0}}>{showFollowers ? 'Entreprises qui me suivent' : 'Entreprises que je suis'}</h3>
+              <button onClick={() => { setShowFollowers(false); setShowFollowing(false) }} style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'#999'}}>✕</button>
             </div>
-            {followerCompanies.length === 0 ? (
-              <p style={{color:'#999',textAlign:'center',padding:'2rem'}}>Personne ne vous suit encore</p>
+            {(showFollowers ? followerCompanies : matchedCompanies).length === 0 ? (
+              <p style={{color:'#999',textAlign:'center',padding:'2rem'}}>{showFollowers ? 'Personne ne vous suit encore' : 'Vous ne suivez encore aucune entreprise'}</p>
             ) : (
-              followerCompanies.map(match => {
-                const other = match.company_a
+              (showFollowers ? followerCompanies : matchedCompanies).map(match => {
+                const other = showFollowers ? match.company_a : match.company_b
                 if (!other) return null
                 const c = sectorColors[other.sector] || '#E24B4A'
                 return (
-                  <div key={match.id} onClick={() => { setShowFollowers(false); setSelectedCompanyId && setSelectedCompanyId(other.id); setActiveTab('map') }} style={{padding:'0.75rem 0',display:'flex',alignItems:'center',gap:12,borderBottom:'1px solid #f5f5f5',cursor:'pointer'}}>
+                  <div key={match.id} onClick={() => { setShowFollowers(false); setShowFollowing(false); setSelectedCompanyId && setSelectedCompanyId(other.id); setActiveTab('map') }} style={{padding:'0.75rem 0',display:'flex',alignItems:'center',gap:12,borderBottom:'1px solid #f5f5f5',cursor:'pointer'}}>
                     <div style={{width:44,height:44,borderRadius:'50%',background:c,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <span style={{color:'white',fontWeight:700,fontSize:14}}>{other.name?.substring(0,2).toUpperCase()}</span>
                     </div>
@@ -145,7 +168,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
 
       {/* Stats cards */}
       <div style={{display:'flex',gap:10,padding:'0 1rem',marginTop:'-1.25rem',position:'relative',zIndex:1}}>
-        <div style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)'}}>
+        <div onClick={() => setShowFollowing(true)} style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}>
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.matches}</p>
           <p style={{fontSize:11,color:'#999',marginTop:3}}>Je suis</p>
         </div>
@@ -165,7 +188,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
         <div style={{background:'white',border:'1px solid #f0f0f0',borderRadius:12,overflow:'hidden'}}>
           <div style={{padding:'0.875rem 1rem',borderBottom:'1px solid #f5f5f5',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <p style={{fontWeight:700,fontSize:14,margin:0}}>Entreprises que je suis</p>
-            <span onClick={() => setActiveTab('messages')}
+            <span onClick={() => setShowFollowing(true)}
               style={{fontSize:12,color:'#E24B4A',cursor:'pointer',fontWeight:600}}>Voir tout →</span>
           </div>
           {matchedCompanies.length === 0 ? (
@@ -183,7 +206,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
                 if (!other) return null
                 const c = sectorColors[other.sector] || '#E24B4A'
                 return (
-                  <div key={match.id} onClick={() => setActiveTab('messages')}
+                  <div key={match.id} onClick={() => { setSelectedCompanyId && setSelectedCompanyId(other.id); setActiveTab('map') }}
                     style={{padding:'0.75rem 1rem',display:'flex',alignItems:'center',gap:12,cursor:'pointer',borderBottom:'1px solid #f9f9f9'}}>
                     <div style={{width:40,height:40,borderRadius:'50%',background:c,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <span style={{color:'white',fontWeight:700,fontSize:13}}>
