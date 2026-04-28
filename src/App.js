@@ -9,6 +9,7 @@ import LegalScreen from './LegalScreen'
 import AdminScreen from './AdminScreen'
 import CompanyProfileScreen from './CompanyProfileScreen'
 import PrivacyPolicy from './PrivacyPolicy'
+import { getUiText } from './i18n'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 
@@ -328,7 +329,7 @@ export default function App() {
   })
   return () => subscription.unsubscribe()
 }, [])
-  if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'Plus Jakarta Sans'}}>Chargement...</div>
+  if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh',background:'white',fontFamily:'Plus Jakarta Sans'}}>Chargement...</div>
 if (isProduction) return (
     <>
       <style>{styles + `
@@ -348,7 +349,7 @@ if (isProduction) return (
       <style>{styles}</style>
       <div className="app">
         {screen === 'privacy' ? (
-  <PrivacyPolicy setScreen={setScreen} />
+  <PrivacyPolicy setScreen={setScreen} lang={lang} />
 ) : user ? (
   <Dashboard user={user} setUser={setUser} t={t} lang={lang} setLang={setLang} />
 ) : screen === 'home' ? (
@@ -362,7 +363,7 @@ if (isProduction) return (
         ) : screen === 'legal' ? (
           <LegalScreen setScreen={setScreen} lang={lang} />
           ) : screen === 'privacy' ? (
-  <PrivacyPolicy setScreen={setScreen} />
+  <PrivacyPolicy setScreen={setScreen} lang={lang} />
         ) : screen === 'admin' ? (
           <AdminScreen user={user} setScreen={setScreen} />
         ) : null}
@@ -481,7 +482,7 @@ const handleWaitlist = async () => {
   )
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',gap:'1.5rem',textAlign:'center',position:'relative',background:'white'}}>
+    <div style={{minHeight:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1.5rem',textAlign:'center',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
 
       {/* Logo */}
       <img src="/LOGO-HUBBING-ICON.svg" alt="Hubbing" style={{width:72,height:72,borderRadius:'50%',animation:'fadeUp 0.6s ease 0.1s both'}} />
@@ -625,8 +626,8 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
   ]
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',gap:'1.2rem',position:'relative'}}>
-      <div style={{position:'absolute',top:'1rem',right:'1rem'}}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.25rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1.2rem',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
+      <div style={{position:'absolute',top:'calc(env(safe-area-inset-top) + 1rem)',right:'1rem'}}>
         <button onClick={() => setShowLangMenu(!showLangMenu)}
           style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'6px 14px',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',fontWeight:500}}>
           {t.changeLanguage}
@@ -703,8 +704,8 @@ function LoginScreen({ setScreen, t }) {
   }
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',padding:'2rem',gap:'1rem'}}>
-      <button onClick={() => setScreen('home')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,marginBottom:'1rem'}}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1rem',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
+      <button onClick={() => setScreen('home')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,alignSelf:'flex-start',padding:'0.25rem 0',marginBottom:'0.5rem'}}>
         {t.back}
       </button>
       <h2 style={{fontSize:24,fontWeight:700,marginBottom:'0.5rem'}}>{t.loginTitle}</h2>
@@ -931,6 +932,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('swipe')
   const [showModal, setShowModal] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
+  const ui = getUiText(lang)
 
   const tabStyle = (tab) => ({
     flex:1, padding:'8px 0 4px', background:'none', border:'none', cursor:'pointer',
@@ -973,7 +975,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
       {showModal && <Modal />}
 
       <div style={{
-  padding:'calc(env(safe-area-inset-top) + 0.35rem) 1rem 0.5rem',
+  padding:'calc(env(safe-area-inset-top) + 0.55rem) 1rem 0.55rem',
   borderBottom:'1px solid #f0f0f0',
   display:'flex',
   alignItems:'center',
@@ -1024,8 +1026,8 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   WebkitOverflowScrolling:'touch',
   paddingBottom:'calc(60px + env(safe-area-inset-bottom))'
 }}>
-        {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
-       {activeTab === 'map' && <Suspense fallback={<div>Chargement...</div>}><MapScreen user={null} setScreen={setScreen} /></Suspense>}
+        {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} lang={lang} />}
+       {activeTab === 'map' && <Suspense fallback={<div>{ui.common.loading}</div>}><MapScreen user={null} setScreen={setScreen} lang={lang} /></Suspense>}
         {activeTab === 'messages' && (
           <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
             <div style={{fontSize:48}}>💬</div>
@@ -1044,9 +1046,9 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
               <p style={{fontSize:13,color:'#666'}}>{t.pricingDesc}</p>
             </div>
             {[
-              {name:'Starter',price:'Gratuit',color:'#666',features:['Profil entreprise','5 swipes/jour','Visible sur la carte']},
-              {name:'Basic',price:'CHF 19/mois',color:'#185FA5',features:['Swipes illimités','Messagerie B2B','Statistiques']},
-              {name:'Premium',price:'CHF 39/mois',color:'#E24B4A',features:['Tout Basic inclus','Badge Fondateur ⭐','Visibilité prioritaire','2 mois offerts'],highlight:true},
+              {name:'Starter',price:ui.common.free,color:'#666',features:ui.pricing.starterFeatures.slice(0, 3)},
+              {name:'Basic',price:`CHF 19${ui.common.month}`,color:'#185FA5',features:ui.pricing.basicFeatures.slice(0, 3)},
+              {name:'Premium',price:`CHF 39${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 4),highlight:true},
             ].map(plan => (
               <div key={plan.name} onClick={() => setShowModal(true)}
                 style={{border: plan.highlight ? `2px solid ${plan.color}` : '1px solid #eee',borderRadius:12,padding:'1rem',marginBottom:'0.75rem',cursor:'pointer',background:'white'}}>
@@ -1078,10 +1080,10 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   zIndex:9999
 }}>
         {[
-          {id:'swipe',label:'Swipe',icon:'💼'},
-          {id:'map',label:'Carte',icon:'🗺️'},
-          {id:'messages',label:'Messages',icon:'💬'},
-          {id:'pricing',label:'Tarifs',icon:'💳'},
+          {id:'swipe',label:ui.nav.swipe,icon:'💼'},
+          {id:'map',label:ui.nav.map,icon:'🗺️'},
+          {id:'messages',label:ui.nav.messages,icon:'💬'},
+          {id:'pricing',label:ui.nav.pricing,icon:'💳'},
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}>
             <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
@@ -1101,6 +1103,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [directMessageCompanyId, setDirectMessageCompanyId] = useState(null)
+  const ui = getUiText(lang)
 
 useEffect(() => {
   loadUnreadCount()
@@ -1145,7 +1148,7 @@ const handleTabChange = (tab) => {
   })
 
   return (
-    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh'}}>Chargement...</div>}>
+    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh'}}>{ui.common.loading}</div>}>
     <div style={{
   height:'100dvh',
   display:'flex',
@@ -1154,7 +1157,7 @@ const handleTabChange = (tab) => {
   background:'white'
 }}>
       <div style={{
-  padding:'calc(env(safe-area-inset-top) + 0.35rem) 1rem 0.5rem',
+  padding:'calc(env(safe-area-inset-top) + 0.55rem) 1rem 0.55rem',
   borderBottom:'1px solid #f0f0f0',
   display:'flex',
   alignItems:'center',
@@ -1211,6 +1214,7 @@ const handleTabChange = (tab) => {
     <CompanyProfileScreen
   companyId={selectedCompanyId}
   plan={userPlan}
+  lang={lang}
   onBack={() => setSelectedCompanyId(null)}
   setActiveTab={setActiveTab}
   setSelectedCompanyId={setSelectedCompanyId}
@@ -1218,12 +1222,12 @@ const handleTabChange = (tab) => {
 />
   ) : (
     <>
-      {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} />}
-      {activeTab === 'swipe' && <SwipeScreen user={user} />}
-      {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} onDirectOpenHandled={() => setDirectMessageCompanyId(null)} />}
-      {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} />}
-      {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} />}
+      {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} lang={lang} />}
+      {activeTab === 'swipe' && <SwipeScreen user={user} lang={lang} />}
+      {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} lang={lang} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} onDirectOpenHandled={() => setDirectMessageCompanyId(null)} lang={lang} />}
+      {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
+      {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
     </>
   )}
 </div>
@@ -1243,11 +1247,11 @@ const handleTabChange = (tab) => {
   zIndex:9999
 }}>
   {[
-    {id:'home',label:'Accueil',icon:'🏠'},
-    {id:'swipe',label:'Swipe',icon:'💼'},
-    {id:'map',label:'Carte',icon:'🗺️'},
-    {id:'messages',label:'Messages',icon:'💬'},
-    {id:'profile',label:'Profil',icon:'👤'},
+    {id:'home',label:ui.nav.home,icon:'🏠'},
+    {id:'swipe',label:ui.nav.swipe,icon:'💼'},
+    {id:'map',label:ui.nav.map,icon:'🗺️'},
+    {id:'messages',label:ui.nav.messages,icon:'💬'},
+    {id:'profile',label:ui.nav.profile,icon:'👤'},
   ].map(tab => (
     <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={tabStyle(tab.id)}>
       <div style={{position:'relative',display:'inline-block',fontSize:20,marginBottom:2}}>

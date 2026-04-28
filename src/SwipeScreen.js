@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
+import { getUiText } from './i18n'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -64,7 +65,8 @@ const getActiveTags = (needs_tags) => {
   } catch { return [] }
 }
 
-export default function SwipeScreen({ user, setScreen }) {
+export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
+  const ui = getUiText(lang)
   const [companies, setCompanies] = useState([])
   const [filteredCompanies, setFilteredCompanies] = useState([])
   const [current, setCurrent] = useState(0)
@@ -242,18 +244,18 @@ export default function SwipeScreen({ user, setScreen }) {
 
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
-      <p style={{color:'#999'}}>Chargement...</p>
+      <p style={{color:'#999'}}>{ui.common.loading}</p>
     </div>
   )
 
   if (allSeen || current >= filteredCompanies.length) return (
     <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
       <div style={{fontSize:48}}>{activeFilters > 0 ? '🔍' : '🎉'}</div>
-      <h3 style={{fontSize:20,fontWeight:700}}>{activeFilters > 0 ? 'Aucun résultat pour ces filtres' : 'Vous avez tout vu !'}</h3>
-      <p style={{color:'#999',fontSize:14}}>{activeFilters > 0 ? "Essayez d'élargir le rayon ou changer de secteur." : 'Vous avez parcouru toutes les entreprises disponibles.'}</p>
-      {activeFilters > 0 && <button onClick={() => { setFilterSector(''); setFilterRadius(300) }} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>Effacer les filtres</button>}
-      <button onClick={() => loadCompanies(true)} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>Tout revoir depuis le début</button>
-      <button onClick={() => loadCompanies(false)} style={{padding:'12px 24px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>Voir uniquement les nouvelles</button>
+      <h3 style={{fontSize:20,fontWeight:700}}>{activeFilters > 0 ? ui.swipe.noResults : ui.swipe.allSeen}</h3>
+      <p style={{color:'#999',fontSize:14}}>{activeFilters > 0 ? ui.swipe.noResultsDesc : ui.swipe.allSeenDesc}</p>
+      {activeFilters > 0 && <button onClick={() => { setFilterSector(''); setFilterRadius(300) }} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clearFilters}</button>}
+      <button onClick={() => loadCompanies(true)} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.reviewAll}</button>
+      <button onClick={() => loadCompanies(false)} style={{padding:'12px 24px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.newOnly}</button>
     </div>
   )
 
@@ -269,15 +271,15 @@ export default function SwipeScreen({ user, setScreen }) {
       {showMatchModal && (
         <div style={{position:'fixed',top:'15%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center',width:'80%',maxWidth:300}}>
           {user ? (
-            <><div style={{fontSize:36}}>🎉</div><p style={{fontWeight:700,fontSize:16,marginTop:8}}>Match envoyé !</p></>
+            <><div style={{fontSize:36}}>🎉</div><p style={{fontWeight:700,fontSize:16,marginTop:8}}>{ui.swipe.matchSent}</p></>
           ) : (
             <>
               <div style={{fontSize:36}}>🔒</div>
-              <p style={{fontWeight:700,fontSize:16,marginTop:8}}>Créez un compte !</p>
-              <p style={{fontSize:13,color:'#666',marginTop:4,marginBottom:12}}>Inscrivez-vous pour sauvegarder ce match.</p>
-              <button onClick={() => setScreen && setScreen('register')} style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>Créer un compte →</button>
-              <button onClick={() => setScreen && setScreen('login')} style={{width:'100%',padding:'12px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>Se connecter →</button>
-              <button onClick={() => setShowMatchModal(false)} style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>Continuer en mode visiteur</button>
+              <p style={{fontWeight:700,fontSize:16,marginTop:8}}>{ui.swipe.createAccountTitle}</p>
+              <p style={{fontSize:13,color:'#666',marginTop:4,marginBottom:12}}>{ui.swipe.signupToSave}</p>
+              <button onClick={() => setScreen && setScreen('register')} style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>{ui.swipe.createAccount}</button>
+              <button onClick={() => setScreen && setScreen('login')} style={{width:'100%',padding:'12px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>{ui.swipe.login}</button>
+              <button onClick={() => setShowMatchModal(false)} style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>{ui.swipe.continueVisitor}</button>
             </>
           )}
         </div>
@@ -287,25 +289,25 @@ export default function SwipeScreen({ user, setScreen }) {
         <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',zIndex:200}} onClick={() => setShowFilters(false)}>
           <div style={{position:'absolute',bottom:0,left:0,right:0,background:'white',borderRadius:'20px 20px 0 0',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1.25rem'}} onClick={e => e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <h3 style={{fontSize:18,fontWeight:700}}>Filtres</h3>
+              <h3 style={{fontSize:18,fontWeight:700}}>{ui.swipe.filters}</h3>
               <button onClick={() => setShowFilters(false)} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:'#999'}}>✕</button>
             </div>
             <div>
-              <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8}}>📍 Rayon : {filterRadius >= 300 ? 'Toute la Suisse' : `${filterRadius} km`}</p>
+              <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8}}>{ui.swipe.radius(filterRadius)}</p>
               <input type="range" min={10} max={300} step={10} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
-              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#999',marginTop:4}}><span>10 km</span><span>Toute la Suisse</span></div>
-              {!myCompanyCoords && <p style={{fontSize:11,color:'#F39C12',marginTop:6}}>⚠️ Sauvegardez votre profil pour activer le filtre par rayon</p>}
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#999',marginTop:4}}><span>10 km</span><span>{ui.swipe.allSwitzerland}</span></div>
+              {!myCompanyCoords && <p style={{fontSize:11,color:'#F39C12',marginTop:6}}>{ui.swipe.saveProfileRadius}</p>}
             </div>
             <div>
-              <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8}}>🏢 Secteur</p>
+              <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8}}>{ui.swipe.sector}</p>
               <select value={filterSector} onChange={e => setFilterSector(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
-                <option value="">Tous les secteurs</option>
+                <option value="">{ui.swipe.allSectors}</option>
                 {sectors.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div style={{display:'flex',gap:10}}>
-              <button onClick={() => { setFilterSector(''); setFilterRadius(300) }} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>Effacer</button>
-              <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>Appliquer ({filteredCompanies.length} résultats)</button>
+              <button onClick={() => { setFilterSector(''); setFilterRadius(300) }} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
+              <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filteredCompanies.length)}</button>
             </div>
           </div>
         </div>
@@ -314,7 +316,7 @@ export default function SwipeScreen({ user, setScreen }) {
       {!user && (
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.5rem 1rem',width:'100%',textAlign:'center'}}>
           <p style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>
-            👀 Mode visiteur — <span onClick={() => setScreen && setScreen('register')} style={{textDecoration:'underline',cursor:'pointer'}}>Créez un compte</span> pour sauvegarder vos matches
+            {ui.swipe.visitorMode}<span onClick={() => setScreen && setScreen('register')} style={{textDecoration:'underline',cursor:'pointer'}}>{ui.swipe.visitorCreate}</span>{ui.swipe.visitorSuffix}
           </p>
         </div>
       )}
@@ -322,7 +324,7 @@ export default function SwipeScreen({ user, setScreen }) {
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%'}}>
         <span style={{fontSize:13,color:'#999'}}>{current + 1} / {filteredCompanies.length}</span>
         <button onClick={() => setShowFilters(true)} style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background: activeFilters > 0 ? '#E24B4A' : 'white',color: activeFilters > 0 ? 'white' : '#444',border:'1px solid #ddd',borderRadius:20,fontSize:12,fontWeight:600,cursor:'pointer'}}>
-          🎛 Filtres {activeFilters > 0 ? `(${activeFilters})` : ''}
+          {ui.swipe.filtersButton} {activeFilters > 0 ? `(${activeFilters})` : ''}
         </button>
       </div>
 
@@ -361,7 +363,7 @@ export default function SwipeScreen({ user, setScreen }) {
             <div style={{display:'flex',gap:6,marginBottom:'0.5rem',flexWrap:'wrap'}}>
               <span style={{background:color+'15',color:color,padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>{company.sector}</span>
               <span style={{background:'#f5f5f5',color:'#666',padding:'2px 8px',borderRadius:20,fontSize:11}}>📍 {company.city}, {company.canton}</span>
-              <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>★ {ratings[company.id] || 'Nouveau'}</span>
+              <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>★ {ratings[company.id] || ui.swipe.newLabel}</span>
             </div>
 
             {company.contact_name && (
@@ -387,7 +389,7 @@ export default function SwipeScreen({ user, setScreen }) {
 
             {hasNeeds && (
               <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:10,padding:'8px 10px'}}>
-                <p style={{fontSize:11,color:'#E67E22',fontWeight:700,marginBottom:4}}>💼 BESOINS</p>
+                <p style={{fontSize:11,color:'#E67E22',fontWeight:700,marginBottom:4}}>{ui.swipe.needs}</p>
                 {company.needs_description && (
                   <p style={{fontSize:12,color:'#444',lineHeight:1.4,marginBottom: activeTags.length > 0 ? 4 : 0}}>{company.needs_description}</p>
                 )}
@@ -411,7 +413,7 @@ export default function SwipeScreen({ user, setScreen }) {
         <button onClick={() => handleSwipe('right')} style={{width:64,height:64,borderRadius:'50%',background:'#E24B4A',border:'none',color:'white',fontSize:24,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(226,75,74,0.4)'}}>✓</button>
       </div>
 
-      {!user && <p style={{fontSize:11,color:'#999',textAlign:'center',flexShrink:0}}>Appuyez sur ✓ pour créer un compte</p>}
+      {!user && <p style={{fontSize:11,color:'#999',textAlign:'center',flexShrink:0}}>{ui.swipe.pressCheck}</p>}
     </div>
   )
 }

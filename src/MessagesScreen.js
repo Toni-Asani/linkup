@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
+import { getUiText, localeForLang } from './i18n'
 
-export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, onDirectOpenHandled }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, onDirectOpenHandled, lang = 'fr' }) {
+  const ui = getUiText(lang)
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [messages, setMessages] = useState([])
@@ -124,7 +126,7 @@ const loadMyCompanyAndMatches = async () => {
     const other = getOtherCompany(selectedMatch)
 
     if (containsForbiddenContent(reviewComment)) {
-      alert('⚠️ Avis non soumis\n\nVotre commentaire contient du contenu inapproprié.')
+      alert(ui.messages.reviewBlocked)
       setSubmittingReview(false)
       return
     }
@@ -176,12 +178,12 @@ const handleFileUpload = async (e) => {
   if (!file) return
 
   if (!allowedTypes.includes(file.type)) {
-    alert('❌ Type de fichier non autorisé.\n\nFormats acceptés : images (jpg, png, gif, webp), PDF, Word, Excel, PowerPoint.')
+    alert(ui.messages.fileTypeError)
     return
   }
 
   if (file.size > 10 * 1024 * 1024) {
-    alert('❌ Fichier trop lourd. Taille maximum : 10 MB.')
+    alert(ui.messages.fileSizeError)
     return
   }
 
@@ -204,14 +206,14 @@ const handleFileUpload = async (e) => {
     })
     await loadMessages(selectedMatch.id)
   } catch(e) {
-    alert('Erreur lors de l\'envoi du fichier.')
+    alert(ui.messages.fileUploadError)
   }
   setUploadingFile(false)
 }
   const sendMessage = async () => {
     if (!newMessage.trim() || !myCompany) return
     if (containsForbiddenContent(newMessage)) {
-      alert('⚠️ Message non envoyé\n\nVotre message contient du contenu inapproprié (sexuel, raciste ou abusif).\n\nTout abus peut entraîner la suspension de votre compte.')
+      alert(ui.messages.messageBlocked)
       return
     }
     const content = newMessage.trim()
@@ -226,8 +228,9 @@ if (data) setMessages(prev => [...prev, data])
     return match.company_a?.id === myCompany.id ? match.company_b : match.company_a
   }
 
-  const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' })
-  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' })
+  const locale = localeForLang(lang)
+  const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'short' })
 
   const isBasicOrPremium = plan === 'Basic' || plan === 'Premium'
   const canSendMessages = plan === 'Basic' || plan === 'Premium'
@@ -279,20 +282,20 @@ if (data) setMessages(prev => [...prev, data])
   if (selectedMatch) {
     const other = getOtherCompany(selectedMatch)
     return (
-      <div style={{flex:1,display:'flex',flexDirection:'column',height:'calc(100vh - 120px)'}}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',height:'100%',minHeight:0}}>
 
         {/* Modal avis */}
         {showReviewModal && (
           <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'1rem'}}>
             <div style={{background:'white',borderRadius:16,padding:'1.5rem',width:'100%',maxWidth:360}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
-                <h3 style={{fontSize:17,fontWeight:700}}>Évaluer {other?.name}</h3>
+                <h3 style={{fontSize:17,fontWeight:700}}>{ui.messages.reviewTitle(other?.name)}</h3>
                 <button onClick={() => setShowReviewModal(false)}
                   style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:'#999'}}>✕</button>
               </div>
 
               {/* Étoiles */}
-              <p style={{fontSize:13,color:'#666',marginBottom:8}}>Note globale *</p>
+              <p style={{fontSize:13,color:'#666',marginBottom:8}}>{ui.messages.ratingLabel}</p>
               <div style={{display:'flex',gap:8,marginBottom:'1rem'}}>
                 {[1,2,3,4,5].map(star => (
                   <button key={star} onClick={() => setReviewRating(star)}
@@ -306,22 +309,22 @@ if (data) setMessages(prev => [...prev, data])
               </div>
 
               {/* Commentaire */}
-              <p style={{fontSize:13,color:'#666',marginBottom:6}}>Commentaire (optionnel)</p>
+              <p style={{fontSize:13,color:'#666',marginBottom:6}}>{ui.messages.commentOptional}</p>
               <textarea
                 value={reviewComment}
                 onChange={e => setReviewComment(e.target.value)}
-                placeholder="Décrivez votre expérience avec cette entreprise..."
+                placeholder={ui.messages.commentPlaceholder}
                 rows={3}
                 style={{width:'100%',padding:'10px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',marginBottom:'1rem'}}
               />
 
               <p style={{fontSize:11,color:'#999',marginBottom:'1rem'}}>
-                ⚠️ Votre avis sera soumis à modération avant publication. Tout avis abusif entraîne une suspension.
+                {ui.messages.moderation}
               </p>
 
               <button onClick={submitReview} disabled={!reviewRating || submittingReview}
                 style={{width:'100%',padding:'13px',background: reviewRating ? '#E24B4A' : '#eee',color: reviewRating ? 'white' : '#999',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor: reviewRating ? 'pointer' : 'default'}}>
-                {submittingReview ? 'Envoi...' : existingReview ? 'Modifier mon avis' : 'Soumettre mon avis'}
+                {submittingReview ? ui.common.sending : existingReview ? ui.messages.editReview : ui.messages.submitReview}
               </button>
             </div>
           </div>
@@ -340,13 +343,13 @@ if (data) setMessages(prev => [...prev, data])
           </div>
           <div style={{flex:1,cursor:'pointer'}} onClick={() => setSelectedCompanyId && setSelectedCompanyId(other?.id)}>
   <p style={{fontWeight:700,fontSize:15,margin:0}}>{other?.name}</p>
-  <p style={{fontSize:12,color:'#999',margin:0}}>{other?.sector} · {other?.city} — <span style={{color:'#E24B4A'}}>Voir le profil →</span></p>
+  <p style={{fontSize:12,color:'#999',margin:0}}>{other?.sector} · {other?.city} — <span style={{color:'#E24B4A'}}>{ui.messages.viewProfile}</span></p>
 </div>
           {/* Bouton avis */}
           {canLeaveReview && (
             <button onClick={() => setShowReviewModal(true)}
               style={{background: existingReview ? '#FFF9F0' : '#FFF5F5',border:`1px solid ${existingReview ? '#FDE8C0' : '#FECACA'}`,borderRadius:20,padding:'6px 10px',cursor:'pointer',fontSize:12,fontWeight:600,color: existingReview ? '#E67E22' : '#E24B4A',flexShrink:0}}>
-              {existingReview ? `★ ${existingReview.rating}/5` : '⭐ Évaluer'}
+              {existingReview ? `★ ${existingReview.rating}/5` : ui.messages.evaluate}
             </button>
           )}
         </div>
@@ -356,8 +359,8 @@ if (data) setMessages(prev => [...prev, data])
           {messages.length === 0 && (
             <div style={{textAlign:'center',padding:'2rem',color:'#999'}}>
               <p style={{fontSize:32,marginBottom:8}}>👋</p>
-              <p style={{fontSize:14}}>Début de la conversation avec {other?.name}</p>
-              <p style={{fontSize:12,marginTop:4}}>Présentez-vous !</p>
+              <p style={{fontSize:14}}>{ui.messages.startConversation(other?.name)}</p>
+              <p style={{fontSize:12,marginTop:4}}>{ui.messages.introduce}</p>
             </div>
           )}
           {messages.filter(msg => {
@@ -370,12 +373,12 @@ if (data) setMessages(prev => [...prev, data])
               <div key={msg.id} style={{display:'flex',justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems:'flex-end', gap:4}}>
   <button onClick={async () => {
   if (isMe) {
-    if (window.confirm('Supprimer ce message pour tout le monde ?')) {
+    if (window.confirm(ui.messages.deleteForAllConfirm)) {
       await supabase.from('messages').update({ deleted_for_all: true }).eq('id', msg.id)
       setMessages(prev => prev.map(m => m.id === msg.id ? {...m, deleted_for_all: true} : m))
     }
   } else {
-    if (window.confirm('Supprimer ce message pour vous uniquement ?')) {
+    if (window.confirm(ui.messages.deleteForMeConfirm)) {
       const newDeletedFor = [...(msg.deleted_for || []), myCompany.id]
       await supabase.from('messages').update({ deleted_for: newDeletedFor }).eq('id', msg.id)
       setMessages(prev => prev.map(m => m.id === msg.id ? {...m, deleted_for: newDeletedFor} : m))
@@ -425,7 +428,7 @@ if (data) setMessages(prev => [...prev, data])
   value={newMessage}
   onChange={e => setNewMessage(e.target.value)}
   onKeyDown={e => e.key === 'Enter' && sendMessage()}
-      placeholder="Votre message..."
+      placeholder={ui.messages.messagePlaceholder}
       style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans'}}
     />
     <button onClick={sendMessage} disabled={!newMessage.trim()}
@@ -435,10 +438,10 @@ if (data) setMessages(prev => [...prev, data])
   </div>
 ) : (
   <div style={{padding:'1rem',borderTop:'1px solid #f0f0f0',background:'#FFF5F5',textAlign:'center'}}>
-    <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,marginBottom:6}}>💬 Messagerie disponible dès le plan Basic</p>
+    <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,marginBottom:6}}>{ui.messages.basicOnly}</p>
     <button onClick={() => setActiveTab && setActiveTab('pricing')}
       style={{padding:'8px 20px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-      Passer au plan Basic →
+      {ui.messages.upgradeBasic}
     </button>
   </div>
 )}
@@ -459,29 +462,29 @@ if (data) setMessages(prev => [...prev, data])
               setLongPressMatch(null)
             }}
               style={{width:'100%',padding:'13px',background:'#FFF5F5',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:8}}>
-              🗑️ Supprimer la conversation
+              {ui.messages.deleteConversation}
             </button>
             <button onClick={() => setLongPressMatch(null)}
               style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>
-              Annuler
+              {ui.common.cancel}
             </button>
           </div>
         </div>
       )}
       <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0'}}>
-        <h2 style={{fontSize:20,fontWeight:700}}>Messages</h2>
-        <p style={{fontSize:13,color:'#999',marginTop:2}}>Vos connexions B2B</p>
+        <h2 style={{fontSize:20,fontWeight:700}}>{ui.messages.title}</h2>
+        <p style={{fontSize:13,color:'#999',marginTop:2}}>{ui.messages.subtitle}</p>
       </div>
 
       {loading ? (
         <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <p style={{color:'#999'}}>Chargement...</p>
+          <p style={{color:'#999'}}>{ui.common.loading}</p>
         </div>
       ) : matches.length === 0 ? (
         <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
           <div style={{fontSize:48}}>💬</div>
-          <h3 style={{fontSize:18,fontWeight:700}}>Pas encore de connexions</h3>
-          <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>Swipez des entreprises pour démarrer des conversations !</p>
+          <h3 style={{fontSize:18,fontWeight:700}}>{ui.messages.noConnections}</h3>
+          <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>{ui.messages.noConnectionsDesc}</p>
         </div>
       ) : (
         <div style={{flex:1,overflowY:'auto'}}>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
+import { getUiText } from './i18n'
 
 const sectorColors = {
   'Fiduciaire': '#3B6D11', 'Design & Communication': '#533AB7',
@@ -8,7 +9,8 @@ const sectorColors = {
   'Transport & Logistique': '#444441', 'Services': '#993C1D',
 }
 
-export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId }) {
+export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, lang = 'fr' }) {
+  const ui = getUiText(lang)
   const [company, setCompany] = useState(null)
   const [stats, setStats] = useState({ matches: 0, messages: 0, followers: 0, totalCompanies: 0 })
   const [matchedCompanies, setMatchedCompanies] = useState([])
@@ -90,9 +92,9 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
 
   const getGreeting = () => {
     const h = new Date().getHours()
-    if (h < 12) return 'Bonjour'
-    if (h < 18) return 'Bon après-midi'
-    return 'Bonsoir'
+    if (h < 12) return ui.home.morning
+    if (h < 18) return ui.home.afternoon
+    return ui.home.evening
   }
 
   const color = company ? (sectorColors[company.sector] || '#E24B4A') : '#E24B4A'
@@ -100,7 +102,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
 
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
-      <p style={{color:'#999'}}>Chargement...</p>
+      <p style={{color:'#999'}}>{ui.common.loading}</p>
     </div>
   )
 
@@ -110,11 +112,11 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
         <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:10000}}>
           <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:430,maxHeight:'70vh',overflowY:'auto',padding:'1.5rem',paddingBottom:'calc(1.5rem + env(safe-area-inset-bottom))'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
-              <h3 style={{fontSize:18,fontWeight:700,margin:0}}>{showFollowers ? 'Entreprises qui me suivent' : 'Entreprises que je suis'}</h3>
+              <h3 style={{fontSize:18,fontWeight:700,margin:0}}>{showFollowers ? ui.home.followersTitle : ui.home.followingTitle}</h3>
               <button onClick={() => { setShowFollowers(false); setShowFollowing(false) }} style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'#999'}}>✕</button>
             </div>
             {(showFollowers ? followerCompanies : matchedCompanies).length === 0 ? (
-              <p style={{color:'#999',textAlign:'center',padding:'2rem'}}>{showFollowers ? 'Personne ne vous suit encore' : 'Vous ne suivez encore aucune entreprise'}</p>
+              <p style={{color:'#999',textAlign:'center',padding:'2rem'}}>{showFollowers ? ui.home.noFollowers : ui.home.noFollowing}</p>
             ) : (
               (showFollowers ? followerCompanies : matchedCompanies).map(match => {
                 const other = showFollowers ? match.company_a : match.company_b
@@ -160,7 +162,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
         )}
         <div style={{marginTop:12,background:'rgba(255,255,255,0.15)',borderRadius:8,padding:'6px 12px',display:'inline-block'}}>
           <span style={{color:'white',fontSize:12,fontWeight:600}}>
-            🏢 {stats.totalCompanies} entreprises sur Hubbing
+            🏢 {ui.home.companiesOnHubbing(stats.totalCompanies)}
           </span>
         </div>
         </div>
@@ -170,15 +172,15 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
       <div style={{display:'flex',gap:10,padding:'0 1rem',marginTop:'-1.25rem',position:'relative',zIndex:1}}>
         <div onClick={() => setShowFollowing(true)} style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}>
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.matches}</p>
-          <p style={{fontSize:11,color:'#999',marginTop:3}}>Je suis</p>
+          <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.followingLabel}</p>
         </div>
         <div onClick={() => setShowFollowers(true)} style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}>
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.followers}</p>
-          <p style={{fontSize:11,color:'#999',marginTop:3}}>Me suivent</p>
+          <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.followersLabel}</p>
         </div>
         <div style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)'}}>
           <p style={{fontSize:24,fontWeight:700,color:'#3B6D11',margin:0}}>{remaining}</p>
-          <p style={{fontSize:11,color:'#999',marginTop:3}}>Places Fondateurs</p>
+          <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.founderPlaces}</p>
         </div>
       </div>
 
@@ -187,16 +189,16 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
         {/* Entreprises que je suis */}
         <div style={{background:'white',border:'1px solid #f0f0f0',borderRadius:12,overflow:'hidden'}}>
           <div style={{padding:'0.875rem 1rem',borderBottom:'1px solid #f5f5f5',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <p style={{fontWeight:700,fontSize:14,margin:0}}>Entreprises que je suis</p>
+            <p style={{fontWeight:700,fontSize:14,margin:0}}>{ui.home.followingTitle}</p>
             <span onClick={() => setShowFollowing(true)}
-              style={{fontSize:12,color:'#E24B4A',cursor:'pointer',fontWeight:600}}>Voir tout →</span>
+              style={{fontSize:12,color:'#E24B4A',cursor:'pointer',fontWeight:600}}>{ui.home.viewAll}</span>
           </div>
           {matchedCompanies.length === 0 ? (
             <div style={{padding:'1.5rem',textAlign:'center'}}>
-              <p style={{color:'#999',fontSize:13}}>Pas encore de connexions</p>
+              <p style={{color:'#999',fontSize:13}}>{ui.home.noConnections}</p>
               <button onClick={() => setActiveTab('swipe')}
                 style={{marginTop:8,padding:'8px 16px',background:'#E24B4A',color:'white',border:'none',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                Découvrir des entreprises
+                {ui.home.discoverCompanies}
               </button>
             </div>
           ) : (
@@ -228,17 +230,17 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
         {/* Offre fondateurs */}
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-            <p style={{fontSize:14,color:'#E24B4A',fontWeight:700,margin:0}}>🎉 Offre Fondateurs</p>
-            <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>{remaining} restantes</span>
+            <p style={{fontSize:14,color:'#E24B4A',fontWeight:700,margin:0}}>{ui.home.founderOffer}</p>
+            <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>{ui.home.remaining(remaining)}</span>
           </div>
           <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,marginBottom:8}}>
             <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
           </div>
           <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
-            2 mois Premium offerts — plus que <strong>{remaining} places</strong> disponibles !
+            {ui.home.founderDesc(remaining)}
           </p>
           <button style={{marginTop:'0.75rem',width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-            Activer l'offre Fondateurs
+            {ui.home.activateFounder}
           </button>
         </div>
 
@@ -248,8 +250,8 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
             style={{background:'#f9f9f9',border:'1px solid #eee',borderRadius:12,padding:'1rem',cursor:'pointer',display:'flex',alignItems:'center',gap:12}}>
             <span style={{fontSize:28}}>✏️</span>
             <div style={{flex:1}}>
-              <p style={{fontWeight:700,fontSize:14,margin:0}}>Complétez votre profil</p>
-              <p style={{fontSize:12,color:'#999',marginTop:2}}>Un profil complet attire 3x plus de matchs</p>
+              <p style={{fontWeight:700,fontSize:14,margin:0}}>{ui.home.completeProfile}</p>
+              <p style={{fontSize:12,color:'#999',marginTop:2}}>{ui.home.completeProfileDesc}</p>
             </div>
             <span style={{color:'#ccc',fontSize:18}}>›</span>
           </div>
@@ -258,8 +260,8 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
         {/* Bannière App Store / Google Play */}
         <div style={{background:'#1a1a1a',borderRadius:12,padding:'1rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
           <div>
-            <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>📱 Application mobile</p>
-            <p style={{color:'rgba(255,255,255,0.6)',fontSize:12,marginTop:3}}>Bientôt disponible sur</p>
+            <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>{ui.home.mobileApp}</p>
+            <p style={{color:'rgba(255,255,255,0.6)',fontSize:12,marginTop:3}}>{ui.home.soonAvailable}</p>
             <div style={{display:'flex',gap:8,marginTop:8}}>
               <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
                 <span style={{fontSize:16}}></span>
@@ -280,8 +282,8 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId })
         <div onClick={() => setActiveTab('swipe')}
           style={{background:color,borderRadius:12,padding:'1.25rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <div>
-            <p style={{color:'white',fontWeight:700,fontSize:15,margin:0}}>Découvrir des entreprises</p>
-            <p style={{color:'rgba(255,255,255,0.75)',fontSize:12,marginTop:3}}>Swipez et créez des connexions B2B</p>
+            <p style={{color:'white',fontWeight:700,fontSize:15,margin:0}}>{ui.home.discoverTitle}</p>
+            <p style={{color:'rgba(255,255,255,0.75)',fontSize:12,marginTop:3}}>{ui.home.discoverDesc}</p>
           </div>
           <span style={{fontSize:28}}>💼</span>
         </div>

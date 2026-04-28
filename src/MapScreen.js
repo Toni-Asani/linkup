@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { supabase } from './supabaseClient'
+import { getUiText } from './i18n'
 import 'leaflet/dist/leaflet.css'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -22,7 +23,8 @@ const sectorColors = {
   'Services': '#993C1D',
 }
 
-export default function MapScreen({ user, setScreen, setSelectedCompanyId, setActiveTab }) {
+export default function MapScreen({ user, setScreen, setSelectedCompanyId, setActiveTab, lang = 'fr' }) {
+  const ui = getUiText(lang)
   const [companies, setCompanies] = useState([])
   const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState('')
@@ -95,11 +97,11 @@ const cantons = [
   <div style={{display:'flex',flexDirection:'column',gap:4}}>
     <button onClick={() => setScreen && setScreen('register')}
       style={{width:'100%',padding:'6px',background:'#E24B4A',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer'}}>
-      Créer un compte →
+      {ui.map.createAccount}
     </button>
     <button onClick={() => setScreen && setScreen('login')}
       style={{width:'100%',padding:'6px',background:'white',color:'#E24B4A',border:'1px solid #E24B4A',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer'}}>
-      Se connecter →
+      {ui.map.login}
     </button>
   </div>
 )}
@@ -110,7 +112,7 @@ const cantons = [
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher une entreprise, secteur, ville..."
+            placeholder={ui.map.searchPlaceholder}
             style={{width:'100%',padding:'10px 12px 10px 34px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans',background:'#f9f9f9'}}
           />
           {search && (
@@ -125,14 +127,14 @@ const cantons = [
 <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
   <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)}
     style={{width:'100%',padding:'8px 12px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans'}}>
-    <option value="">Tous les cantons</option>
+    <option value="">{ui.map.allCantons}</option>
     {cantons.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
   </select>
 </div>
       <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
   <select value={filter} onChange={e => setFilter(e.target.value)}
     style={{width:'100%',padding:'8px 12px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans'}}>
-    <option value="">Tous les secteurs ({companies.length} entreprises)</option>
+    <option value="">{ui.map.allSectors(companies.length)}</option>
     {sectors.map(s => <option key={s} value={s}>{s}</option>)}
   </select>
 </div>
@@ -163,11 +165,11 @@ const cantons = [
   <div style={{marginTop:'0.75rem',display:'flex',flexDirection:'column',gap:8}}>
     <button onClick={() => setScreen && setScreen('register')}
       style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-      Créer un compte →
+      {ui.map.createAccount}
     </button>
     <button onClick={() => setScreen && setScreen('login')}
       style={{width:'100%',padding:'12px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-      Se connecter →
+      {ui.map.login}
     </button>
   </div>
 )}
@@ -200,12 +202,12 @@ const cantons = [
                 setActiveTab('map')
               }}
                 style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-                Voir le profil →
+                {ui.map.viewProfile}
               </button>
             ) : (
               <button onClick={() => setScreen && setScreen('register')}
                 style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-                Créer un compte pour contacter {selected.name} →
+                {ui.map.createAccountToContact(selected.name)}
               </button>
             )}
           </div>
@@ -213,7 +215,7 @@ const cantons = [
       )}
 
       <div style={{padding:'6px',textAlign:'center',background:'#f9f9f9',borderTop:'1px solid #f0f0f0',flexShrink:0}}>
-  <span style={{fontSize:12,color:'#999'}}>🏢 {companies.length} entreprise{companies.length > 1 ? 's' : ''} inscrite{companies.length > 1 ? 's' : ''} sur Hubbing</span>
+  <span style={{fontSize:12,color:'#999'}}>🏢 {ui.map.registeredCount(companies.length)}</span>
 </div>
     </div>
   )

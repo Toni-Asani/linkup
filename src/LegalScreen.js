@@ -222,13 +222,13 @@ export default function LegalScreen({ setScreen, lang = 'fr' }) {
   const current = getCurrentContent()
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-      <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',gap:12}}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:'white',overflow:'hidden'}}>
+      <div style={{padding:'calc(env(safe-area-inset-top) + 0.75rem) 1.5rem 0.75rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',gap:12,flexShrink:0,background:'white'}}>
         <button onClick={() => setScreen('home')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',fontSize:20}}>←</button>
         <h2 style={{fontSize:18,fontWeight:700}}>{content.title}</h2>
       </div>
 
-      <div style={{display:'flex',borderBottom:'1px solid #f0f0f0',overflowX:'auto'}}>
+      <div style={{display:'flex',borderBottom:'1px solid #f0f0f0',overflowX:'auto',flexShrink:0}}>
         {sectionKeys.map((key, i) => (
           <button key={key} onClick={() => setSection(key)}
             style={{padding:'12px 16px',background:'none',border:'none',cursor:'pointer',fontSize:13,fontWeight: section===key ? 600 : 400,color: section===key ? '#E24B4A' : '#666',borderBottom: section===key ? '2px solid #E24B4A' : '2px solid transparent',whiteSpace:'nowrap'}}>
@@ -237,7 +237,7 @@ export default function LegalScreen({ setScreen, lang = 'fr' }) {
         ))}
       </div>
 
-      <div style={{flex:1,overflowY:'auto',padding:'1.5rem'}}>
+      <div style={{flex:1,minHeight:0,overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch',padding:'1.5rem',paddingBottom:'calc(1.5rem + env(safe-area-inset-bottom))'}}>
         <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
           <h3 style={{fontSize:16,fontWeight:700,color:'#E24B4A'}}>{current.title}</h3>
           {current.updated ? <p style={{fontSize:12,color:'#999'}}>{current.updated}</p> : null}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
+import { getUiText, localeForLang } from './i18n'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -53,7 +54,8 @@ const cantons = [
   'TI','UR','VD','VS','ZG','ZH'
 ]
 
-export default function ProfileScreen({ user, setActiveTab }) {
+export default function ProfileScreen({ user, setActiveTab, lang = 'fr' }) {
+  const ui = getUiText(lang)
   const [uploadingContact, setUploadingContact] = useState(false)
   const [company, setCompany] = useState(null)
   const [editing, setEditing] = useState(false)
@@ -107,7 +109,7 @@ export default function ProfileScreen({ user, setActiveTab }) {
     setCompany({ ...company, background_url: urlData.publicUrl })
     setForm({ ...form, background_url: urlData.publicUrl })
   } catch (e) {
-    alert('Erreur lors du téléchargement.')
+    alert(ui.profile.uploadError)
   }
 }
 const handleLogoUpload = async (e) => {
@@ -125,7 +127,7 @@ const handleLogoUpload = async (e) => {
     setCompany({ ...company, logo_url: urlData.publicUrl })
     setForm({ ...form, logo_url: urlData.publicUrl })
   } catch (e) {
-    alert('Erreur lors du téléchargement.')
+    alert(ui.profile.uploadError)
   }
   setUploadingLogo(false)
 }
@@ -143,7 +145,7 @@ const handleContactPhotoUpload = async (e) => {
     const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName)
     setForm({ ...form, contact_photo_url: urlData.publicUrl })
   } catch (e) {
-    alert('Erreur lors du téléchargement.')
+    alert(ui.profile.uploadError)
   }
   setUploadingContact(false)
 }
@@ -207,13 +209,13 @@ notif_email: form.notif_email ?? true,
 }
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
-      <p style={{color:'#999'}}>Chargement...</p>
+      <p style={{color:'#999'}}>{ui.common.loading}</p>
     </div>
   )
 
   if (!company) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center'}}>
-      <p style={{color:'#999'}}>Profil introuvable</p>
+      <p style={{color:'#999'}}>{ui.common.companyNotFound}</p>
     </div>
   )
 
@@ -240,24 +242,24 @@ notif_email: form.notif_email ?? true,
     if (!expires) return ''
     const diff = new Date(expires) - new Date()
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
-    if (days < 0) return '⚠️ Expiré'
-    if (days === 0) return "⏰ Expire aujourd'hui"
-    if (days <= 7) return `⏰ ${days}j restants`
-    return `✓ jusqu'au ${new Date(expires).toLocaleDateString('fr-CH')}`
+    if (days < 0) return ui.profile.expired
+    if (days === 0) return ui.profile.expiresToday
+    if (days <= 7) return ui.profile.daysLeft(days)
+    return ui.profile.until(new Date(expires).toLocaleDateString(localeForLang(lang)))
   }
 
   if (editing) return (
     <div style={{flex:1,overflowY:'auto',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <h2 style={{fontSize:20,fontWeight:700}}>Modifier le profil</h2>
-        <button onClick={() => setEditing(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:14}}>Annuler</button>
+        <h2 style={{fontSize:20,fontWeight:700}}>{ui.profile.editTitle}</h2>
+        <button onClick={() => setEditing(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:14}}>{ui.common.cancel}</button>
       </div>
 
-      <Label>ENTREPRISE</Label>
-      <Input value={form.name||''} onChange={e => setForm({...form,name:e.target.value})} placeholder="Nom de l'entreprise *" />
+      <Label>{ui.profile.company}</Label>
+      <Input value={form.name||''} onChange={e => setForm({...form,name:e.target.value})} placeholder={ui.profile.companyName} />
       <select value={form.sector||''} onChange={e => setForm({...form,sector:e.target.value})}
         style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
-        <option value="">Secteur d'activité</option>
+        <option value="">{ui.profile.sector}</option>
         {sectors.map(s => <option key={s} value={s}>{s}</option>)}
       </select>
       <div style={{display:'flex',gap:12}}>
@@ -266,22 +268,22 @@ notif_email: form.notif_email ?? true,
           <option value="">Canton</option>
           {cantons.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <Input style={{flex:2}} value={form.city||''} onChange={e => setForm({...form,city:e.target.value})} placeholder="Ville" />
+        <Input style={{flex:2}} value={form.city||''} onChange={e => setForm({...form,city:e.target.value})} placeholder={ui.profile.city} />
       </div>
-      <Input value={form.address||''} onChange={e => setForm({...form,address:e.target.value})} placeholder="Adresse complète *" />
+      <Input value={form.address||''} onChange={e => setForm({...form,address:e.target.value})} placeholder={ui.profile.address} />
 <textarea value={form.description||''} onChange={e => setForm({...form,description:e.target.value})}
-        rows={5} placeholder="Description de l'entreprise..."
+        rows={5} placeholder={ui.profile.description}
         style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
-      <Input value={form.website||''} onChange={e => setForm({...form,website:e.target.value})} placeholder="Site web (https://...)" />
+      <Input value={form.website||''} onChange={e => setForm({...form,website:e.target.value})} placeholder={ui.profile.website} />
 
-      <Label>DÉCIDEUR / CONTACT PRINCIPAL</Label>
-<Input value={form.contact_name||''} onChange={e => setForm({...form,contact_name:e.target.value})} placeholder="Nom et prénom *" />
-<Input value={form.contact_title||''} onChange={e => setForm({...form,contact_title:e.target.value})} placeholder="Titre (CEO, Directeur, Gérant...)" />
-<Input value={form.contact_phone||''} onChange={e => setForm({...form,contact_phone:e.target.value})} placeholder="Téléphone direct" />
-<Input value={form.contact_linkedin||''} onChange={e => setForm({...form,contact_linkedin:e.target.value})} placeholder="LinkedIn (https://linkedin.com/in/...)" />
+      <Label>{ui.profile.contact}</Label>
+<Input value={form.contact_name||''} onChange={e => setForm({...form,contact_name:e.target.value})} placeholder={ui.profile.contactName} />
+<Input value={form.contact_title||''} onChange={e => setForm({...form,contact_title:e.target.value})} placeholder={ui.profile.contactTitle} />
+<Input value={form.contact_phone||''} onChange={e => setForm({...form,contact_phone:e.target.value})} placeholder={ui.profile.contactPhone} />
+<Input value={form.contact_linkedin||''} onChange={e => setForm({...form,contact_linkedin:e.target.value})} placeholder={ui.profile.contactLinkedin} />
 
 {/* Photo décisionnaire */}
-<p style={{fontSize:12,color:'#666'}}>Photo du décisionnaire :</p>
+<p style={{fontSize:12,color:'#666'}}>{ui.profile.contactPhoto}</p>
 <div style={{display:'flex',alignItems:'center',gap:12}}>
   {form.contact_photo_url ? (
     <img src={form.contact_photo_url} alt="contact"
@@ -292,14 +294,14 @@ notif_email: form.notif_email ?? true,
     </div>
   )}
   <label style={{padding:'10px 16px',background:'#f0f0f0',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-    {uploadingContact ? 'Upload...' : 'Choisir une photo'}
+    {uploadingContact ? ui.common.upload : ui.profile.choosePhoto}
     <input type="file" accept="image/*" style={{display:'none'}} onChange={handleContactPhotoUpload} />
   </label>
 </div>
-      <Label>NOS BESOINS</Label>
+      <Label>{ui.profile.needs}</Label>
       <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
 style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
-      <p style={{fontSize:12,color:'#666'}}>Ajoutez des besoins spécifiques avec une date d'échéance :</p>
+      <p style={{fontSize:12,color:'#666'}}>{ui.profile.needsHelp}</p>
 
       {/* Tags existants */}
       {tags.length > 0 && (
@@ -324,7 +326,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
       {/* Ajouter un tag */}
       <div style={{display:'flex',flexDirection:'column',gap:8,background:'#f9f9f9',borderRadius:10,padding:'12px'}}>
         <Input value={newTag} onChange={e => setNewTag(e.target.value)}
-          placeholder="Ex: Ingénieur civil, Électricien, Comptable..." />
+          placeholder={ui.profile.tagPlaceholder} />
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <input type="date" value={form.newTagExpiry||''} onChange={e => setForm({...form,newTagExpiry:e.target.value})}
             style={{flex:1,padding:'10px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
@@ -335,17 +337,17 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
             setForm({...form, newTagExpiry: ''})
           }}
             style={{padding:'10px 16px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-            + Ajouter
+            {ui.profile.add}
           </button>
         </div>
-        <p style={{fontSize:11,color:'#999'}}>La date d'échéance est optionnelle</p>
+        <p style={{fontSize:11,color:'#999'}}>{ui.profile.expiryOptional}</p>
       </div>
-<Label>NOTIFICATIONS</Label>
+<Label>{ui.profile.notifications}</Label>
 <div style={{display:'flex',flexDirection:'column',gap:12,background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
     <div>
-      <p style={{fontSize:14,fontWeight:600,margin:0}}>🔔 Notifications dans l'app</p>
-      <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>Nouveaux matchs, messages, alertes</p>
+      <p style={{fontSize:14,fontWeight:600,margin:0}}>{ui.profile.appNotif}</p>
+      <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{ui.profile.appNotifDesc}</p>
     </div>
     <div onClick={() => setForm({...form, notif_app: !form.notif_app})}
       style={{width:44,height:24,borderRadius:12,background: form.notif_app !== false ? '#E24B4A' : '#ddd',cursor:'pointer',position:'relative',transition:'background 0.2s',flexShrink:0}}>
@@ -354,8 +356,8 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
   </div>
   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
     <div>
-      <p style={{fontSize:14,fontWeight:600,margin:0}}>📧 Notifications par email</p>
-      <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>Résumé des activités par email</p>
+      <p style={{fontSize:14,fontWeight:600,margin:0}}>{ui.profile.emailNotif}</p>
+      <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{ui.profile.emailNotifDesc}</p>
     </div>
     <div onClick={() => setForm({...form, notif_email: !form.notif_email})}
       style={{width:44,height:24,borderRadius:12,background: form.notif_email !== false ? '#E24B4A' : '#ddd',cursor:'pointer',position:'relative',transition:'background 0.2s',flexShrink:0}}>
@@ -365,7 +367,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
 </div>
       <button onClick={handleSave} disabled={saving}
         style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer',marginTop:'0.5rem'}}>
-        {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+        {saving ? ui.common.saving : ui.common.save}
       </button>
     </div>
   )
@@ -389,7 +391,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
   <div style={{position:'relative',zIndex:1}}>
   {/* Bouton changer fond */}
   <label style={{position:'absolute',top:10,right:10,background:'rgba(0,0,0,0.4)',borderRadius:20,padding:'4px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:4}}>
-    <span style={{fontSize:12,color:'white'}}>🖼️ Fond</span>
+    <span style={{fontSize:12,color:'white'}}>{ui.profile.background}</span>
     <input type="file" accept="image/*" style={{display:'none'}} onChange={handleBackgroundUpload} />
   </label>
         <div style={{position:'relative',width:88,height:88,margin:'0 auto',cursor:'pointer'}}
@@ -407,7 +409,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
           </div>
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{display:'none'}} />
-        {uploadingLogo && <p style={{color:'rgba(255,255,255,0.8)',fontSize:12,marginTop:4}}>Téléchargement...</p>}
+        {uploadingLogo && <p style={{color:'rgba(255,255,255,0.8)',fontSize:12,marginTop:4}}>{ui.profile.downloading}</p>}
         <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem'}}>{company.name}</h2>
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
         {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}      </div>
@@ -415,12 +417,12 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
 
       {/* Stats */}
       <div style={{display:'flex',margin:'-1.25rem 1rem 0',gap:12,position:'relative',zIndex:1}}>
-        <StatCard value={stats.matches} label="Matchs" color="#E24B4A" />
-        <StatCard value="0" label="Messages" color="#E24B4A" />
+        <StatCard value={stats.matches} label={ui.profile.matches} color="#E24B4A" />
+        <StatCard value="0" label={ui.profile.messages} color="#E24B4A" />
         <div style={{flex:1,background:'white',borderRadius:12,padding:'1rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}
           onClick={() => setActiveTab && setActiveTab('pricing')}>
           <p style={{fontSize:13,fontWeight:700,color:'#3B6D11',margin:0}}>{currentPlan}</p>
-          <p style={{fontSize:11,color:'#999',marginTop:3}}>Mon plan →</p>
+          <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.profile.myPlan}</p>
         </div>
       </div>
 
@@ -428,14 +430,14 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
 
         {success && (
           <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:10,padding:'0.75rem',textAlign:'center'}}>
-            <p style={{color:'#166534',fontSize:14,fontWeight:600}}>✓ Profil mis à jour !</p>
+            <p style={{color:'#166534',fontSize:14,fontWeight:600}}>{ui.profile.updated}</p>
           </div>
         )}
 
         {/* Nos besoins */}
         {(company.needs_description || activeTags.length > 0) && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
-            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>💼 NOS BESOINS</p>
+            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>💼 {ui.profile.needs}</p>
             {company.needs_description && (
               <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0}}>
                 {company.needs_description}
@@ -457,7 +459,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
 
         {/* Décideur */}
         {company.contact_name && (
-  <InfoCard title="DÉCIDEUR / CONTACT PRINCIPAL">
+  <InfoCard title={ui.profile.contact}>
     <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
       {company.contact_photo_url ? (
         <img src={company.contact_photo_url} alt="contact"
@@ -472,9 +474,9 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         {company.contact_title && <p style={{fontSize:13,color:'#666',margin:0}}>{company.contact_title}</p>}
       </div>
     </div>
-    {company.contact_phone && <InfoRow label="Téléphone" value={company.contact_phone} />}
+    {company.contact_phone && <InfoRow label={ui.profile.contactPhone.replace(' direct', '')} value={company.contact_phone} />}
     {company.contact_linkedin && (
-      <InfoRow label="LinkedIn" value="Voir le profil →" color="#0A66C2" />
+      <InfoRow label="LinkedIn" value={ui.common.viewProfile} color="#0A66C2" />
     )}
   </InfoCard>
 )}
@@ -482,39 +484,39 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         {/* Description */}
         {company.description && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
-            <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:6}}>À PROPOS</p>
+            <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:6}}>{ui.profile.about}</p>
             <p style={{fontSize:14,color:'#444',lineHeight:1.6}}>{company.description}</p>
           </div>
         )}
 
         {/* Infos entreprise */}
-        <InfoCard title="INFORMATIONS ENTREPRISE">
-          {company.zefix_uid && <InfoRow label="Numéro IDE" value={company.zefix_uid} />}
-          {company.address && <InfoRow label="Adresse" value={company.address} />}
-          {company.city && <InfoRow label="Ville" value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
-          {company.website && <InfoRow label="Site web" value={company.website} color="#185FA5" />}
-          <InfoRow label="Email" value={user.email} />
+        <InfoCard title={ui.profile.companyInfo}>
+          {company.zefix_uid && <InfoRow label={ui.profile.zefix} value={company.zefix_uid} />}
+          {company.address && <InfoRow label={ui.profile.address.replace(' *', '')} value={company.address} />}
+          {company.city && <InfoRow label={ui.profile.city} value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
+          {company.website && <InfoRow label={ui.profile.website.replace(' (https://...)', '')} value={company.website} color="#185FA5" />}
+          <InfoRow label={ui.profile.email} value={user.email} />
         </InfoCard>
 
         {/* Offre fondateurs */}
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
-          <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>🎉 Offre Fondateurs</p>
-          <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>2 mois Premium offerts pour les 100 premiers membres !</p>
+          <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>{ui.profile.founderOffer}</p>
+          <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>{ui.profile.founderDesc}</p>
           <button onClick={() => setActiveTab && setActiveTab('pricing')}
             style={{marginTop:'0.75rem',padding:'10px 20px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-            Voir les plans
+            {ui.common.viewPlans}
           </button>
         </div>
 
         <button onClick={() => setEditing(true)}
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
-          Modifier mon profil
+          {ui.profile.editProfile}
         </button>
         <a href="mailto:contact@hubbing.ch"
   style={{padding:'14px',background:'white',color:'#666',border:'1px solid #eee',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',textDecoration:'none',display:'block'}}>
-  ✉️ Contacter Hubbing
+  {ui.profile.contactHubbing}
 </a>
-        <DeleteAccountButton user={user} />
+        <DeleteAccountButton user={user} lang={lang} />
 
 <button onClick={() => window.location.href = window.location.pathname + '?admin=true'}
   style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#eee',textAlign:'center',padding:'4px',width:'100%'}}>
@@ -529,7 +531,8 @@ function Label({ children }) {
   return <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{children}</p>
 }
 
-function DeleteAccountButton({ user }) {
+function DeleteAccountButton({ user, lang = 'fr' }) {
+  const ui = getUiText(lang)
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
 
@@ -545,7 +548,7 @@ function DeleteAccountButton({ user }) {
       body: JSON.stringify({
         userId: user.id,
         email: user.email,
-        companyName: company?.name || 'Inconnu'
+        companyName: company?.name || ui.profile.unknown
       })
     })
 
@@ -556,7 +559,7 @@ function DeleteAccountButton({ user }) {
 
     setStep(3)
   } catch(e) {
-    alert('Une erreur est survenue.')
+    alert(ui.profile.deleteError)
   }
   setLoading(false)
 }
@@ -564,24 +567,24 @@ function DeleteAccountButton({ user }) {
   if (step === 0) return (
     <button onClick={() => setStep(1)}
       style={{padding:'12px',background:'white',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',width:'100%'}}>
-      🗑️ Supprimer mon compte
+      {ui.profile.deleteAccount}
     </button>
   )
 
   if (step === 1) return (
     <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem'}}>
-      <p style={{fontSize:15,fontWeight:700,color:'#E24B4A',marginBottom:8}}>⚠️ Attention</p>
+      <p style={{fontSize:15,fontWeight:700,color:'#E24B4A',marginBottom:8}}>{ui.profile.warningTitle}</p>
       <p style={{fontSize:13,color:'#666',lineHeight:1.6,marginBottom:'1rem'}}>
-        Vous êtes sur le point de supprimer votre compte Hubbing. Cette action supprimera définitivement votre profil, vos matchs et vos messages.
+        {ui.profile.warningText}
       </p>
       <div style={{display:'flex',gap:8}}>
         <button onClick={() => setStep(0)}
           style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-          Abandonner
+          {ui.profile.abandon}
         </button>
         <button onClick={() => setStep(2)}
           style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-          Poursuivre
+          {ui.profile.continue}
         </button>
       </div>
     </div>
@@ -589,18 +592,18 @@ function DeleteAccountButton({ user }) {
 
   if (step === 2) return (
     <div style={{background:'#FFF5F5',border:'2px solid #E24B4A',borderRadius:12,padding:'1rem'}}>
-      <p style={{fontSize:15,fontWeight:700,color:'#E24B4A',marginBottom:8}}>🔴 Confirmation finale</p>
+      <p style={{fontSize:15,fontWeight:700,color:'#E24B4A',marginBottom:8}}>{ui.profile.finalConfirm}</p>
       <p style={{fontSize:13,color:'#666',lineHeight:1.6,marginBottom:'1rem'}}>
-        Un email de confirmation sera envoyé à <strong>{user.email}</strong>. Votre compte sera supprimé définitivement dans les 24h.
+        {ui.profile.finalConfirmText(user.email)}
       </p>
       <div style={{display:'flex',gap:8}}>
         <button onClick={() => setStep(0)}
           style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-          Abandonner
+          {ui.profile.abandon}
         </button>
         <button onClick={handleDelete} disabled={loading}
           style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-          {loading ? 'Envoi...' : 'Confirmer'}
+          {loading ? ui.common.sending : ui.profile.confirm}
         </button>
       </div>
     </div>
@@ -608,8 +611,8 @@ function DeleteAccountButton({ user }) {
 
   if (step === 3) return (
     <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:12,padding:'1rem',textAlign:'center'}}>
-      <p style={{fontSize:15,fontWeight:700,color:'#166534',marginBottom:4}}>✅ Demande envoyée</p>
-      <p style={{fontSize:13,color:'#666'}}>Un email de confirmation a été envoyé à {user.email}. Votre compte sera supprimé dans les 24h.</p>
+      <p style={{fontSize:15,fontWeight:700,color:'#166534',marginBottom:4}}>{ui.profile.requestSent}</p>
+      <p style={{fontSize:13,color:'#666'}}>{ui.profile.requestSentText(user.email)}</p>
     </div>
   )
 }

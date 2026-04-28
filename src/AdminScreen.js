@@ -84,13 +84,13 @@ export default function AdminScreen({ user, setScreen }) {
   const formatDate = (d) => new Date(d).toLocaleDateString('fr-CH')
 
   if (loading) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}>
+    <div style={{minHeight:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'white'}}>
       <p style={{color:'#999'}}>Vérification des droits...</p>
     </div>
   )
 
   if (!isAdmin) return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
+    <div style={{minHeight:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 2rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',textAlign:'center',gap:'1rem',background:'white'}}>
       <div style={{fontSize:48}}>🚫</div>
       <h2 style={{fontSize:22,fontWeight:700}}>Accès refusé</h2>
       <p style={{color:'#999',fontSize:14}}>Vous n'avez pas les droits d'accès à cette page.</p>
@@ -102,10 +102,10 @@ export default function AdminScreen({ user, setScreen }) {
   )
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',background:'#f5f5f5'}}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:'#f5f5f5',overflow:'hidden'}}>
 
       {/* Header */}
-      <div style={{background:'#1a1a1a',padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <div style={{background:'#1a1a1a',padding:'calc(env(safe-area-inset-top) + 0.75rem) 1.5rem 0.75rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{width:32,height:32,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <span style={{color:'white',fontWeight:700,fontSize:12}}>LK</span>
@@ -121,7 +121,7 @@ export default function AdminScreen({ user, setScreen }) {
         </button>
       </div>
 
-      <div style={{padding:'1rem',display:'flex',flexDirection:'column',gap:'1rem',maxWidth:430,margin:'0 auto',width:'100%'}}>
+      <div style={{padding:'1rem',paddingBottom:'calc(1rem + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:'1rem',maxWidth:430,margin:'0 auto',width:'100%',flex:1,minHeight:0,overflowY:'auto',WebkitOverflowScrolling:'touch'}}>
 
         {/* Stats */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>

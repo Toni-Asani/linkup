@@ -1,19 +1,15 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
+import { getUiText } from './i18n'
 
-const plans = [
+const getPlans = (ui) => [
   {
     id: 'starter',
     name: 'Starter',
     price: 0,
     color: '#666',
-    features: [
-      'Profil entreprise',
-      '5 swipes par jour',
-      'Visible sur la carte',
-      'Mode visiteur',
-    ],
-    cta: 'Plan actuel',
+    features: ui.pricing.starterFeatures,
+    cta: ui.common.currentPlan,
     disabled: true
   },
   {
@@ -22,13 +18,8 @@ const plans = [
     price: 19,
     color: '#185FA5',
     priceId: process.env.REACT_APP_STRIPE_PRICE_BASIC,
-    features: [
-      'Swipes illimités',
-      'Messagerie B2B',
-      'Visible sur la carte',
-      'Statistiques de base',
-    ],
-    cta: 'Choisir Basic',
+    features: ui.pricing.basicFeatures,
+    cta: ui.pricing.chooseBasic,
     disabled: false
   },
   {
@@ -37,21 +28,17 @@ const plans = [
     price: 39,
     color: '#E24B4A',
     priceId: process.env.REACT_APP_STRIPE_PRICE_PREMIUM,
-    features: [
-      'Tout Basic inclus',
-      'Badge Compte Vérifié ⭐',
-      'Visibilité prioritaire',
-      'Accès anticipé nouveautés',
-      '2 mois offerts — jusqu\'au 30 juin 2026',
-    ],
-    cta: 'Choisir Premium',
+    features: ui.pricing.premiumFeatures,
+    cta: ui.pricing.choosePremium,
     disabled: false,
     highlighted: true,
     founder: true
   }
 ]
 
-export default function PricingScreen({ user, setActiveTab }) {
+export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
+  const ui = getUiText(lang)
+  const plans = getPlans(ui)
   const [currentPlan, setCurrentPlan] = useState('starter')
   const [loading, setLoading] = useState(null)
   const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
@@ -118,19 +105,19 @@ const response = await fetch(
     <div style={{flex:1,overflowY:'auto',padding:'1.5rem 1rem'}}>
 
       <div style={{textAlign:'center',marginBottom:'1.5rem'}}>
-        <h2 style={{fontSize:22,fontWeight:700,marginBottom:8}}>Choisissez votre plan</h2>
-        <p style={{fontSize:14,color:'#666'}}>Développez votre réseau B2B en Suisse</p>
+        <h2 style={{fontSize:22,fontWeight:700,marginBottom:8}}>{ui.pricing.title}</h2>
+        <p style={{fontSize:14,color:'#666'}}>{ui.pricing.subtitle}</p>
       </div>
 
       {/* Compteur fondateurs */}
       <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.875rem',marginBottom:'1.25rem',textAlign:'center'}}>
         <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,margin:0}}>
-          🎉 Offre limitée — {remaining} places · Expire le 30 juin 2026
+          {ui.pricing.limitedOffer(remaining)}
         </p>
         <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,margin:'8px 0 4px'}}>
           <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
         </div>
-        <p style={{fontSize:12,color:'#666',margin:0}}>2 mois Premium offerts — pour les 100 premiers inscrits avant le 30 juin</p>
+        <p style={{fontSize:12,color:'#666',margin:0}}>{ui.pricing.founderDesc}</p>
       </div>
 
       {/* Plans */}
@@ -150,7 +137,7 @@ const response = await fetch(
               {isHighlighted && (
                 <div style={{background:plan.color,padding:'6px',textAlign:'center'}}>
                   <span style={{color:'white',fontSize:12,fontWeight:600}}>
-                    ⭐ RECOMMANDÉ — OFFRE LIMITÉE
+                    {ui.pricing.recommended}
                   </span>
                 </div>
               )}
@@ -167,16 +154,16 @@ const response = await fetch(
                   </div>
                   <div style={{textAlign:'right'}}>
                     {plan.price === 0 ? (
-                      <p style={{fontSize:22,fontWeight:700,margin:0,color:'#444'}}>Gratuit</p>
+                      <p style={{fontSize:22,fontWeight:700,margin:0,color:'#444'}}>{ui.common.free}</p>
                     ) : (
                       <>
                         <p style={{fontSize:22,fontWeight:700,margin:0,color:'#1a1a1a'}}>
                           CHF {plan.price}
-                          <span style={{fontSize:13,fontWeight:400,color:'#999'}}>/mois</span>
+                          <span style={{fontSize:13,fontWeight:400,color:'#999'}}>{ui.common.month}</span>
                         </p>
                         {plan.founder && remaining > 0 && (
                           <p style={{fontSize:11,color:'#E24B4A',margin:'2px 0 0',fontWeight:600}}>
-                            2 mois offerts !
+                            {ui.pricing.twoMonthsFree}
                           </p>
                         )}
                       </>
@@ -204,7 +191,7 @@ const response = await fetch(
                     color: isCurrent ? '#22c55e' : plan.disabled ? '#999' : 'white',
                     border: isCurrent ? '1px solid #bbf7d0' : 'none'
                   }}>
-                  {loading === plan.id ? 'Chargement...' : isCurrent ? '✓ Plan actuel' : plan.cta}
+                  {loading === plan.id ? ui.common.loading : isCurrent ? `✓ ${ui.common.currentPlan}` : plan.cta}
                 </button>
               </div>
             </div>
@@ -213,7 +200,7 @@ const response = await fetch(
       </div>
 
       <p style={{fontSize:11,color:'#999',textAlign:'center',marginTop:'1rem',lineHeight:1.5}}>
-        Résiliable à tout moment · Paiement sécurisé · CHF uniquement
+        {ui.pricing.footer}
       </p>
     </div>
   )

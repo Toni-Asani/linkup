@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
+import { getUiText } from './i18n'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -45,7 +46,8 @@ const sectorColors = {
   'Autre': '#666',
 }
 
-export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId, setDirectMessageCompanyId }) {
+export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId, setDirectMessageCompanyId, lang = 'fr' }) {
+  const ui = getUiText(lang)
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -93,7 +95,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     setShowReportModal(false)
     setReportReason('')
     setReportComment('')
-    alert('✅ Signalement envoyé. Notre équipe va examiner ce profil dans les 48h.')
+    alert(ui.companyProfile.reportSent)
   } catch (e) {
     console.error(e)
   }
@@ -135,13 +137,13 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
 
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
-      <p style={{color:'#999'}}>Chargement...</p>
+      <p style={{color:'#999'}}>{ui.common.loading}</p>
     </div>
   )
 
   if (!company) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center'}}>
-      <p style={{color:'#999'}}>Profil introuvable</p>
+      <p style={{color:'#999'}}>{ui.common.companyNotFound}</p>
     </div>
   )
 
@@ -167,17 +169,17 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'1rem'}}>
           <div style={{background:'white',borderRadius:16,padding:'2rem',width:'100%',maxWidth:340,textAlign:'center'}}>
             <div style={{fontSize:40,marginBottom:'0.75rem'}}>🔒</div>
-            <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>Fonctionnalité Basic</h3>
+            <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>{ui.companyProfile.featureBasic}</h3>
             <p style={{fontSize:14,color:'#666',lineHeight:1.6,marginBottom:'1.25rem'}}>
-              Passez en Basic ou Premium pour contacter des entreprises et accéder à la messagerie B2B.
+              {ui.companyProfile.upgradeDesc}
             </p>
             <button onClick={() => { setShowUpgradeModal(false); setSelectedCompanyId && setSelectedCompanyId(null); setActiveTab && setActiveTab('pricing') }}
               style={{width:'100%',padding:'13px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:'0.75rem'}}>
-              Voir les forfaits →
+              {ui.common.viewPlans}
             </button>
             <button onClick={() => setShowUpgradeModal(false)}
               style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>
-              Annuler
+              {ui.common.cancel}
             </button>
           </div>
         </div>
@@ -187,7 +189,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
       <div style={{background:color,padding:'1rem 1.5rem 3rem',position:'relative',textAlign:'center'}}>
         <button onClick={onBack}
           style={{position:'absolute',top:16,left:16,background:'rgba(255,255,255,0.2)',border:'none',borderRadius:20,padding:'6px 12px',color:'white',fontSize:13,cursor:'pointer',fontWeight:600}}>
-          ← Retour
+          {ui.common.back}
         </button>
         <div style={{width:80,height:80,margin:'2rem auto 0',borderRadius:'50%',overflow:'hidden',border:'3px solid white'}}>
           {company.logo_url ? (
@@ -201,7 +203,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem'}}>{company.name}</h2>
         {company.is_suspended && (
           <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:8,padding:'6px 12px',marginTop:8,display:'inline-block'}}>
-            <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>⚠️ Entreprise inactive</span>
+            <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>{ui.companyProfile.inactive}</span>
           </div>
         )}
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
@@ -210,7 +212,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           <div style={{marginTop:8,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
             <span style={{color:'#F39C12',fontSize:16}}>{'★'.repeat(Math.round(avgRating))}{'☆'.repeat(5-Math.round(avgRating))}</span>
             <span style={{color:'rgba(255,255,255,0.9)',fontSize:13,fontWeight:600}}>{avgRating}/5</span>
-            <span style={{color:'rgba(255,255,255,0.7)',fontSize:12}}>({reviewCount} avis)</span>
+            <span style={{color:'rgba(255,255,255,0.7)',fontSize:12}}>{ui.companyProfile.reviews(reviewCount)}</span>
           </div>
         )}
       </div>
@@ -220,7 +222,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         {/* Description */}
         {company.description && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
-            <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:6}}>À PROPOS</p>
+            <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:6}}>{ui.companyProfile.about}</p>
             <p style={{fontSize:14,color:'#444',lineHeight:1.6}}>{company.description}</p>
           </div>
         )}
@@ -228,7 +230,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         {/* Besoins — visibles par tous, interaction bloquée pour Starter */}
         {hasNeeds && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
-            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>💼 BESOINS</p>
+            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>{ui.companyProfile.needs}</p>
             {company.needs_description && (
               <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0}}>
                 {company.needs_description}
@@ -246,16 +248,16 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             {isStarter ? (
               <div style={{background:'#f5f5f5',borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:16}}>🔒</span>
-                <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>Passez en <strong>Basic ou Premium</strong> pour répondre à ces besoins</p>
+                <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>{ui.companyProfile.upgradeForNeeds}</p>
                 <button onClick={() => { setSelectedCompanyId && setSelectedCompanyId(null); setActiveTab && setActiveTab('pricing') }}
                   style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
-                  Upgrader →
+                  {ui.common.upgrade}
                 </button>
               </div>
             ) : (
               <button onClick={handleContact}
                 style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                Répondre à ce besoin →
+                {ui.companyProfile.answerNeed}
               </button>
             )}
           </div>
@@ -264,7 +266,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         {/* Décisionnaire */}
         {company.contact_name && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
-            <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>DÉCIDEUR</p>
+            <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>{ui.companyProfile.decisionMaker}</p>
             {isPremium ? (
               <div style={{display:'flex',alignItems:'center',gap:12}}>
                 {company.contact_photo_url ? (
@@ -294,20 +296,20 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
                 {company.contact_phone && <p style={{fontSize:13,color:'#444',margin:'4px 0 0'}}>{company.contact_phone}</p>}
                 <div style={{marginTop:8,background:'#f0f0f0',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:12}}>🔒</span>
-                  <span style={{fontSize:12,color:'#999',flex:1}}>Photo et LinkedIn disponibles en Premium</span>
+                  <span style={{fontSize:12,color:'#999',flex:1}}>{ui.companyProfile.photoLinkedInPremium}</span>
                   <button onClick={() => { setSelectedCompanyId && setSelectedCompanyId(null); setActiveTab && setActiveTab('pricing') }}
                     style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
-                    Upgrader →
+                    {ui.common.upgrade}
                   </button>
                 </div>
               </div>
             ) : (
               <div style={{display:'flex',alignItems:'center',gap:8,background:'#f5f5f5',borderRadius:10,padding:'10px 12px'}}>
                 <span style={{fontSize:16}}>🔒</span>
-                <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>Disponible dès le plan <strong>Basic</strong></p>
+                <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>{ui.companyProfile.availableBasic}</p>
                 <button onClick={() => setActiveTab && setActiveTab('pricing')}
                   style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
-                  Upgrader →
+                  {ui.common.upgrade}
                 </button>
               </div>
             )}
@@ -316,19 +318,19 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
 
         {/* Infos */}
         <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
-          <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>INFORMATIONS</p>
-          {company.city && <InfoRow label="Ville" value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
-          {company.website && <InfoRow label="Site web" value={company.website} color="#185FA5" />}
+          <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>{ui.companyProfile.information}</p>
+          {company.city && <InfoRow label={ui.companyProfile.city} value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
+          {company.website && <InfoRow label={ui.companyProfile.website} value={company.website} color="#185FA5" />}
         </div>
 
         {/* Bouton Contacter */}
         <button onClick={handleContact} disabled={contacting}
           style={{width:'100%',padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-          {contacting ? 'Connexion...' : `💬 Contacter ${company.name}`}
+          {contacting ? ui.companyProfile.connecting : ui.companyProfile.contact(company.name)}
         </button>
         {isStarter && (
           <p style={{fontSize:11,color:'#999',textAlign:'center',marginTop:-8}}>
-            🔒 La messagerie est disponible dès le plan Basic
+            {ui.companyProfile.basicMessaging}
           </p>
         )}
 
@@ -336,7 +338,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         <div style={{textAlign:'center'}}>
           <button onClick={() => setShowReportModal(true)}
             style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#999',textDecoration:'underline'}}>
-            🚩 Signaler ce profil
+            {ui.companyProfile.reportProfile}
           </button>
         </div>
 
@@ -347,18 +349,12 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300,padding:'1rem'}}>
           <div style={{background:'white',borderRadius:16,padding:'1.5rem',width:'100%',maxWidth:360}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
-              <h3 style={{fontSize:17,fontWeight:700}}>Signaler ce profil</h3>
+              <h3 style={{fontSize:17,fontWeight:700}}>{ui.companyProfile.reportTitle}</h3>
               <button onClick={() => setShowReportModal(false)}
                 style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:'#999'}}>✕</button>
             </div>
-            <p style={{fontSize:13,color:'#666',marginBottom:12}}>Motif du signalement *</p>
-            {[
-              {value:'fake_profile', label:'🚫 Faux profil / usurpation d\'identité'},
-              {value:'abusive_behavior', label:'⚠️ Comportement abusif ou harcelant'},
-              {value:'inappropriate_message', label:'🔞 Message inapproprié ou sexuel'},
-              {value:'spam', label:'📧 Spam ou contenu commercial abusif'},
-              {value:'other', label:'❓ Autre'},
-            ].map(r => (
+            <p style={{fontSize:13,color:'#666',marginBottom:12}}>{ui.companyProfile.reportReason}</p>
+            {ui.companyProfile.reasons.map(r => (
               <div key={r.value} onClick={() => setReportReason(r.value)}
                 style={{padding:'10px 12px',borderRadius:10,border:`2px solid ${reportReason === r.value ? '#E24B4A' : '#eee'}`,marginBottom:8,cursor:'pointer',background: reportReason === r.value ? '#FFF5F5' : 'white'}}>
                 <p style={{fontSize:13,fontWeight: reportReason === r.value ? 600 : 400,color: reportReason === r.value ? '#E24B4A' : '#444',margin:0}}>{r.label}</p>
@@ -367,16 +363,16 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             <textarea
               value={reportComment}
               onChange={e => setReportComment(e.target.value)}
-              placeholder="Détails supplémentaires (optionnel)..."
+              placeholder={ui.companyProfile.reportDetails}
               rows={3}
               style={{width:'100%',padding:'10px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',marginTop:4,marginBottom:12}}
             />
             <p style={{fontSize:11,color:'#999',marginBottom:12}}>
-              Notre équipe examinera ce signalement dans les 48h. Tout faux signalement peut entraîner une suspension de votre compte.
+              {ui.companyProfile.reportNote}
             </p>
             <button onClick={handleReport} disabled={!reportReason || submittingReport}
               style={{width:'100%',padding:'13px',background: reportReason ? '#E24B4A' : '#eee',color: reportReason ? 'white' : '#999',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor: reportReason ? 'pointer' : 'default'}}>
-              {submittingReport ? 'Envoi...' : 'Envoyer le signalement'}
+              {submittingReport ? ui.common.sending : ui.companyProfile.sendReport}
             </button>
           </div>
         </div>
