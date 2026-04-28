@@ -856,7 +856,7 @@ if (zefixStatus === 'invalid') {
   }
 
   if (success) return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',gap:'1rem',textAlign:'center'}}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1rem',textAlign:'center',background:'white'}}>
       <div style={{fontSize:48}}>🎉</div>
       <h2 style={{fontSize:22,fontWeight:700}}>{t.successTitle}</h2>
       <p style={{color:'#666',fontSize:15}}>{t.successMsg}</p>
@@ -868,8 +868,8 @@ if (zefixStatus === 'invalid') {
   )
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',padding:'2rem',gap:'1rem',overflowY:'auto'}}>
-      <button onClick={() => setScreen('home')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14}}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2.5rem)',gap:'1rem',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch',background:'white'}}>
+      <button onClick={() => setScreen('home')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,alignSelf:'flex-start',padding:'0.25rem 0',marginBottom:'0.5rem'}}>
         {t.back}
       </button>
       <h2 style={{fontSize:24,fontWeight:700}}>{t.registerTitle}</h2>
