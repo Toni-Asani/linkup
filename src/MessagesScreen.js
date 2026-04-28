@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 
-export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, onDirectOpenHandled }) {
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [messages, setMessages] = useState([])
@@ -35,9 +35,12 @@ useEffect(() => {
       m.company_a?.id === openMatchWithCompanyId || 
       m.company_b?.id === openMatchWithCompanyId
     )
-    if (match) setSelectedMatch(match)
+    if (match) {
+      setSelectedMatch(match)
+      onDirectOpenHandled && onDirectOpenHandled()
+    }
   }
-}, [openMatchWithCompanyId, matches])
+}, [openMatchWithCompanyId, matches, onDirectOpenHandled])
 
   useEffect(() => {
     if (selectedMatch) {

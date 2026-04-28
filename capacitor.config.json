@@ -4,5 +4,8 @@
   "webDir": "build",
   "server": {
     "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "never"
   }
 }

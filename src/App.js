@@ -933,7 +933,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   const [showLangMenu, setShowLangMenu] = useState(false)
 
   const tabStyle = (tab) => ({
-    flex:1, padding:'12px 0', background:'none', border:'none', cursor:'pointer',
+    flex:1, padding:'8px 0 4px', background:'none', border:'none', cursor:'pointer',
     fontSize:11, color: activeTab === tab ? '#E24B4A' : '#999',
     fontWeight: activeTab === tab ? 600 : 400,
     borderTop: activeTab === tab ? '2px solid #E24B4A' : '2px solid transparent',
@@ -973,7 +973,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
       {showModal && <Modal />}
 
       <div style={{
-  padding:'calc(env(safe-area-inset-top) + 0.75rem) 1rem 0.75rem',
+  padding:'calc(env(safe-area-inset-top) + 0.35rem) 1rem 0.5rem',
   borderBottom:'1px solid #f0f0f0',
   display:'flex',
   alignItems:'center',
@@ -1022,7 +1022,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   overflowY:'auto',
   overflowX:'hidden',
   WebkitOverflowScrolling:'touch',
-  paddingBottom:'calc(72px + env(safe-area-inset-bottom))'
+  paddingBottom:'calc(60px + env(safe-area-inset-bottom))'
 }}>
         {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} />}
        {activeTab === 'map' && <Suspense fallback={<div>Chargement...</div>}><MapScreen user={null} setScreen={setScreen} /></Suspense>}
@@ -1100,6 +1100,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [userPlan, setUserPlan] = useState('Starter')
   const [unreadCount, setUnreadCount] = useState(0)
   const [showLangMenu, setShowLangMenu] = useState(false)
+  const [directMessageCompanyId, setDirectMessageCompanyId] = useState(null)
 
 useEffect(() => {
   loadUnreadCount()
@@ -1132,10 +1133,11 @@ const loadUnreadCount = async () => {
 const handleTabChange = (tab) => {
   setActiveTab(tab)
   setSelectedCompanyId(null)
+  if (tab !== 'messages') setDirectMessageCompanyId(null)
 }
 
   const tabStyle = (tab) => ({
-    flex:1, padding:'12px 0', background:'none', border:'none', cursor:'pointer',
+    flex:1, padding:'8px 0 4px', background:'none', border:'none', cursor:'pointer',
     fontSize:11, color: activeTab === tab ? '#E24B4A' : '#999',
     fontWeight: activeTab === tab ? 600 : 400,
     borderTop: activeTab === tab ? '2px solid #E24B4A' : '2px solid transparent',
@@ -1152,7 +1154,7 @@ const handleTabChange = (tab) => {
   background:'white'
 }}>
       <div style={{
-  padding:'calc(env(safe-area-inset-top) + 0.75rem) 1rem 0.75rem',
+  padding:'calc(env(safe-area-inset-top) + 0.35rem) 1rem 0.5rem',
   borderBottom:'1px solid #f0f0f0',
   display:'flex',
   alignItems:'center',
@@ -1203,7 +1205,7 @@ const handleTabChange = (tab) => {
   overflowX:'hidden',
   WebkitOverflowScrolling:'touch',
   position:'relative',
-  paddingBottom:'calc(72px + env(safe-area-inset-bottom))'
+  paddingBottom:'calc(60px + env(safe-area-inset-bottom))'
 }}>
   {selectedCompanyId ? (
     <CompanyProfileScreen
@@ -1212,13 +1214,14 @@ const handleTabChange = (tab) => {
   onBack={() => setSelectedCompanyId(null)}
   setActiveTab={setActiveTab}
   setSelectedCompanyId={setSelectedCompanyId}
+  setDirectMessageCompanyId={setDirectMessageCompanyId}
 />
   ) : (
     <>
       {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} />}
       {activeTab === 'swipe' && <SwipeScreen user={user} />}
       {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={selectedCompanyId} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} onDirectOpenHandled={() => setDirectMessageCompanyId(null)} />}
       {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} />}
       {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} />}
     </>

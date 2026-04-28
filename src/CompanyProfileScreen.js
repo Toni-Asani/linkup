@@ -45,7 +45,7 @@ const sectorColors = {
   'Autre': '#666',
 }
 
-export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId }) {
+export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId, setDirectMessageCompanyId }) {
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -124,6 +124,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           status: 'pending'
         })
       }
+      setDirectMessageCompanyId && setDirectMessageCompanyId(companyId)
       setSelectedCompanyId && setSelectedCompanyId(null)
       setActiveTab && setActiveTab('messages')
     } catch (e) {
