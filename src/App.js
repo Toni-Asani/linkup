@@ -390,6 +390,67 @@ function PlanBadge({ user }) {
     </span>
   )
 }
+
+function InstallAppButton({ compact = false }) {
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null)
+  const [showInstallHelp, setShowInstallHelp] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
+
+  useEffect(() => {
+    const updateStandalone = () => {
+      setIsStandalone(window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true)
+    }
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault()
+      setDeferredInstallPrompt(event)
+    }
+    const handleInstalled = () => {
+      setIsStandalone(true)
+      setDeferredInstallPrompt(null)
+      setShowInstallHelp(false)
+    }
+
+    updateStandalone()
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleInstalled)
+    }
+  }, [])
+
+  const handleInstallApp = async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt()
+      const choice = await deferredInstallPrompt.userChoice
+      setDeferredInstallPrompt(null)
+      if (choice?.outcome !== 'accepted') setShowInstallHelp(true)
+      return
+    }
+    setShowInstallHelp(value => !value)
+  }
+
+  return (
+    <div style={{width:'100%',maxWidth:compact ? '100%' : 340}}>
+      <button
+        onClick={handleInstallApp}
+        disabled={isStandalone}
+        style={{width:'100%',padding:compact ? '12px 14px' : '13px 16px',background:isStandalone ? '#f0fdf4' : '#1a1a1a',color:isStandalone ? '#15803d' : 'white',border:isStandalone ? '1px solid #bbf7d0' : 'none',borderRadius:12,fontSize:compact ? 13 : 14,fontWeight:700,cursor:isStandalone ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:isStandalone ? 'none' : '0 8px 24px rgba(0,0,0,0.12)'}}>
+        {isStandalone ? 'Application installée' : "Installer l'application sur ce téléphone"}
+      </button>
+      {showInstallHelp && !isStandalone && (
+        <div style={{marginTop:10,background:'#f9f9f9',border:'1px solid #eee',borderRadius:12,padding:'0.85rem',textAlign:'left'}}>
+          <p style={{fontSize:12,color:'#1a1a1a',fontWeight:700,margin:'0 0 6px'}}>Installation sur téléphone</p>
+          <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
+            Sur iPhone : ouvrez cette page dans Safari, touchez le bouton Partager, puis "Ajouter à l'écran d'accueil".<br />
+            Sur Android : touchez le menu du navigateur, puis "Installer l'application".
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function WaitlistScreen() {
   const [email, setEmail] = useState('')
   const [success, setSuccess] = useState(false)
@@ -714,6 +775,7 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
         <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>{t.founderOffer}</p>
         <p style={{fontSize:12,color:'#666',marginTop:4}}>{t.founderOfferDesc}</p>
       </div>
+      <InstallAppButton compact />
       <button onClick={() => setScreen('register')}
         style={{width:'100%',padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
         {t.createAccount}
