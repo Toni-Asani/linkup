@@ -286,8 +286,8 @@ export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
       )}
 
       {showFilters && (
-        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',zIndex:200}} onClick={() => setShowFilters(false)}>
-          <div style={{position:'absolute',bottom:0,left:0,right:0,background:'white',borderRadius:'20px 20px 0 0',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1.25rem'}} onClick={e => e.stopPropagation()}>
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',zIndex:30000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={() => setShowFilters(false)}>
+          <div style={{width:'100%',maxWidth:430,maxHeight:'calc(100dvh - env(safe-area-inset-top) - 1rem)',background:'white',borderRadius:'20px 20px 0 0',padding:'1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:'1.25rem',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}} onClick={e => e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <h3 style={{fontSize:18,fontWeight:700}}>{ui.swipe.filters}</h3>
               <button onClick={() => setShowFilters(false)} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:'#999'}}>✕</button>
@@ -305,7 +305,7 @@ export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
                 {sectors.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <div style={{display:'flex',gap:10}}>
+            <div style={{display:'flex',gap:10,flexShrink:0}}>
               <button onClick={() => { setFilterSector(''); setFilterRadius(300) }} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
               <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filteredCompanies.length)}</button>
             </div>

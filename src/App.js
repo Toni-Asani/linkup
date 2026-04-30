@@ -300,7 +300,8 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
   const hostname = window.location.hostname.toLowerCase()
-  const isMarketingSite = hostname === 'hubbing.ch' || hostname === 'www.hubbing.ch'
+  const isStandalonePwa = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true
+  const isMarketingSite = (hostname === 'hubbing.ch' || hostname === 'www.hubbing.ch') && !isStandalonePwa
   const t = translations[lang]
 
   useEffect(() => {
@@ -395,6 +396,9 @@ function WaitlistScreen() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [timeLeft, setTimeLeft] = useState({})
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null)
+  const [showInstallHelp, setShowInstallHelp] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
 
   useEffect(() => {
     const target = new Date('2026-05-01T00:00:00')
@@ -415,6 +419,40 @@ function WaitlistScreen() {
     }, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    const updateStandalone = () => {
+      setIsStandalone(window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true)
+    }
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault()
+      setDeferredInstallPrompt(event)
+    }
+    const handleInstalled = () => {
+      setIsStandalone(true)
+      setDeferredInstallPrompt(null)
+      setShowInstallHelp(false)
+    }
+
+    updateStandalone()
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleInstalled)
+    }
+  }, [])
+
+  const handleInstallApp = async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt()
+      const choice = await deferredInstallPrompt.userChoice
+      setDeferredInstallPrompt(null)
+      if (choice?.outcome !== 'accepted') setShowInstallHelp(true)
+      return
+    }
+    setShowInstallHelp(value => !value)
+  }
 
 const handleWaitlist = async () => { 
      setLoading(true)
@@ -493,6 +531,24 @@ const handleWaitlist = async () => {
       <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:100,padding:'8px 20px',animation:'fadeUp 0.6s ease 0.3s both'}}>
         <div style={{width:7,height:7,borderRadius:'50%',background:'#E24B4A',animation:'pulse 2s ease infinite'}}></div>
         <span style={{fontSize:13,fontWeight:600,color:'#E24B4A'}}>Lancement le 1er mai 2026 🎉</span>
+      </div>
+
+      <div style={{width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.35s both'}}>
+        <button
+          onClick={handleInstallApp}
+          disabled={isStandalone}
+          style={{width:'100%',padding:'13px 16px',background:isStandalone ? '#f0fdf4' : '#1a1a1a',color:isStandalone ? '#15803d' : 'white',border:isStandalone ? '1px solid #bbf7d0' : 'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:isStandalone ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:isStandalone ? 'none' : '0 8px 24px rgba(0,0,0,0.12)'}}>
+          {isStandalone ? 'Application installée' : "Installer l'application sur mon téléphone"}
+        </button>
+        {showInstallHelp && !isStandalone && (
+          <div style={{marginTop:10,background:'#f9f9f9',border:'1px solid #eee',borderRadius:12,padding:'0.85rem',textAlign:'left'}}>
+            <p style={{fontSize:12,color:'#1a1a1a',fontWeight:700,margin:'0 0 6px'}}>Installation sur téléphone</p>
+            <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
+              Sur iPhone : ouvrez cette page dans Safari, touchez le bouton Partager, puis "Ajouter à l'écran d'accueil".<br />
+              Sur Android : touchez le menu du navigateur, puis "Installer l'application".
+            </p>
+          </div>
+        )}
       </div>
 
 {/* Compte à rebours */}
