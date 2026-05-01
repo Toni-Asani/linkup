@@ -83,7 +83,7 @@ export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
   const decisionRef = useRef(null)
   const currentRef = useRef(0)
   const companiesRef = useRef([])
-  const dragRef = useRef({ active: false, startX: 0, startY: 0, pointerId: null })
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null })
 
   useEffect(() => { loadCompanies() }, [])
   useEffect(() => { currentRef.current = current }, [current])
@@ -204,15 +204,17 @@ export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
 
   const handlePointerDown = (e) => {
     if (decisionRef.current) return
-    dragRef.current = { active: true, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId }
+    if (e.pointerType === 'touch') return
+    dragRef.current = { active: true, startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastY: e.clientY, pointerId: e.pointerId, source: 'pointer' }
     e.currentTarget.setPointerCapture?.(e.pointerId)
   }
 
   const handlePointerMove = (e) => {
     const drag = dragRef.current
-    if (!drag.active || decisionRef.current || drag.pointerId !== e.pointerId) return
+    if (!drag.active || drag.source !== 'pointer' || decisionRef.current || drag.pointerId !== e.pointerId) return
     const deltaX = e.clientX - drag.startX
     const deltaY = e.clientY - drag.startY
+    dragRef.current = { ...drag, lastX: e.clientX, lastY: e.clientY }
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       e.preventDefault()
       setOffset({ x: deltaX, y: deltaY * 0.1 })
@@ -221,10 +223,39 @@ export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
 
   const handlePointerEnd = (e) => {
     const drag = dragRef.current
-    if (!drag.active || decisionRef.current || drag.pointerId !== e.pointerId) return
-    dragRef.current = { active: false, startX: 0, startY: 0, pointerId: null }
+    if (!drag.active || drag.source !== 'pointer' || decisionRef.current || drag.pointerId !== e.pointerId) return
+    dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
     e.currentTarget.releasePointerCapture?.(e.pointerId)
-    const deltaX = e.clientX - drag.startX
+    const deltaX = (e.clientX || drag.lastX) - drag.startX
+    if (deltaX > 60) handleSwipe('right')
+    else if (deltaX < -60) handleSwipe('left')
+    else setOffset({ x: 0, y: 0 })
+  }
+
+  const handleTouchStart = (e) => {
+    if (decisionRef.current || e.touches.length !== 1) return
+    const touch = e.touches[0]
+    dragRef.current = { active: true, startX: touch.clientX, startY: touch.clientY, lastX: touch.clientX, lastY: touch.clientY, pointerId: 'touch', source: 'touch' }
+  }
+
+  const handleTouchMove = (e) => {
+    const drag = dragRef.current
+    if (!drag.active || drag.source !== 'touch' || decisionRef.current || e.touches.length !== 1) return
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - drag.startX
+    const deltaY = touch.clientY - drag.startY
+    dragRef.current = { ...drag, lastX: touch.clientX, lastY: touch.clientY }
+    if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 0.75) {
+      e.preventDefault()
+      setOffset({ x: deltaX, y: deltaY * 0.1 })
+    }
+  }
+
+  const handleTouchEnd = () => {
+    const drag = dragRef.current
+    if (!drag.active || drag.source !== 'touch' || decisionRef.current) return
+    dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
+    const deltaX = drag.lastX - drag.startX
     if (deltaX > 60) handleSwipe('right')
     else if (deltaX < -60) handleSwipe('left')
     else setOffset({ x: 0, y: 0 })
@@ -339,6 +370,10 @@ export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerEnd}
           onPointerCancel={handlePointerEnd}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           style={{
           position:'absolute',top:0,left:0,right:0,bottom:0,
           background:'white',borderRadius:20,border:'1px solid #eee',
@@ -346,7 +381,8 @@ export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
           transform: getCardTransform(),
           transition: decision ? 'transform 0.4s ease' : 'none',
           cursor:'grab', zIndex:2, overflow:'hidden',
-          touchAction:'none',
+          touchAction:'pan-y',
+          overscrollBehavior:'contain',
         }}>
           <div style={{height:100,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',flexShrink:0}}>
             {company.logo_url ? (

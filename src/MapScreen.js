@@ -66,7 +66,12 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
     return matchSector && matchCanton && matchSearch
   })
 
-  const sectors = [...new Set(companies.map(c => c.sector).filter(Boolean))]
+  const sectorCounts = companies.reduce((counts, company) => {
+    if (!company.sector) return counts
+    counts[company.sector] = (counts[company.sector] || 0) + 1
+    return counts
+  }, {})
+  const sectors = Object.keys(sectorCounts).sort((a, b) => a.localeCompare(b, 'fr'))
 const cantons = [
   {code:'AG', name:'Argovie'},
   {code:'AI', name:'Appenzell Rhodes-Intérieures'},
@@ -147,7 +152,7 @@ const cantons = [
   <select value={filter} onChange={e => setFilter(e.target.value)}
     style={{width:'100%',padding:'10px 12px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans',color:'#111'}}>
     <option value="">{ui.map.allSectors(companies.length)}</option>
-    {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+    {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s]})</option>)}
   </select>
 </div>
 

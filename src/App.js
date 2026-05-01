@@ -308,7 +308,10 @@ const translations = {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState('home')
+  const [screen, setScreen] = useState(() => {
+    const requestedScreen = new URLSearchParams(window.location.search).get('screen')
+    return ['home', 'login', 'register', 'visitor'].includes(requestedScreen) ? requestedScreen : 'home'
+  })
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
@@ -470,9 +473,12 @@ function WaitlistScreen() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [timeLeft, setTimeLeft] = useState({})
+  const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null)
   const [showInstallHelp, setShowInstallHelp] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  const founderRemaining = Math.max(0, founderSlots.max - founderSlots.used)
+  const founderProgress = founderSlots.max > 0 ? Math.min(100, (founderSlots.used / founderSlots.max) * 100) : 0
 
   useEffect(() => {
     const target = new Date('2026-05-01T00:00:00')
@@ -492,6 +498,19 @@ function WaitlistScreen() {
       })
     }, 1000)
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    supabase
+      .from('founder_slots')
+      .select('used, max_slots')
+      .eq('id', 1)
+      .single()
+      .then(({ data }) => {
+        if (active && data) setFounderSlots({ used: data.used || 0, max: data.max_slots || 100 })
+      })
+    return () => { active = false }
   }, [])
 
   useEffect(() => {
@@ -598,13 +617,22 @@ const handleWaitlist = async () => {
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 10rem)',gap:'1.5rem',textAlign:'center',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
 
       {/* Logo */}
-      <img src="/LOGO-HUBBING-ICON.svg" alt="Hubbing" style={{width:72,height:72,borderRadius:'50%',animation:'fadeUp 0.6s ease 0.1s both'}} />
+      <div style={{animation:'fadeUp 0.6s ease 0.1s both',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+        <img src="/LOGO-HUBBING-ICON.svg" alt="Hubbing" style={{width:112,height:112,borderRadius:'50%',boxShadow:'0 18px 45px rgba(226,75,74,0.22)'}} />
+        <h1 style={{fontSize:38,fontWeight:800,fontFamily:'Nunito, sans-serif',letterSpacing:'-0.5px',margin:0}}>hubbing</h1>
+      </div>
 
-<h1 style={{fontSize:32,fontWeight:700,letterSpacing:'-1px',animation:'fadeUp 0.6s ease 0.2s both',fontFamily:'Nunito, sans-serif', fontWeight:800, letterSpacing:'-0.5px'}}>hubbing</h1>
-      {/* Badge lancement */}
-      <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:100,padding:'8px 20px',animation:'fadeUp 0.6s ease 0.3s both'}}>
-        <div style={{width:7,height:7,borderRadius:'50%',background:'#E24B4A',animation:'pulse 2s ease infinite'}}></div>
-        <span style={{fontSize:13,fontWeight:600,color:'#E24B4A'}}>Lancement le 1er mai 2026 🎉</span>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.25s both'}}>
+        {['Bienvenue', 'Willkommen', 'Benvenuti', 'Welcome'].map((word, index) => (
+          <div key={word} style={{background:index === 0 ? '#E24B4A' : '#f9f9f9',color:index === 0 ? 'white' : '#1a1a1a',border:index === 0 ? 'none' : '1px solid #eee',borderRadius:14,padding:'0.8rem 0.65rem',fontSize:13,fontWeight:800}}>
+            {word}
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:100,padding:'8px 18px',animation:'fadeUp 0.6s ease 0.3s both'}}>
+        <div style={{width:7,height:7,borderRadius:'50%',background:'#16a34a',animation:'pulse 2s ease infinite'}}></div>
+        <span style={{fontSize:13,fontWeight:700,color:'#15803d'}}>Application ouverte aux entreprises suisses</span>
       </div>
 
       <div style={{width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.35s both'}}>
@@ -625,20 +653,12 @@ const handleWaitlist = async () => {
         )}
       </div>
 
-{/* Compte à rebours */}
-      <div style={{display:'flex',gap:'0.75rem',animation:'fadeUp 0.6s ease 0.6s both'}}>
-        <CountBox value={timeLeft.days ?? '--'} label="Jours" />
-        <CountBox value={timeLeft.hours ?? '--'} label="Heures" />
-        <CountBox value={timeLeft.minutes ?? '--'} label="Minutes" />
-        <CountBox value={timeLeft.seconds ?? '--'} label="Secondes" />
-      </div>
-
       {/* Headline forte */}
       <div style={{animation:'fadeUp 0.6s ease 0.4s both'}}>
         <h2 style={{fontSize:26,fontWeight:800,letterSpacing:'-0.5px',lineHeight:1.2,marginBottom:'0.75rem'}}>
-          Trouvez vos partenaires<br />
-          business en Suisse<br />
-          <span style={{color:'#E24B4A'}}>en 30 secondes</span>
+          Le réseau B2B suisse<br />
+          pour trouver les bons<br />
+          <span style={{color:'#E24B4A'}}>partenaires locaux</span>
         </h2>
         <p style={{color:'#666',fontSize:14,lineHeight:1.7,maxWidth:300,margin:'0 auto'}}>
           Hubbing est la première app de mise en relation B2B locale en Suisse. Swipez, matchez et collaborez avec les bonnes entreprises près de chez vous.
@@ -705,7 +725,10 @@ const handleWaitlist = async () => {
 
       {/* Offre fondateur */}
       <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.8s both'}}>
-        <p style={{fontSize:13,color:'#E24B4A',fontWeight:700}}>🎉 Offre Fondateurs — 100 places</p>
+        <p style={{fontSize:13,color:'#E24B4A',fontWeight:700}}>🎉 Offre Fondateurs — {founderRemaining} places restantes</p>
+        <div style={{height:6,background:'#fee2e2',borderRadius:999,overflow:'hidden',margin:'0.65rem 0'}}>
+          <div style={{height:'100%',width:`${founderProgress}%`,background:'#E24B4A',borderRadius:999}} />
+        </div>
         <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>
           Les 100 premiers abonnés Premium recevront <strong>2 mois d'abonnement Premium offerts</strong>. Ne manquez pas cette opportunité unique !
         </p>
@@ -717,38 +740,19 @@ const handleWaitlist = async () => {
       <p style={{fontSize:12,color:'#ccc',textAlign:'center'}}>🇨🇭 Made in Switzerland</p>
       <p style={{fontSize:11,color:'#ddd',textAlign:'center'}}>© {new Date().getFullYear()} Hubbing — Tous droits réservés</p>
 
-      <div style={{position:'fixed',left:'50%',bottom:0,transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'white',borderTop:'1px solid #f0f0f0',boxShadow:'0 -8px 30px rgba(0,0,0,0.08)',padding:'0.9rem 1rem calc(env(safe-area-inset-bottom) + 0.9rem)',zIndex:20}}>
-        {!success ? (
-          <div style={{display:'flex',flexDirection:'column',gap:'0.6rem'}}>
-            <p style={{fontSize:12,fontWeight:600,color:'#1a1a1a',lineHeight:1.4}}>
-              Entrez votre adresse email et nous vous informerons du lancement.
-            </p>
-            <div style={{display:'flex',gap:8}}>
-              <input
-                className="waitlist-input"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleWaitlist()}
-                placeholder="votre@email.ch"
-                type="email"
-                style={{flex:1,minWidth:0,padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,fontFamily:'Plus Jakarta Sans'}}
-              />
-              <button
-                className="waitlist-btn"
-                onClick={handleWaitlist}
-                disabled={loading}
-                style={{padding:'12px 14px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',transition:'background 0.2s',fontFamily:'Plus Jakarta Sans',whiteSpace:'nowrap'}}>
-                {loading ? '...' : "M'informer"}
-              </button>
-            </div>
-            {error && <p style={{color:'#E24B4A',fontSize:12,textAlign:'left'}}>{error}</p>}
-          </div>
-        ) : (
-          <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:12,padding:'0.8rem',textAlign:'center'}}>
-            <p style={{fontWeight:700,fontSize:14,color:'#166534'}}>Vous êtes sur la liste !</p>
-            <p style={{fontSize:12,color:'#15803d',marginTop:3}}>Nous vous contacterons dès le lancement le 1er mai.</p>
-          </div>
-        )}
+      <div style={{position:'fixed',left:'50%',bottom:0,transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'white',borderTop:'1px solid #f0f0f0',boxShadow:'0 -8px 30px rgba(0,0,0,0.08)',padding:'0.85rem 1rem calc(env(safe-area-inset-bottom) + 0.85rem)',zIndex:20}}>
+        <div style={{display:'flex',flexDirection:'column',gap:'0.6rem'}}>
+          <button
+            onClick={() => { window.location.href = 'https://app.hubbing.ch?screen=register&offer=founder' }}
+            style={{width:'100%',padding:'13px 14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(226,75,74,0.18)'}}>
+            Offre Fondateurs · {founderRemaining} place{founderRemaining > 1 ? 's' : ''} disponible{founderRemaining > 1 ? 's' : ''} →
+          </button>
+          <button
+            onClick={() => { window.location.href = 'https://app.hubbing.ch' }}
+            style={{width:'100%',padding:'12px 14px',background:'white',color:'#1a1a1a',border:'1px solid #e5e5e5',borderRadius:12,fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+            Ouvrir l'application
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -1154,13 +1158,19 @@ L'équipe Hubbing`
   <input value={city} onChange={e => setCity(e.target.value)} placeholder="Ville *"
     style={{flex:1,padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 </div>
-<select value={canton} onChange={e => setCanton(e.target.value)}
-  style={{width:'100%',height:54,padding:'0 14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,lineHeight:'22px',outline:'none',backgroundColor:'white',color:canton ? '#111' : '#999',WebkitTextFillColor:canton ? '#111' : '#999',fontFamily:'Plus Jakarta Sans',colorScheme:'light',appearance:'auto',WebkitAppearance:'menulist'}}>
-  <option value="" style={{color:'#999',background:'white'}}>Canton *</option>
-  {['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH'].map(c => (
-    <option key={c} value={c} style={{color:'#111',background:'white'}}>{c}</option>
-  ))}
-</select>
+<div style={{position:'relative',width:'100%',height:56,flexShrink:0}}>
+  <div style={{position:'absolute',inset:0,padding:'0 44px 0 14px',border:'1px solid #ddd',borderRadius:10,background:'white',display:'flex',alignItems:'center',fontSize:16,lineHeight:1.2,fontFamily:'Plus Jakarta Sans',color:canton ? '#111' : '#999',pointerEvents:'none'}}>
+    {canton || 'Canton *'}
+  </div>
+  <span style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',fontSize:18,color:'#111',pointerEvents:'none'}}>⌄</span>
+  <select value={canton} onChange={e => setCanton(e.target.value)} aria-label="Canton"
+    style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',fontSize:16}}>
+    <option value="">Canton *</option>
+    {['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH'].map(c => (
+      <option key={c} value={c}>{c}</option>
+    ))}
+  </select>
+</div>
 
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{t.contactInfo}</p>
       <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder={t.contactName}
