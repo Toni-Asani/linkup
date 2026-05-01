@@ -66,6 +66,8 @@ const normalizeLocationKey = (value = '') =>
     .replace(/[^a-z0-9]/g, '')
 
 export const hasValidCoordinates = (lat, lng) => {
+  if (lat === null || lat === undefined || lat === '') return false
+  if (lng === null || lng === undefined || lng === '') return false
   const parsedLat = Number(lat)
   const parsedLng = Number(lng)
   return Number.isFinite(parsedLat) && Number.isFinite(parsedLng)
@@ -74,7 +76,8 @@ export const hasValidCoordinates = (lat, lng) => {
 export const getFallbackCoordinates = ({ city, canton }) => {
   const cityKey = normalizeLocationKey(city)
   if (cityKey && cityCoordinates[cityKey]) return cityCoordinates[cityKey]
-  if (canton && cantonCoordinates[canton]) return cantonCoordinates[canton]
+  const cantonKey = String(canton || '').trim().toUpperCase()
+  if (cantonKey && cantonCoordinates[cantonKey]) return cantonCoordinates[cantonKey]
   return null
 }
 
