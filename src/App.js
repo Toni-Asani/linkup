@@ -10,6 +10,7 @@ import AdminScreen from './AdminScreen'
 import CompanyProfileScreen from './CompanyProfileScreen'
 import PrivacyPolicy from './PrivacyPolicy'
 import { getUiText } from './i18n'
+import { geocodeSwissAddress } from './geo'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 
@@ -932,6 +933,12 @@ if (zefixStatus === 'invalid') {
     
     const userId = data?.user?.id || data?.session?.user?.id
     if (userId) {
+      let coords = null
+      try {
+        coords = await geocodeSwissAddress({ address, npa, city, canton })
+      } catch (geoError) {
+        console.log('Registration geocoding failed:', geoError)
+      }
       const { error: insertError } = await supabase.from('companies').insert({
         user_id: userId,
       name: company,
@@ -941,6 +948,8 @@ if (zefixStatus === 'invalid') {
       address: `${address}, ${npa} ${city}`,
      city: city,
      canton: canton,
+     lat: coords?.lat ?? null,
+     lng: coords?.lng ?? null,
       })
       if (insertError) console.error('Insert error:', insertError)
     }

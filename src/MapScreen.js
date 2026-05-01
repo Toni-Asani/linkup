@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
+import { getCompanyCoordinates } from './geo'
 import 'leaflet/dist/leaflet.css'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -37,10 +38,21 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
     const { data } = await supabase
       .from('companies')
       .select('*')
-      .not('lat', 'is', null)
-      .not('lng', 'is', null)
-      .limit(50)
-    setCompanies(data || [])
+      .eq('is_suspended', false)
+      .limit(200)
+    const mappedCompanies = (data || [])
+      .map(company => {
+        const coords = getCompanyCoordinates(company)
+        if (!coords) return null
+        return {
+          ...company,
+          mapLat: coords.lat,
+          mapLng: coords.lng,
+          hasPreciseCoordinates: coords.precise,
+        }
+      })
+      .filter(Boolean)
+    setCompanies(mappedCompanies)
   }
 
   const filtered = companies.filter(c => {
@@ -152,7 +164,7 @@ const cantons = [
           {filtered.map(company => (
             <Marker
               key={company.id}
-              position={[company.lat, company.lng]}
+              position={[company.mapLat, company.mapLng]}
               icon={createIcon(sectorColors[company.sector] || '#E24B4A')}
               eventHandlers={{ click: () => setSelected(company) }}
             >
@@ -161,6 +173,7 @@ const cantons = [
                   <p style={{fontWeight:700,fontSize:14,margin:'0 0 4px'}}>{company.name}</p>
                   <p style={{fontSize:12,color:'#666',margin:'0 0 2px'}}>{company.sector}</p>
                   <p style={{fontSize:12,color:'#999',margin:'0 0 6px'}}>📍 {company.city}, {company.canton}</p>
+                  {!company.hasPreciseCoordinates && <p style={{fontSize:11,color:'#999',margin:'0 0 6px'}}>{ui.map.approximatePosition}</p>}
                   {!user && (
   <div style={{marginTop:'0.75rem',display:'flex',flexDirection:'column',gap:8}}>
     <button onClick={() => setScreen && setScreen('register')}
@@ -189,6 +202,7 @@ const cantons = [
             <div style={{flex:1}}>
               <p style={{fontWeight:700,fontSize:15,margin:0}}>{selected.name}</p>
               <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{selected.sector} · {selected.city}, {selected.canton}</p>
+              {!selected.hasPreciseCoordinates && <p style={{fontSize:11,color:'#bbb',margin:'2px 0 0'}}>{ui.map.approximatePosition}</p>}
               {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.4}}>{selected.description}</p>}
             </div>
             <button onClick={() => setSelected(null)}

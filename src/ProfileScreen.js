@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile } from './moderation'
+import { geocodeSwissAddress } from './geo'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -197,12 +198,10 @@ const handleContactPhotoUpload = async (e) => {
   let lat = form.lat || null
   let lng = form.lng || null
   try {
-    const address = `${form.address}, ${form.city}, ${form.canton}, Switzerland`
-    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-    const geoData = await geoRes.json()
-    if (geoData && geoData.length > 0) {
-      lat = parseFloat(geoData[0].lat)
-      lng = parseFloat(geoData[0].lon)
+    const coords = await geocodeSwissAddress({ address: form.address, city: form.city, canton: form.canton })
+    if (coords) {
+      lat = coords.lat
+      lng = coords.lng
     }
   } catch (e) {
     console.log('Géocodage échoué', e)

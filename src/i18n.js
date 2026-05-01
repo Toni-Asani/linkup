@@ -62,6 +62,7 @@ const dictionaries = {
       viewProfile: 'Voir le profil →',
       createAccountToContact: (name) => `Créer un compte pour contacter ${name} →`,
       registeredCount: (count) => `${count} entreprise${count > 1 ? 's' : ''} inscrite${count > 1 ? 's' : ''} sur Hubbing`,
+      approximatePosition: 'Position approximative',
     },
     swipe: {
       noResults: 'Aucun résultat pour ces filtres',
@@ -309,6 +310,7 @@ dictionaries.de = {
     viewProfile: 'Profil ansehen →',
     createAccountToContact: (name) => `Konto erstellen, um ${name} zu kontaktieren →`,
     registeredCount: (count) => `${count} Unternehmen auf Hubbing registriert`,
+    approximatePosition: 'Ungefähre Position',
   },
   swipe: {
     noResults: 'Keine Ergebnisse für diese Filter',
@@ -589,6 +591,7 @@ Object.assign(dictionaries.it, {
     viewProfile: 'Vedi profilo →',
     createAccountToContact: (name) => `Crea un account per contattare ${name} →`,
     registeredCount: (count) => `${count} aziende registrate su Hubbing`,
+    approximatePosition: 'Posizione approssimativa',
   },
   swipe: {
     noResults: 'Nessun risultato per questi filtri',
@@ -810,6 +813,7 @@ Object.assign(dictionaries.en, {
     viewProfile: 'View profile →',
     createAccountToContact: (name) => `Create an account to contact ${name} →`,
     registeredCount: (count) => `${count} compan${count > 1 ? 'ies' : 'y'} registered on Hubbing`,
+    approximatePosition: 'Approximate position',
   },
   swipe: {
     noResults: 'No results for these filters',
