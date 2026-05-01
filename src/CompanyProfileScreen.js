@@ -152,6 +152,10 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const isBasic = plan === 'Basic' || plan === 'Premium'
   const isPremium = plan === 'Premium'
   const isStarter = !isBasic
+  const goToPricing = () => {
+    setSelectedCompanyId && setSelectedCompanyId(null)
+    setActiveTab && setActiveTab('pricing')
+  }
 
   let parsedTags = []
   try { parsedTags = company.needs_tags ? JSON.parse(company.needs_tags) : [] } catch { parsedTags = [] }
@@ -290,28 +294,9 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
                 )}
               </div>
             ) : isBasic ? (
-              <div>
-                <p style={{fontSize:14,fontWeight:600,margin:0}}>{company.contact_name}</p>
-                {company.contact_title && <p style={{fontSize:13,color:'#666',margin:'2px 0 0'}}>{company.contact_title}</p>}
-                {company.contact_phone && <p style={{fontSize:13,color:'#444',margin:'4px 0 0'}}>{company.contact_phone}</p>}
-                <div style={{marginTop:8,background:'#f0f0f0',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:12}}>🔒</span>
-                  <span style={{fontSize:12,color:'#999',flex:1}}>{ui.companyProfile.photoLinkedInPremium}</span>
-                  <button onClick={() => { setSelectedCompanyId && setSelectedCompanyId(null); setActiveTab && setActiveTab('pricing') }}
-                    style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
-                    {ui.common.upgrade}
-                  </button>
-                </div>
-              </div>
+              <LockedRow text={ui.companyProfile.fullContactPremium} button={ui.common.upgrade} onClick={goToPricing} />
             ) : (
-              <div style={{display:'flex',alignItems:'center',gap:8,background:'#f5f5f5',borderRadius:10,padding:'10px 12px'}}>
-                <span style={{fontSize:16}}>🔒</span>
-                <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>{ui.companyProfile.availableBasic}</p>
-                <button onClick={() => setActiveTab && setActiveTab('pricing')}
-                  style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,cursor:'pointer'}}>
-                  {ui.common.upgrade}
-                </button>
-              </div>
+              <LockedRow text={ui.companyProfile.fullContactPremium} button={ui.common.upgrade} onClick={goToPricing} />
             )}
           </div>
         )}
@@ -320,7 +305,20 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
           <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>{ui.companyProfile.information}</p>
           {company.city && <InfoRow label={ui.companyProfile.city} value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
-          {company.website && <InfoRow label={ui.companyProfile.website} value={company.website} color="#185FA5" />}
+          {company.address && (
+            isBasic ? (
+              <InfoRow label={ui.companyProfile.address} value={company.address} />
+            ) : (
+              <LockedRow text={ui.companyProfile.addressBasic} button={ui.common.upgrade} onClick={goToPricing} compact />
+            )
+          )}
+          {company.website && (
+            isPremium ? (
+              <InfoRow label={ui.companyProfile.website} value={company.website} color="#185FA5" />
+            ) : (
+              <LockedRow text={ui.companyProfile.websitePremium} button={ui.common.upgrade} onClick={goToPricing} compact />
+            )
+          )}
         </div>
 
         {/* Bouton Contacter */}
@@ -386,6 +384,19 @@ function InfoRow({ label, value, color }) {
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
       <span style={{fontSize:13,color:'#666'}}>{label}</span>
       <span style={{fontSize:13,color:color||'#444',fontWeight:500,textAlign:'right',maxWidth:'60%'}}>{value}</span>
+    </div>
+  )
+}
+
+function LockedRow({ text, button, onClick, compact = false }) {
+  return (
+    <div style={{marginTop:compact ? 6 : 0,background:'#f0f0f0',borderRadius:8,padding:compact ? '7px 10px' : '10px 12px',display:'flex',alignItems:'center',gap:8}}>
+      <span style={{fontSize:14}}>🔒</span>
+      <p style={{fontSize:12,color:'#666',margin:0,flex:1,lineHeight:1.35}}>{text}</p>
+      <button onClick={onClick}
+        style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:compact ? '4px 8px' : '6px 10px',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
+        {button}
+      </button>
     </div>
   )
 }

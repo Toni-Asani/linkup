@@ -65,8 +65,9 @@ const getActiveTags = (needs_tags) => {
   } catch { return [] }
 }
 
-export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
+export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 'fr' }) {
   const ui = getUiText(lang)
+  const isPremium = plan === 'Premium'
   const [companies, setCompanies] = useState([])
   const [filteredCompanies, setFilteredCompanies] = useState([])
   const [current, setCurrent] = useState(0)
@@ -404,7 +405,7 @@ export default function SwipeScreen({ user, setScreen, lang = 'fr' }) {
               <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>★ {ratings[company.id] || ui.swipe.newLabel}</span>
             </div>
 
-            {company.contact_name && (
+            {isPremium && company.contact_name && (
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:'0.5rem',background:'#f9f9f9',borderRadius:10,padding:'6px 8px'}}>
                 {company.contact_photo_url ? (
                   <img src={company.contact_photo_url} alt="contact" style={{width:32,height:32,borderRadius:'50%',objectFit:'cover',flexShrink:0}} />
