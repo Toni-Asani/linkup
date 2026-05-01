@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
+import { moderateImageFile } from './moderation'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -95,10 +96,29 @@ export default function ProfileScreen({ user, setActiveTab, lang = 'fr' }) {
     setStats({ matches: count || 0 })
   }
 
+  const validateAndModerateProfileImage = async (file, context) => {
+    if (!file.type?.startsWith('image/')) {
+      alert(ui.profile.imageTypeError)
+      return false
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert(ui.profile.imageSizeError)
+      return false
+    }
+    const moderation = await moderateImageFile(file, context)
+    if (!moderation.allowed) {
+      alert(ui.profile.imageBlocked)
+      return false
+    }
+    return true
+  }
+
   const handleBackgroundUpload = async (e) => {
   const file = e.target.files[0]
   if (!file) return
   try {
+    const isAllowed = await validateAndModerateProfileImage(file, 'profile_background')
+    if (!isAllowed) return
     const ext = file.name.split('.').pop()
     const fileName = `${user.id}-background.${ext}`
     const { error: uploadError } = await supabase.storage
@@ -110,6 +130,8 @@ export default function ProfileScreen({ user, setActiveTab, lang = 'fr' }) {
     setForm({ ...form, background_url: urlData.publicUrl })
   } catch (e) {
     alert(ui.profile.uploadError)
+  } finally {
+    e.target.value = ''
   }
 }
 const handleLogoUpload = async (e) => {
@@ -117,6 +139,8 @@ const handleLogoUpload = async (e) => {
   if (!file) return
   setUploadingLogo(true)
   try {
+    const isAllowed = await validateAndModerateProfileImage(file, 'company_logo')
+    if (!isAllowed) return
     const ext = file.name.split('.').pop()
     const fileName = `${user.id}-logo.${ext}`
     const { error: uploadError } = await supabase.storage
@@ -128,8 +152,10 @@ const handleLogoUpload = async (e) => {
     setForm({ ...form, logo_url: urlData.publicUrl })
   } catch (e) {
     alert(ui.profile.uploadError)
+  } finally {
+    e.target.value = ''
+    setUploadingLogo(false)
   }
-  setUploadingLogo(false)
 }
 
 const handleContactPhotoUpload = async (e) => {
@@ -137,6 +163,8 @@ const handleContactPhotoUpload = async (e) => {
   if (!file) return
   setUploadingContact(true)
   try {
+    const isAllowed = await validateAndModerateProfileImage(file, 'contact_photo')
+    if (!isAllowed) return
     const ext = file.name.split('.').pop()
     const fileName = `${user.id}-contact.${ext}`
     const { error: uploadError } = await supabase.storage
@@ -146,8 +174,10 @@ const handleContactPhotoUpload = async (e) => {
     setForm({ ...form, contact_photo_url: urlData.publicUrl })
   } catch (e) {
     alert(ui.profile.uploadError)
+  } finally {
+    e.target.value = ''
+    setUploadingContact(false)
   }
-  setUploadingContact(false)
 }
 
   const addTag = () => {

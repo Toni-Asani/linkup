@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
+import { moderateImageFile, moderateTextContent } from './moderation'
 
 export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, onDirectOpenHandled, lang = 'fr' }) {
   const ui = getUiText(lang)
@@ -125,7 +126,8 @@ const loadMyCompanyAndMatches = async () => {
     setSubmittingReview(true)
     const other = getOtherCompany(selectedMatch)
 
-    if (containsForbiddenContent(reviewComment)) {
+    const reviewModeration = await moderateTextContent(reviewComment, 'review')
+    if (!reviewModeration.allowed) {
       alert(ui.messages.reviewBlocked)
       setSubmittingReview(false)
       return
@@ -152,19 +154,6 @@ const loadMyCompanyAndMatches = async () => {
     setSubmittingReview(false)
   }
 
-  const forbiddenWords = [
-    'sexe','sex','porn','porno','nue','nud','bite','queue','chatte','vagin','penis','seins','cul',
-    'baise','baiser','niquer','coucher','érotique','erotic','xxx','escort','prostituée',
-    'nègre','negre','youpin','bougnoule','bamboula','bicot','raton','sale arabe','sale noir',
-    'sale juif','hitler','nazi','heil','ku klux','kkk','raciste','antisémite',
-    'connard','enculé','encule','fdp','ntm','pute','salope','batard','bâtard',
-  ]
-
-  const containsForbiddenContent = (text) => {
-    const lower = text.toLowerCase()
-    return forbiddenWords.some(word => lower.includes(word))
-  }
-
   const allowedTypes = [
   'image/jpeg','image/png','image/gif','image/webp',
   'application/pdf',
@@ -189,6 +178,16 @@ const handleFileUpload = async (e) => {
 
   setUploadingFile(true)
   try {
+    if (file.type.startsWith('image/')) {
+      const moderation = await moderateImageFile(file, 'message_attachment')
+      if (!moderation.allowed) {
+        alert(ui.messages.fileBlocked)
+        setUploadingFile(false)
+        if (fileAttachRef.current) fileAttachRef.current.value = ''
+        return
+      }
+    }
+
     const ext = file.name.split('.').pop()
     const fileName = `${myCompany.id}-${Date.now()}.${ext}`
     const { error: uploadError } = await supabase.storage
@@ -209,10 +208,12 @@ const handleFileUpload = async (e) => {
     alert(ui.messages.fileUploadError)
   }
   setUploadingFile(false)
+  if (fileAttachRef.current) fileAttachRef.current.value = ''
 }
   const sendMessage = async () => {
     if (!newMessage.trim() || !myCompany) return
-    if (containsForbiddenContent(newMessage)) {
+    const moderation = await moderateTextContent(newMessage, 'message')
+    if (!moderation.allowed) {
       alert(ui.messages.messageBlocked)
       return
     }
