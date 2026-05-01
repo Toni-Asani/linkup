@@ -1017,10 +1017,10 @@ if (zefixStatus === 'invalid') {
     style={{flex:1,padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 </div>
 <select value={canton} onChange={e => setCanton(e.target.value)}
-  style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
-  <option value="">Canton *</option>
+  style={{width:'100%',height:54,padding:'0 14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,lineHeight:'22px',outline:'none',backgroundColor:'white',color:canton ? '#111' : '#999',WebkitTextFillColor:canton ? '#111' : '#999',fontFamily:'Plus Jakarta Sans',colorScheme:'light',appearance:'auto',WebkitAppearance:'menulist'}}>
+  <option value="" style={{color:'#999',background:'white'}}>Canton *</option>
   {['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH'].map(c => (
-    <option key={c} value={c}>{c}</option>
+    <option key={c} value={c} style={{color:'#111',background:'white'}}>{c}</option>
   ))}
 </select>
 
