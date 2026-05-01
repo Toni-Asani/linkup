@@ -239,7 +239,8 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
           <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
             {ui.home.founderDesc(remaining)}
           </p>
-          <button style={{marginTop:'0.75rem',width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+          <button onClick={() => setActiveTab('pricing')}
+            style={{marginTop:'0.75rem',width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
             {ui.home.activateFounder}
           </button>
         </div>
