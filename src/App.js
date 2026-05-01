@@ -57,6 +57,9 @@ const translations = {
     appTagline: 'Le réseau B2B pour les entreprises suisses',
     founderOffer: '🎉 Offre Fondateurs',
     founderOfferDesc: '2 mois offerts pour les 100 premiers abonnés Premium',
+    founderRemaining: (count) => `${count} place${count > 1 ? 's' : ''} disponible${count > 1 ? 's' : ''}`,
+    founderPremiumNote: 'Premium · 2 mois offerts',
+    founderCta: "Activer l'offre Fondateurs →",
     createAccount: 'Créer un compte',
     login: 'Se connecter',
     visitorMode: 'Continuer en mode visiteur',
@@ -117,6 +120,9 @@ const translations = {
     appTagline: 'Das B2B-Netzwerk für Schweizer Unternehmen',
     founderOffer: '🎉 Gründerangebot',
     founderOfferDesc: '2 Monate gratis für die ersten 100 Premium-Abonnenten',
+    founderRemaining: (count) => `${count} Platz${count > 1 ? 'e' : ''} verfügbar`,
+    founderPremiumNote: 'Premium · 2 Monate gratis',
+    founderCta: 'Gründerangebot aktivieren →',
     createAccount: 'Konto erstellen',
     login: 'Anmelden',
     visitorMode: 'Als Besucher fortfahren',
@@ -177,6 +183,9 @@ const translations = {
     appTagline: 'La rete B2B per le aziende svizzere',
     founderOffer: '🎉 Offerta Fondatori',
     founderOfferDesc: '2 mesi gratuiti per i primi 100 abbonati Premium',
+    founderRemaining: (count) => `${count} post${count > 1 ? 'i' : 'o'} disponibile${count > 1 ? 'i' : ''}`,
+    founderPremiumNote: 'Premium · 2 mesi gratuiti',
+    founderCta: 'Attiva l’offerta Fondatori →',
     createAccount: 'Crea un account',
     login: 'Accedi',
     visitorMode: 'Continua in modalità visitatore',
@@ -237,6 +246,9 @@ const translations = {
     appTagline: 'The B2B network for Swiss companies',
     founderOffer: '🎉 Founder Offer',
     founderOfferDesc: '2 months free for the first 100 Premium subscribers',
+    founderRemaining: (count) => `${count} place${count > 1 ? 's' : ''} available`,
+    founderPremiumNote: 'Premium · 2 months free',
+    founderCta: 'Activate Founder offer →',
     createAccount: 'Create an account',
     login: 'Log in',
     visitorMode: 'Continue as visitor',
@@ -743,12 +755,28 @@ const handleWaitlist = async () => {
 }
 function LandingScreen({ setScreen, t, lang, setLang }) {
   const [showLangMenu, setShowLangMenu] = useState(false)
+  const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const langs = [
     { code: 'fr', label: '🇫🇷 Français' },
     { code: 'de', label: '🇩🇪 Deutsch' },
     { code: 'it', label: '🇮🇹 Italiano' },
     { code: 'en', label: '🇬🇧 English' },
   ]
+  const founderRemaining = Math.max(0, founderSlots.max - founderSlots.used)
+  const founderProgress = founderSlots.max > 0 ? Math.min(100, (founderSlots.used / founderSlots.max) * 100) : 0
+
+  useEffect(() => {
+    let active = true
+    supabase
+      .from('founder_slots')
+      .select('used, max_slots')
+      .eq('id', 1)
+      .single()
+      .then(({ data }) => {
+        if (active && data) setFounderSlots({ used: data.used || 0, max: data.max_slots || 100 })
+      })
+    return () => { active = false }
+  }, [])
 
   return (
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.25rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1.2rem',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
@@ -772,10 +800,23 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
       <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:72,height:72,borderRadius:'50%'}} />
       <h1 style={{fontSize:28,fontWeight:700,color:'#1a1a1a',textAlign:'center'}}>Hubbing</h1>
       <p style={{color:'#666',textAlign:'center',fontSize:15,lineHeight:1.6}}>{t.appTagline}</p>
-      <div style={{width:'100%',background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
-        <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>{t.founderOffer}</p>
-        <p style={{fontSize:12,color:'#666',marginTop:4}}>{t.founderOfferDesc}</p>
-      </div>
+      <button onClick={() => setScreen('register')}
+        style={{width:'100%',background:'linear-gradient(135deg,#FFF5F5 0%,#fff 100%)',border:'1px solid #FECACA',borderRadius:14,padding:'1rem',textAlign:'left',cursor:'pointer',boxShadow:'0 8px 24px rgba(226,75,74,0.08)',fontFamily:'Plus Jakarta Sans'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,marginBottom:8}}>
+          <p style={{fontSize:14,color:'#E24B4A',fontWeight:800,margin:0}}>{t.founderOffer}</p>
+          <span style={{fontSize:11,color:'#E24B4A',fontWeight:800,background:'white',border:'1px solid #FECACA',borderRadius:999,padding:'5px 9px',whiteSpace:'nowrap'}}>
+            {t.founderRemaining(founderRemaining)}
+          </span>
+        </div>
+        <p style={{fontSize:13,color:'#444',margin:'0 0 10px',lineHeight:1.45}}>{t.founderOfferDesc}</p>
+        <div style={{height:6,background:'#fee2e2',borderRadius:999,overflow:'hidden',marginBottom:10}}>
+          <div style={{height:'100%',width:`${founderProgress}%`,background:'#E24B4A',borderRadius:999}} />
+        </div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+          <span style={{fontSize:12,color:'#777',fontWeight:600}}>{t.founderPremiumNote}</span>
+          <span style={{fontSize:13,color:'#E24B4A',fontWeight:800,whiteSpace:'nowrap'}}>{t.founderCta}</span>
+        </div>
+      </button>
       <InstallAppButton compact />
       <button onClick={() => setScreen('register')}
         style={{width:'100%',padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>

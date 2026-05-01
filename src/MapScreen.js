@@ -103,7 +103,7 @@ const cantons = [
   })
 
   return (
-    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column'}}>
+    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',width:'100%',maxWidth:'100%',overflow:'hidden',background:'white'}}>
 
       {!user && (
   <div style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -125,7 +125,7 @@ const cantons = [
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={ui.map.searchPlaceholder}
-            style={{width:'100%',padding:'10px 12px 10px 34px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans',background:'#f9f9f9'}}
+            style={{width:'100%',padding:'11px 12px 11px 36px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',fontFamily:'Plus Jakarta Sans',background:'#f9f9f9',color:'#111'}}
           />
           {search && (
             <button onClick={() => setSearch('')}
@@ -138,14 +138,14 @@ const cantons = [
 
 <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
   <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)}
-    style={{width:'100%',padding:'8px 12px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans'}}>
+    style={{width:'100%',padding:'10px 12px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans',color:'#111'}}>
     <option value="">{ui.map.allCantons}</option>
     {cantons.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
   </select>
 </div>
       <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
   <select value={filter} onChange={e => setFilter(e.target.value)}
-    style={{width:'100%',padding:'8px 12px',border:'1px solid #eee',borderRadius:10,fontSize:13,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans'}}>
+    style={{width:'100%',padding:'10px 12px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans',color:'#111'}}>
     <option value="">{ui.map.allSectors(companies.length)}</option>
     {sectors.map(s => <option key={s} value={s}>{s}</option>)}
   </select>
