@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
+import { isNativeApp } from './platform'
 
 const sectorColors = {
   'Fiduciaire': '#3B6D11', 'Design & Communication': '#533AB7',
@@ -258,26 +259,23 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
           </div>
         )}
 
-        {/* Bannière App Store / Google Play */}
-        <div style={{background:'#1a1a1a',borderRadius:12,padding:'1rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-          <div>
-            <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>{ui.home.mobileApp}</p>
-            <p style={{color:'rgba(255,255,255,0.6)',fontSize:12,marginTop:3}}>{ui.home.soonAvailable}</p>
-            <div style={{display:'flex',gap:8,marginTop:8}}>
-              <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
-                <span style={{fontSize:16}}></span>
-                <span style={{color:'white',fontSize:11,fontWeight:600}}>App Store</span>
-              </div>
-              <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
-                <span style={{fontSize:16}}>🤖</span>
-                <span style={{color:'white',fontSize:11,fontWeight:600}}>Google Play</span>
+        {!isNativeApp() && (
+          <div style={{background:'#1a1a1a',borderRadius:12,padding:'1rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+            <div>
+              <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>{ui.home.mobileApp}</p>
+              <p style={{color:'rgba(255,255,255,0.6)',fontSize:12,marginTop:3}}>{ui.home.soonAvailable}</p>
+              <div style={{display:'flex',gap:8,marginTop:8}}>
+                <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
+                  <span style={{fontSize:16}}></span>
+                  <span style={{color:'white',fontSize:11,fontWeight:600}}>App Store</span>
+                </div>
               </div>
             </div>
+            <div style={{background:'rgba(255,255,255,0.05)',borderRadius:10,padding:'8px',textAlign:'center',flexShrink:0}}>
+              <span style={{fontSize:32}}>📲</span>
+            </div>
           </div>
-          <div style={{background:'rgba(255,255,255,0.05)',borderRadius:10,padding:'8px',textAlign:'center',flexShrink:0}}>
-            <span style={{fontSize:32}}>📲</span>
-          </div>
-        </div>
+        )}
 
         {/* Raccourci swipe */}
         <div onClick={() => setActiveTab('swipe')}

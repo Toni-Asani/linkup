@@ -17,7 +17,7 @@ workflows:
 
       - name: Build web assets
         script: |
-          npm run build
+          GENERATE_SOURCEMAP=false npm run build
 
       - name: Capacitor sync
         script: |

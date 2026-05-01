@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
+import { APPLE_PRODUCT_IDS, HubbingPurchases } from './applePurchases'
+import { isNativeIOS } from './platform'
 
 const getPlans = (ui) => [
   {
@@ -18,6 +20,7 @@ const getPlans = (ui) => [
     price: 19,
     color: '#185FA5',
     priceId: process.env.REACT_APP_STRIPE_PRICE_BASIC,
+    appleProductId: APPLE_PRODUCT_IDS.basic,
     features: ui.pricing.basicFeatures,
     cta: ui.pricing.chooseBasic,
     disabled: false
@@ -28,6 +31,7 @@ const getPlans = (ui) => [
     price: 39,
     color: '#E24B4A',
     priceId: process.env.REACT_APP_STRIPE_PRICE_PREMIUM,
+    appleProductId: APPLE_PRODUCT_IDS.premium,
     features: ui.pricing.premiumFeatures,
     cta: ui.pricing.choosePremium,
     disabled: false,
@@ -39,14 +43,21 @@ const getPlans = (ui) => [
 export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   const ui = getUiText(lang)
   const plans = getPlans(ui)
+  const nativeIOS = isNativeIOS()
   const [currentPlan, setCurrentPlan] = useState('starter')
   const [loading, setLoading] = useState(null)
+  const [restoring, setRestoring] = useState(false)
+  const [appleProducts, setAppleProducts] = useState({})
   const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
 
   useEffect(() => {
     loadCurrentPlan()
     loadFounderSlots()
   }, [])
+
+  useEffect(() => {
+    if (nativeIOS) loadAppleProducts()
+  }, [nativeIOS])
 
   const loadCurrentPlan = async () => {
     const { data } = await supabase
@@ -63,44 +74,114 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
     if (data) setFounderSlots({ used: data.used, max: data.max_slots })
   }
 
+  const loadAppleProducts = async () => {
+    try {
+      const productIds = plans.filter(plan => plan.appleProductId).map(plan => plan.appleProductId)
+      const result = await HubbingPurchases.getProducts({ productIds })
+      const productsById = Object.fromEntries((result.products || []).map(product => [product.id, product]))
+      setAppleProducts(productsById)
+    } catch (e) {
+      console.warn('Apple products unavailable:', e)
+    }
+  }
+
+  const saveSubscription = async (plan, transaction = {}) => {
+    const isFounder = plan.id === 'premium' && remaining > 0
+    const fallbackDays = isFounder ? 60 : 30
+    const currentPeriodEndsAt = transaction.expirationDate || new Date(Date.now() + fallbackDays * 24 * 60 * 60 * 1000).toISOString()
+    const { error } = await supabase.from('subscriptions').upsert({
+      user_id: user.id,
+      plan: plan.id,
+      status: 'active',
+      is_founder: isFounder,
+      current_period_ends_at: currentPeriodEndsAt
+    }, { onConflict: 'user_id' })
+    if (error) throw error
+    setCurrentPlan(plan.id)
+  }
+
+  const handleAppleSubscribe = async (plan) => {
+    if (!plan.appleProductId) throw new Error(ui.pricing.appleProductsUnavailable)
+    const result = await HubbingPurchases.purchase({ productId: plan.appleProductId })
+    if (result.cancelled) return
+    if (result.pending) {
+      alert(ui.pricing.purchasePending)
+      return
+    }
+    await saveSubscription(plan, result.transaction)
+    alert(ui.pricing.purchaseSuccess(plan.name))
+  }
+
+  const handleRestorePurchases = async () => {
+    setRestoring(true)
+    try {
+      const result = await HubbingPurchases.restorePurchases()
+      const transactions = result.transactions || []
+      const premium = transactions.find(transaction => transaction.productId === APPLE_PRODUCT_IDS.premium)
+      const basic = transactions.find(transaction => transaction.productId === APPLE_PRODUCT_IDS.basic)
+      const transaction = premium || basic
+      if (!transaction) {
+        alert(ui.pricing.noPurchaseToRestore)
+        return
+      }
+      const plan = plans.find(item => item.appleProductId === transaction.productId)
+      if (!plan) throw new Error(ui.pricing.appleProductsUnavailable)
+      await saveSubscription(plan, transaction)
+      alert(ui.pricing.purchaseRestored)
+    } catch (e) {
+      alert(ui.pricing.purchaseError(e.message))
+    } finally {
+      setRestoring(false)
+    }
+  }
+
   const handleSubscribe = async (plan) => {
-  if (plan.disabled || currentPlan === plan.id) return
-  setLoading(plan.id)
+    if (plan.disabled || currentPlan === plan.id) return
+    setLoading(plan.id)
 
-  try {
-    const { data: { session } } = await supabase.auth.getSession()
+    try {
+      if (nativeIOS) {
+        await handleAppleSubscribe(plan)
+        return
+      }
 
-const response = await fetch(
-  `https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/create-checkout-session`,
-  {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({
-      priceId: plan.priceId,
-      userId: user.id,
-      planName: plan.id,
-      founder: plan.founder && remaining > 0,
-    }),
+      const response = await fetch(
+        `https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/create-checkout-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            priceId: plan.priceId,
+            userId: user.id,
+            planName: plan.id,
+            founder: plan.founder && remaining > 0,
+          }),
+        }
+      )
+
+      const { url, error } = await response.json()
+      if (error) throw new Error(error)
+
+      window.location.href = url
+
+    } catch (e) {
+      alert(ui.pricing.purchaseError(e.message))
+    } finally {
+      setLoading(null)
+    }
   }
-)
-
-    const { url, error } = await response.json()
-    console.log('Stripe response:', url, error)
-    if (error) throw new Error(error)
-    
-    // Rediriger vers Stripe Checkout
-    window.location.href = url
-
-  } catch (e) {
-    alert('Une erreur est survenue : ' + e.message)
-  }
-  setLoading(null)
-}
 
   const remaining = founderSlots.max - founderSlots.used
+  const getPriceLabel = (plan) => {
+    if (nativeIOS && plan.appleProductId && appleProducts[plan.appleProductId]?.displayPrice) {
+      return appleProducts[plan.appleProductId].displayPrice
+    }
+    if (plan.price === 0) return ui.common.free
+    return `CHF ${plan.price}`
+  }
 
   return (
     <div style={{flex:1,overflowY:'auto',padding:'1.5rem 1rem'}}>
@@ -159,7 +240,7 @@ const response = await fetch(
                     ) : (
                       <>
                         <p style={{fontSize:22,fontWeight:700,margin:0,color:'#1a1a1a'}}>
-                          CHF {plan.price}
+                          {getPriceLabel(plan)}
                           <span style={{fontSize:13,fontWeight:400,color:'#999'}}>{ui.common.month}</span>
                         </p>
                         {plan.founder && remaining > 0 && (
@@ -201,8 +282,14 @@ const response = await fetch(
       </div>
 
       <p style={{fontSize:11,color:'#999',textAlign:'center',marginTop:'1rem',lineHeight:1.5}}>
-        {ui.pricing.footer}
+        {nativeIOS ? ui.pricing.appleFooter : ui.pricing.footer}
       </p>
+      {nativeIOS && (
+        <button onClick={handleRestorePurchases} disabled={restoring}
+          style={{margin:'0.75rem auto 0',display:'block',background:'none',border:'none',color:'#E24B4A',fontSize:13,fontWeight:600,cursor:restoring ? 'default' : 'pointer'}}>
+          {restoring ? ui.common.loading : ui.pricing.restorePurchases}
+        </button>
+      )}
     </div>
   )
 }

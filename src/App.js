@@ -11,6 +11,7 @@ import CompanyProfileScreen from './CompanyProfileScreen'
 import PrivacyPolicy from './PrivacyPolicy'
 import { getUiText } from './i18n'
 import { geocodeSwissAddress } from './geo'
+import { isNativeApp } from './platform'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 
@@ -323,7 +324,7 @@ export default function App() {
   useEffect(() => {
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     setUser(session?.user ?? null)    
-    // Vérifier si retour de Stripe
+    // Vérifier si retour de paiement web
     const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')
     const paymentPlan = params.get('plan')
@@ -446,6 +447,8 @@ function InstallAppButton({ compact = false }) {
     setShowInstallHelp(value => !value)
   }
 
+  if (isNativeApp()) return null
+
   return (
     <div style={{width:'100%',maxWidth:compact ? '100%' : 340}}>
       <button
@@ -458,8 +461,7 @@ function InstallAppButton({ compact = false }) {
         <div style={{marginTop:10,background:'#f9f9f9',border:'1px solid #eee',borderRadius:12,padding:'0.85rem',textAlign:'left'}}>
           <p style={{fontSize:12,color:'#1a1a1a',fontWeight:700,margin:'0 0 6px'}}>Installation sur téléphone</p>
           <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
-            Sur iPhone : ouvrez cette page dans Safari, touchez le bouton Partager, puis "Ajouter à l'écran d'accueil".<br />
-            Sur Android : touchez le menu du navigateur, puis "Installer l'application".
+            Sur iPhone : ouvrez cette page dans Safari, touchez le bouton Partager, puis "Ajouter à l'écran d'accueil".
           </p>
         </div>
       )}
@@ -646,8 +648,7 @@ const handleWaitlist = async () => {
           <div style={{marginTop:10,background:'#f9f9f9',border:'1px solid #eee',borderRadius:12,padding:'0.85rem',textAlign:'left'}}>
             <p style={{fontSize:12,color:'#1a1a1a',fontWeight:700,margin:'0 0 6px'}}>Installation sur téléphone</p>
             <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
-              Sur iPhone : ouvrez cette page dans Safari, touchez le bouton Partager, puis "Ajouter à l'écran d'accueil".<br />
-              Sur Android : touchez le menu du navigateur, puis "Installer l'application".
+              Sur iPhone : ouvrez cette page dans Safari, touchez le bouton Partager, puis "Ajouter à l'écran d'accueil".
             </p>
           </div>
         )}
@@ -834,7 +835,7 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
         style={{width:'100%',padding:'12px',background:'none',color:'#999',border:'none',fontSize:14,cursor:'pointer',textDecoration:'underline'}}>
         {t.visitorMode}
       </button>
-      {/* Bannière App Store / Google Play */}
+      {/* Bannière application mobile */}
       <div style={{background:'#1a1a1a',borderRadius:12,padding:'1rem',width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
         <div>
           <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>📱 Application mobile</p>
@@ -843,10 +844,6 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
             <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
               <span style={{fontSize:16}}></span>
               <span style={{color:'white',fontSize:11,fontWeight:600}}>App Store</span>
-            </div>
-            <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:16}}>🤖</span>
-              <span style={{color:'white',fontSize:11,fontWeight:600}}>Google Play</span>
             </div>
           </div>
         </div>
