@@ -334,7 +334,7 @@ export default function App() {
         plan: paymentPlan,
         status: 'active',
         is_founder: isFounder,
-        current_period_ends_at: new Date(Date.now() + (isFounder ? 90 : 30) * 24 * 60 * 60 * 1000).toISOString()
+        current_period_ends_at: new Date(Date.now() + (isFounder ? 60 : 30) * 24 * 60 * 60 * 1000).toISOString()
       }, { onConflict: 'user_id' })
       alert(`✅ Abonnement ${paymentPlan} activé avec succès !`)
       window.history.replaceState({}, '', window.location.pathname)
