@@ -900,16 +900,6 @@ function LoginScreen({ setScreen, t }) {
   )
 }
 
-const escapeEmailHtml = (value = '') => String(value ?? '').replace(/[&<>"']/g, char => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;'
-}[char]))
-
-const cleanEmailHeader = (value = '') => String(value ?? '').replace(/[\r\n]+/g, ' ').trim()
-
 function RegisterScreen({ setScreen, t }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -998,123 +988,29 @@ if (zefixStatus === 'invalid') {
       })
       if (insertError) console.error('Insert error:', insertError)
     }
-    const safeCompany = escapeEmailHtml(company)
-    const safeEmail = escapeEmailHtml(email)
-    const safeZefix = escapeEmailHtml(zefix)
-    const safeContactName = escapeEmailHtml(contactName)
-    const safeContactTitle = escapeEmailHtml(contactTitle)
-    const safeAddress = escapeEmailHtml(`${address}, ${npa} ${city}`)
-    const safeCity = escapeEmailHtml(city)
-    const safeCanton = escapeEmailHtml(canton)
-    const companyForSubject = cleanEmailHeader(company)
-    const validationSubject = `Hubbing — validation de ${companyForSubject}`
-    const validationBody = `Bonjour ${contactName},
-
-Bonne nouvelle, votre entreprise ${company} a été validée sur Hubbing.
-
-Votre profil peut maintenant être utilisé normalement sur la plateforme.
-
-Merci de faire partie des premières entreprises présentes sur Hubbing.
-
-Cordialement,
-L'équipe Hubbing`
-    const reviewSubject = `Hubbing — informations à compléter pour ${companyForSubject}`
-    const reviewBody = `Bonjour ${contactName},
-
-Merci pour votre inscription sur Hubbing.
-
-Lors de notre vérification, certaines informations doivent être complétées ou corrigées avant validation définitive de votre entreprise.
-
-Merci de répondre à cet email afin que nous puissions finaliser la vérification.
-
-Cordialement,
-L'équipe Hubbing`
-    const validationMailto = `mailto:${email}?subject=${encodeURIComponent(validationSubject)}&body=${encodeURIComponent(validationBody)}`
-    const reviewMailto = `mailto:${email}?subject=${encodeURIComponent(reviewSubject)}&body=${encodeURIComponent(reviewBody)}`
-
-    const sendResendEmail = async (payload) => {
-      const response = await fetch('https://api.resend.com/emails', {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/registration-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REACT_APP_RESEND_API_KEY}`
+          'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          email,
+          company,
+          zefix,
+          contactName,
+          contactTitle,
+          address: `${address}, ${npa} ${city}`,
+          city,
+          canton,
+          userId
+        })
       })
       if (!response.ok) {
         const details = await response.text()
-        throw new Error(details || 'Email sending failed')
+        throw new Error(details || 'Registration email failed')
       }
-    }
-
-    try {
-      await Promise.all([
-        sendResendEmail({
-          from: 'Hubbing <contact@hubbing.ch>',
-          to: email,
-          subject: 'Votre inscription Hubbing a bien été reçue',
-          html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;background:#ffffff;color:#1a1a1a">
-            <img src="https://www.hubbing.ch/logo192.png" width="64" height="64" style="border-radius:16px;display:block" alt="Hubbing" />
-            <h2 style="font-size:24px;line-height:1.25;margin:22px 0 12px;color:#1a1a1a">Inscription bien reçue</h2>
-            <p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 14px">Bonjour ${safeContactName},</p>
-            <p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 14px">
-              Merci pour votre inscription sur <strong>Hubbing</strong>. Votre compte entreprise a bien été créé pour <strong>${safeCompany}</strong>.
-            </p>
-            <p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 14px">
-              Afin de garantir un réseau B2B sérieux et réservé aux entreprises suisses, chaque inscription est vérifiée manuellement.
-              Votre profil est donc actuellement <strong>en cours de vérification</strong>.
-            </p>
-            <div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:14px;padding:16px;margin:20px 0">
-              <p style="font-size:14px;line-height:1.6;color:#333;margin:0">
-                <strong>Délai indicatif :</strong> 24 à 48h ouvrables.<br />
-                Vous pouvez accéder à votre compte après confirmation de votre adresse email. Nous vous contacterons uniquement si une information doit être complétée.
-              </p>
-            </div>
-            <table style="width:100%;border-collapse:collapse;margin:18px 0;font-size:14px">
-              <tr><td style="padding:8px 0;color:#888">Entreprise</td><td style="padding:8px 0;color:#1a1a1a;font-weight:600;text-align:right">${safeCompany}</td></tr>
-              <tr><td style="padding:8px 0;color:#888">Numéro IDE</td><td style="padding:8px 0;color:#1a1a1a;text-align:right">${safeZefix}</td></tr>
-              <tr><td style="padding:8px 0;color:#888">Adresse</td><td style="padding:8px 0;color:#1a1a1a;text-align:right">${safeAddress}</td></tr>
-            </table>
-            <a href="https://app.hubbing.ch" style="display:inline-block;margin-top:8px;padding:13px 20px;background:#E24B4A;color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:700">Accéder à Hubbing</a>
-            <p style="font-size:13px;line-height:1.6;color:#777;margin:22px 0 0">
-              Les 100 premiers abonnés Premium bénéficient de l'offre Fondateurs : <strong>2 mois Premium offerts</strong>.
-            </p>
-            <p style="font-size:12px;color:#bbb;margin-top:28px">Hubbing · Réseau B2B suisse · <a href="mailto:contact@hubbing.ch" style="color:#999">contact@hubbing.ch</a></p>
-          </div>`
-        }),
-        sendResendEmail({
-          from: 'Hubbing <contact@hubbing.ch>',
-          to: 'contact@hubbing.ch',
-          subject: `Nouvelle inscription à vérifier — ${companyForSubject}`,
-          html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;background:#ffffff;color:#1a1a1a">
-            <h2 style="font-size:22px;margin:0 0 8px;color:#1a1a1a">Nouvelle inscription entreprise</h2>
-            <p style="font-size:14px;line-height:1.6;color:#666;margin:0 0 18px">
-              Une nouvelle entreprise vient de créer un compte sur Hubbing. Vérification manuelle recommandée avant validation définitive.
-            </p>
-            <div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:14px;padding:16px;margin-bottom:18px">
-              <p style="margin:0;font-size:14px;color:#E24B4A;font-weight:700">Statut : vérification Zefix à effectuer</p>
-            </div>
-            <table style="width:100%;border-collapse:collapse;font-size:14px">
-              <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Entreprise</td><td style="padding:10px;border-bottom:1px solid #eee;font-weight:700">${safeCompany}</td></tr>
-              <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Numéro IDE</td><td style="padding:10px;border-bottom:1px solid #eee">${safeZefix}</td></tr>
-              <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Adresse</td><td style="padding:10px;border-bottom:1px solid #eee">${safeAddress}</td></tr>
-              <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Ville / canton</td><td style="padding:10px;border-bottom:1px solid #eee">${safeCity} · ${safeCanton}</td></tr>
-              <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Contact</td><td style="padding:10px;border-bottom:1px solid #eee">${safeContactName} — ${safeContactTitle}</td></tr>
-              <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Email</td><td style="padding:10px;border-bottom:1px solid #eee"><a href="mailto:${safeEmail}" style="color:#E24B4A">${safeEmail}</a></td></tr>
-              <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">User ID</td><td style="padding:10px;border-bottom:1px solid #eee">${escapeEmailHtml(userId || 'Non disponible')}</td></tr>
-            </table>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
-              <a href="https://www.zefix.ch/fr/search/entity/welcome" style="display:inline-block;padding:11px 14px;background:#1a1a1a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Ouvrir Zefix</a>
-              <a href="https://www.uid.admin.ch" style="display:inline-block;padding:11px 14px;background:#f5f5f5;color:#1a1a1a;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Registre IDE</a>
-              <a href="${escapeEmailHtml(validationMailto)}" style="display:inline-block;padding:11px 14px;background:#16a34a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Répondre : validé</a>
-              <a href="${escapeEmailHtml(reviewMailto)}" style="display:inline-block;padding:11px 14px;background:#E24B4A;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Répondre : infos à compléter</a>
-            </div>
-            <p style="font-size:12px;line-height:1.6;color:#999;margin-top:18px">
-              Conseil : copier le numéro IDE puis vérifier la concordance du nom, de l'adresse et du statut de l'entreprise dans Zefix ou le registre IDE.
-            </p>
-          </div>`
-        })
-      ])
     } catch (emailError) {
       console.error('Registration email error:', emailError)
     }

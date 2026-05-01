@@ -82,6 +82,7 @@ const response = await fetch(
       priceId: plan.priceId,
       userId: user.id,
       planName: plan.id,
+      founder: plan.founder && remaining > 0,
     }),
   }
 )
