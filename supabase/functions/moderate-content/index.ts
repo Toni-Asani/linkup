@@ -58,6 +58,23 @@ const hasLocalForbiddenContent = (text = '') => {
   return forbiddenWords.some((word) => normalized.includes(word))
 }
 
+const emailPattern = /[a-z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|\sat\s)\s*[a-z0-9.-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*[a-z]{2,}/i
+const urlPattern = /\b(?:https?:\/\/|www\.|[a-z0-9-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*(?:ch|com|net|org|io|co|fr|de|it|li|me|app|dev|biz|info)\b)/i
+const phoneCandidatePattern = /(?:\+|00|0)\d[\d\s()./-]{6,}\d/g
+
+const detectDirectContactInfo = (text = '') => {
+  const normalized = normalizeText(text)
+  if (emailPattern.test(normalized)) return 'email'
+  if (urlPattern.test(normalized)) return 'external_link'
+
+  const candidates = normalized.match(phoneCandidatePattern) || []
+  const hasPhoneNumber = candidates.some((candidate) => {
+    const digits = candidate.replace(/\D/g, '')
+    return digits.length >= 9 && digits.length <= 15
+  })
+  return hasPhoneNumber ? 'phone_number' : null
+}
+
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -171,6 +188,18 @@ serve(async (req) => {
           reason: 'local_forbidden_word',
           categories: ['local_forbidden_word'],
         })
+      }
+
+      if (context === 'message') {
+        const directContactType = detectDirectContactInfo(text)
+        if (directContactType) {
+          return jsonResponse({
+            allowed: false,
+            flagged: true,
+            reason: 'direct_contact_info',
+            categories: [directContactType],
+          })
+        }
       }
 
       const moderation = await createModeration(openaiApiKey, text)

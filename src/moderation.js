@@ -19,6 +19,27 @@ export const containsForbiddenContent = (text = '') => {
   return forbiddenWords.some(word => normalized.includes(word))
 }
 
+const emailPattern = /[a-z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|\sat\s)\s*[a-z0-9.-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*[a-z]{2,}/i
+const urlPattern = /\b(?:https?:\/\/|www\.|[a-z0-9-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*(?:ch|com|net|org|io|co|fr|de|it|li|me|app|dev|biz|info)\b)/i
+const phoneCandidatePattern = /(?:\+|00|0)\d[\d\s()./-]{6,}\d/g
+
+export const detectDirectContactInfo = (text = '') => {
+  const value = normalizeForModeration(text)
+  if (emailPattern.test(value)) return { type: 'email' }
+  if (urlPattern.test(value)) return { type: 'external_link' }
+
+  const candidates = value.match(phoneCandidatePattern) || []
+  const hasPhoneNumber = candidates.some(candidate => {
+    const digits = candidate.replace(/\D/g, '')
+    return digits.length >= 9 && digits.length <= 15
+  })
+  if (hasPhoneNumber) return { type: 'phone_number' }
+
+  return null
+}
+
+export const containsDirectContactInfo = (text = '') => Boolean(detectDirectContactInfo(text))
+
 const invokeModeration = async (payload) => {
   const { data, error } = await supabase.functions.invoke('moderate-content', {
     body: payload,
@@ -34,6 +55,17 @@ export const moderateTextContent = async (text, context = 'message') => {
 
   if (containsForbiddenContent(text)) {
     return { allowed: false, reason: 'local_forbidden_word' }
+  }
+
+  if (context === 'message') {
+    const directContact = detectDirectContactInfo(text)
+    if (directContact) {
+      return {
+        allowed: false,
+        reason: 'direct_contact_info',
+        categories: [directContact.type],
+      }
+    }
   }
 
   try {

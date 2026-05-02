@@ -102,10 +102,6 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   setSubmittingReport(false)
 }
   const handleContact = async () => {
-    if (plan === 'Starter') {
-      setShowUpgradeModal(true)
-      return
-    }
     setContacting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -231,7 +227,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           </div>
         )}
 
-        {/* Besoins — visibles par tous, interaction bloquée pour Starter */}
+        {/* Besoins — visibles par tous, réponse limitée par le plan dans la messagerie */}
         {hasNeeds && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>{ui.companyProfile.needs}</p>
@@ -249,21 +245,13 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
                 ))}
               </div>
             )}
-            {isStarter ? (
-              <div style={{background:'#f5f5f5',borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',gap:8}}>
-                <span style={{fontSize:16}}>🔒</span>
-                <p style={{fontSize:12,color:'#666',margin:0,flex:1}}>{ui.companyProfile.upgradeForNeeds}</p>
-                <button onClick={() => { setSelectedCompanyId && setSelectedCompanyId(null); setActiveTab && setActiveTab('pricing') }}
-                  style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
-                  {ui.common.upgrade}
-                </button>
-              </div>
-            ) : (
-              <button onClick={handleContact}
-                style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                {ui.companyProfile.answerNeed}
-              </button>
+            {isStarter && (
+              <p style={{fontSize:11,color:'#777',margin:'0 0 8px',lineHeight:1.4}}>{ui.companyProfile.upgradeForNeeds}</p>
             )}
+            <button onClick={handleContact}
+              style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+              {ui.companyProfile.answerNeed}
+            </button>
           </div>
         )}
 

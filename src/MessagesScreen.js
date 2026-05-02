@@ -3,6 +3,8 @@ import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
 
+const STARTER_DAILY_MESSAGE_LIMIT = 5
+
 export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, onDirectOpenHandled, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [matches, setMatches] = useState([])
@@ -16,6 +18,7 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
+  const [dailyMessageCount, setDailyMessageCount] = useState(0)
   const messagesEndRef = useRef(null)
   const [uploadingFile, setUploadingFile] = useState(false)
   const [longPressMatch, setLongPressMatch] = useState(null)
@@ -85,6 +88,7 @@ const loadMyCompanyAndMatches = async () => {
     .from('companies').select('*').eq('user_id', user.id).single()
   if (!myComp) { setLoading(false); return }
   setMyCompany(myComp)
+  await loadDailyMessageCount(myComp.id)
 
   const { data: matchData } = await supabase
     .from('matches')
@@ -96,6 +100,20 @@ const loadMyCompanyAndMatches = async () => {
   setMatches(matchData || [])
   setLoading(false)
 }
+
+  const loadDailyMessageCount = async (companyId) => {
+    if (!companyId) return 0
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    const { count } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('sender_id', companyId)
+      .gte('created_at', startOfToday.toISOString())
+    const todayCount = count || 0
+    setDailyMessageCount(todayCount)
+    return todayCount
+  }
 
   const loadMessages = async (matchId) => {
     const { data } = await supabase
@@ -212,16 +230,35 @@ const handleFileUpload = async (e) => {
 }
   const sendMessage = async () => {
     if (!newMessage.trim() || !myCompany) return
+    let starterCountBeforeSend = dailyMessageCount
+    if (isStarter) {
+      starterCountBeforeSend = await loadDailyMessageCount(myCompany.id)
+      if (starterCountBeforeSend >= STARTER_DAILY_MESSAGE_LIMIT) {
+        alert(ui.messages.starterLimitReached)
+        return
+      }
+    }
     const moderation = await moderateTextContent(newMessage, 'message')
     if (!moderation.allowed) {
-      alert(ui.messages.messageBlocked)
+      alert(moderation.reason === 'direct_contact_info'
+        ? ui.messages.directContactBlocked
+        : ui.messages.messageBlocked)
       return
     }
     const content = newMessage.trim()
 setNewMessage('')
 const msg = { match_id: selectedMatch.id, sender_id: myCompany.id, content }
 const { data } = await supabase.from('messages').insert(msg).select().single()
-if (data) setMessages(prev => [...prev, data])
+if (data) {
+  setMessages(prev => [...prev, data])
+  if (isStarter) {
+    const nextCount = starterCountBeforeSend + 1
+    setDailyMessageCount(nextCount)
+    if (nextCount >= STARTER_DAILY_MESSAGE_LIMIT) {
+      alert(ui.messages.starterLimitReached)
+    }
+  }
+}
   }
 
   const getOtherCompany = (match) => {
@@ -233,9 +270,12 @@ if (data) setMessages(prev => [...prev, data])
   const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
   const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'short' })
 
+  const isStarter = plan === 'Starter'
   const isBasicOrPremium = plan === 'Basic' || plan === 'Premium'
-  const canSendMessages = plan === 'Basic' || plan === 'Premium'
+  const canSendMessages = isStarter || isBasicOrPremium
   const canLeaveReview = isBasicOrPremium && messages.length >= 1
+  const starterMessagesRemaining = Math.max(0, STARTER_DAILY_MESSAGE_LIMIT - dailyMessageCount)
+  const starterLimitReached = isStarter && starterMessagesRemaining <= 0
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
@@ -416,7 +456,13 @@ if (data) setMessages(prev => [...prev, data])
 
         {/* Input message */}
 {canSendMessages ? (
-  <div style={{padding:'0.75rem 1rem',borderTop:'1px solid #f0f0f0',background:'white',display:'flex',gap:8,alignItems:'center'}}>
+  <div style={{padding:'0.75rem 1rem',borderTop:'1px solid #f0f0f0',background:'white'}}>
+    {isStarter && (
+      <p style={{fontSize:11,color: starterLimitReached ? '#E24B4A' : '#666',margin:'0 0 8px',textAlign:'center',fontWeight:600}}>
+        {ui.messages.starterDailyLimit(starterMessagesRemaining, STARTER_DAILY_MESSAGE_LIMIT)}
+      </p>
+    )}
+    <div style={{display:'flex',gap:8,alignItems:'center'}}>
     {plan === 'Premium' && (
   <label style={{cursor:'pointer',flexShrink:0}}>
     <span style={{fontSize:22}}>{uploadingFile ? '⏳' : '📎'}</span>
@@ -429,13 +475,15 @@ if (data) setMessages(prev => [...prev, data])
   value={newMessage}
   onChange={e => setNewMessage(e.target.value)}
   onKeyDown={e => e.key === 'Enter' && sendMessage()}
-      placeholder={ui.messages.messagePlaceholder}
-      style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans'}}
+      disabled={starterLimitReached}
+      placeholder={starterLimitReached ? ui.messages.starterLimitPlaceholder : ui.messages.messagePlaceholder}
+      style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',background: starterLimitReached ? '#f5f5f5' : 'white'}}
     />
-    <button onClick={sendMessage} disabled={!newMessage.trim()}
-      style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+    <button onClick={sendMessage} disabled={!newMessage.trim() || starterLimitReached}
+      style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() && !starterLimitReached ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() && !starterLimitReached ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
       ↑
     </button>
+    </div>
   </div>
 ) : (
   <div style={{padding:'1rem',borderTop:'1px solid #f0f0f0',background:'#FFF5F5',textAlign:'center'}}>
