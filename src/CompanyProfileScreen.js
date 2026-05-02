@@ -58,6 +58,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const [reportReason, setReportReason] = useState('')
   const [reportComment, setReportComment] = useState('')
   const [submittingReport, setSubmittingReport] = useState(false)
+  const [zoomImage, setZoomImage] = useState(null)
 
   useEffect(() => { loadCompany() }, [companyId])
 
@@ -164,6 +165,19 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   return (
     <div style={{flex:1,overflowY:'auto'}}>
 
+      {zoomImage && (
+        <div onClick={() => setZoomImage(null)}
+          style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.88)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:600,padding:'calc(env(safe-area-inset-top) + 1rem) 1rem calc(env(safe-area-inset-bottom) + 1rem)'}}>
+          <button onClick={() => setZoomImage(null)} aria-label="Fermer"
+            style={{position:'absolute',top:'calc(env(safe-area-inset-top) + 14px)',right:14,width:36,height:36,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.35)',background:'rgba(255,255,255,0.12)',color:'white',fontSize:20,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            x
+          </button>
+          <img src={zoomImage.src} alt={zoomImage.alt}
+            onClick={e => e.stopPropagation()}
+            style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',borderRadius:12,boxShadow:'0 18px 60px rgba(0,0,0,0.45)'}} />
+        </div>
+      )}
+
       {/* Modal upgrade Starter */}
       {showUpgradeModal && (
         <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'1rem'}}>
@@ -193,7 +207,11 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         </button>
         <div style={{width:80,height:80,margin:'2rem auto 0',borderRadius:'50%',overflow:'hidden',border:'3px solid white'}}>
           {company.logo_url ? (
-            <img src={company.logo_url} alt="logo" style={{width:'100%',height:'100%',objectFit:'cover'}} />
+            <button onClick={() => setZoomImage({ src: company.logo_url, alt: company.name || 'Logo' })}
+              aria-label="Agrandir le logo"
+              style={{width:'100%',height:'100%',border:'none',padding:0,background:'transparent',cursor:'zoom-in',display:'block'}}>
+              <img src={company.logo_url} alt="logo" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
+            </button>
           ) : (
             <div style={{width:'100%',height:'100%',background:'rgba(255,255,255,0.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
               <span style={{color:'white',fontWeight:700,fontSize:28}}>{initials}</span>
@@ -262,8 +280,12 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             {isPremium ? (
               <div style={{display:'flex',alignItems:'center',gap:12}}>
                 {company.contact_photo_url ? (
-                  <img src={company.contact_photo_url} alt="contact"
-                    style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:'2px solid #eee',flexShrink:0}} />
+                  <button onClick={() => setZoomImage({ src: company.contact_photo_url, alt: company.contact_name || 'Contact' })}
+                    aria-label="Agrandir la photo"
+                    style={{width:52,height:52,borderRadius:'50%',border:'2px solid #eee',padding:0,overflow:'hidden',background:'transparent',cursor:'zoom-in',flexShrink:0}}>
+                    <img src={company.contact_photo_url} alt="contact"
+                      style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
+                  </button>
                 ) : (
                   <div style={{width:52,height:52,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                     <span style={{fontSize:22}}>👤</span>
