@@ -832,7 +832,7 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
         {t.login}
       </button>
       <button onClick={() => setScreen('visitor')}
-        style={{width:'100%',padding:'12px',background:'none',color:'#999',border:'none',fontSize:14,cursor:'pointer',textDecoration:'underline'}}>
+        style={{width:'100%',padding:'14px',background:'#F8FAFC',color:'#475569',border:'1px solid #CBD5E1',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:'0 6px 18px rgba(71,85,105,0.08)'}}>
         {t.visitorMode}
       </button>
       {/* Bannière application mobile */}
