@@ -10,7 +10,7 @@ const MESSAGE_CHAR_LIMITS = {
   Premium: 2000,
 }
 
-export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, lang = 'fr' }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, onUnreadChange, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
@@ -27,6 +27,7 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const messagesEndRef = useRef(null)
   const [uploadingFile, setUploadingFile] = useState(false)
   const [longPressMatch, setLongPressMatch] = useState(null)
+  const [unreadByMatch, setUnreadByMatch] = useState({})
   const fileAttachRef = useRef(null)
   const longPressTimerRef = useRef(null)
   const longPressTriggeredRef = useRef(false)
@@ -77,20 +78,47 @@ useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const markNotificationsRead = async () => {
-  await supabase
-    .from('notifications')
-    .update({ read: true })
-    .eq('user_id', user.id)
-    .eq('read', false)
-}
+  const loadUnreadNotifications = async () => {
+    const { data } = await supabase
+      .from('notifications')
+      .select('match_id')
+      .eq('user_id', user.id)
+      .eq('type', 'new_message')
+      .eq('read', false)
+    const grouped = {}
+    ;(data || []).forEach(item => {
+      if (!item.match_id) return
+      grouped[item.match_id] = (grouped[item.match_id] || 0) + 1
+    })
+    setUnreadByMatch(grouped)
+  }
+
+  const markNotificationsRead = async (matchId) => {
+    if (!matchId) return
+    await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', user.id)
+      .eq('type', 'new_message')
+      .eq('match_id', matchId)
+      .eq('read', false)
+    setUnreadByMatch(current => ({ ...current, [matchId]: 0 }))
+    onUnreadChange && onUnreadChange()
+  }
+
+  const notifyMessageRecipient = async (match) => {
+    const other = getOtherCompany(match)
+    if (!other?.user_id) return
+    await supabase.from('notifications').insert({
+      user_id: other.user_id,
+      type: 'new_message',
+      match_id: match.id
+    })
+  }
 
 const loadMyCompanyAndMatches = async () => {
   // Expirer les matchs sans message après 7 jours
   await supabase.rpc('expire_matches')
-
-  // Marquer les notifications comme lues
-  await markNotificationsRead()
 
   const { data: myComp } = await supabase
     .from('companies').select('*').eq('user_id', user.id).single()
@@ -106,6 +134,7 @@ const loadMyCompanyAndMatches = async () => {
     .order('created_at', { ascending: false })
 
   setMatches(matchData || [])
+  await loadUnreadNotifications()
   setLoading(false)
 }
 
@@ -128,6 +157,7 @@ const loadMyCompanyAndMatches = async () => {
       .from('messages').select('*').eq('match_id', matchId)
       .order('created_at', { ascending: true })
     setMessages(data || [])
+    await markNotificationsRead(matchId)
   }
 
   const checkExistingReview = async () => {
@@ -229,6 +259,7 @@ const handleFileUpload = async (e) => {
       attachment_name: file.name,
       attachment_type: file.type
     })
+    await notifyMessageRecipient(selectedMatch)
     await loadMessages(selectedMatch.id)
   } catch(e) {
     alert(ui.messages.fileUploadError)
@@ -263,6 +294,7 @@ const msg = { match_id: selectedMatch.id, sender_id: myCompany.id, content }
 const { data } = await supabase.from('messages').insert(msg).select().single()
 if (data) {
   setMessages(prev => [...prev, data])
+  await notifyMessageRecipient(selectedMatch)
   if (isStarter) {
     const nextCount = starterCountBeforeSend + 1
     setDailyMessageCount(nextCount)
@@ -569,6 +601,7 @@ if (data) {
           {matches.map(match => {
             const other = getOtherCompany(match)
             if (!other) return null
+            const unread = unreadByMatch[match.id] || 0
             return (
               <div key={match.id} 
                 onClick={e => handleConversationClick(match, e)}
@@ -591,7 +624,14 @@ if (data) {
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <p style={{fontWeight:700,fontSize:15,margin:0}}>{other.name}</p>
-                    <span style={{fontSize:11,color:'#999',flexShrink:0}}>{formatDate(match.created_at)}</span>
+                    <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+                      {unread > 0 && (
+                        <span style={{minWidth:18,height:18,borderRadius:9,background:'#E24B4A',color:'white',fontSize:10,fontWeight:800,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}}>
+                          {unread > 9 ? '9+' : unread}
+                        </span>
+                      )}
+                      <span style={{fontSize:11,color:'#999'}}>{formatDate(match.created_at)}</span>
+                    </div>
                   </div>
                   <p style={{fontSize:13,color:'#999',margin:'2px 0 0',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
                     {other.sector} · {other.city}

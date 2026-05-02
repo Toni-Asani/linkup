@@ -115,7 +115,7 @@ const cantons = [
   })
 
   return (
-    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',width:'100%',maxWidth:'100%',overflow:'hidden',background:'white'}}>
+    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',width:'100%',maxWidth:'100%',overflowY:selected ? 'auto' : 'hidden',overflowX:'hidden',WebkitOverflowScrolling:'touch',background:'white'}}>
 
       {!user && (
   <div style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -163,7 +163,7 @@ const cantons = [
   </select>
 </div>
 
-      <div style={{flex:1,position:'relative'}}>
+      <div style={{flex:selected ? '0 0 auto' : 1,position:'relative',height:selected ? 260 : undefined,minHeight:selected ? 260 : 350}}>
         <MapContainer
           center={[46.8182, 8.2275]}
           zoom={8}
@@ -227,7 +227,7 @@ const cantons = [
       </div>
 
       {selected && (
-        <div style={{padding:'1rem',paddingBottom:'calc(1rem + 72px + env(safe-area-inset-bottom))',borderTop:'1px solid #f0f0f0',background:'white',flexShrink:0}}>
+        <div style={{padding:'1rem',paddingBottom:'1rem',borderTop:'1px solid #f0f0f0',background:'white',flex:'0 0 auto'}}>
           {(() => {
             const selectedActiveTags = getActiveTags(selected.needs_tags)
             const selectedHasNeeds = selected.needs_description || selectedActiveTags.length > 0

@@ -1292,6 +1292,7 @@ const loadUnreadCount = async () => {
     .from('notifications')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
+    .eq('type', 'new_message')
     .eq('read', false)
   setUnreadCount(count || 0)
 }
@@ -1399,7 +1400,7 @@ const handleTabChange = (tab) => {
       {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} lang={lang} />}
       {activeTab === 'swipe' && <SwipeScreen user={user} plan={userPlan} lang={lang} />}
       {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} lang={lang} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} lang={lang} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadUnreadCount} lang={lang} />}
       {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
       {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
     </>
