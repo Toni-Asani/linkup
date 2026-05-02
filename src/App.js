@@ -1212,9 +1212,9 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
               <p style={{fontSize:13,color:'#666'}}>{t.pricingDesc}</p>
             </div>
             {[
-              {name:'Starter',price:ui.common.free,color:'#666',features:ui.pricing.starterFeatures.slice(0, 3)},
-              {name:'Basic',price:`CHF 19${ui.common.month}`,color:'#185FA5',features:ui.pricing.basicFeatures.slice(0, 3)},
-              {name:'Premium',price:`CHF 39${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 4),highlight:true},
+              {name:'Starter',price:ui.common.free,color:'#666',features:ui.pricing.starterFeatures.slice(0, 4),limits:ui.pricing.starterLimits.slice(0, 2)},
+              {name:'Basic',price:`CHF 19${ui.common.month}`,color:'#185FA5',features:ui.pricing.basicFeatures.slice(0, 4),limits:ui.pricing.basicLimits.slice(0, 2)},
+              {name:'Premium',price:`CHF 39${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 5),limits:ui.pricing.premiumLimits,highlight:true},
             ].map(plan => (
               <div key={plan.name} onClick={() => setShowModal(true)}
                 style={{border: plan.highlight ? `2px solid ${plan.color}` : '1px solid #eee',borderRadius:12,padding:'1rem',marginBottom:'0.75rem',cursor:'pointer',background:'white'}}>
@@ -1224,6 +1224,9 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
                 </div>
                 {plan.features.map((f,i) => (
                   <p key={i} style={{fontSize:12,color:'#666',margin:'3px 0'}}>✓ {f}</p>
+                ))}
+                {(plan.limits || []).map((f,i) => (
+                  <p key={`limit-${i}`} style={{fontSize:12,color:'#999',margin:'3px 0'}}>− {f}</p>
                 ))}
               </div>
             ))}

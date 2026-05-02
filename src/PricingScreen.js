@@ -11,6 +11,7 @@ const getPlans = (ui) => [
     price: 0,
     color: '#666',
     features: ui.pricing.starterFeatures,
+    limits: ui.pricing.starterLimits,
     cta: ui.common.currentPlan,
     disabled: true
   },
@@ -22,6 +23,7 @@ const getPlans = (ui) => [
     priceId: process.env.REACT_APP_STRIPE_PRICE_BASIC,
     appleProductId: APPLE_PRODUCT_IDS.basic,
     features: ui.pricing.basicFeatures,
+    limits: ui.pricing.basicLimits,
     cta: ui.pricing.chooseBasic,
     disabled: false
   },
@@ -33,6 +35,7 @@ const getPlans = (ui) => [
     priceId: process.env.REACT_APP_STRIPE_PRICE_PREMIUM,
     appleProductId: APPLE_PRODUCT_IDS.premium,
     features: ui.pricing.premiumFeatures,
+    limits: ui.pricing.premiumLimits,
     cta: ui.pricing.choosePremium,
     disabled: false,
     highlighted: true,
@@ -260,6 +263,14 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
                         <span style={{fontSize:10,color:plan.color}}>✓</span>
                       </div>
                       <span style={{fontSize:13,color:'#444'}}>{f}</span>
+                    </div>
+                  ))}
+                  {(plan.limits || []).map((f, i) => (
+                    <div key={`limit-${i}`} style={{display:'flex',alignItems:'center',gap:8}}>
+                      <div style={{width:16,height:16,borderRadius:'50%',background:'#f5f5f5',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                        <span style={{fontSize:10,color:'#999'}}>−</span>
+                      </div>
+                      <span style={{fontSize:13,color:'#777'}}>{f}</span>
                     </div>
                   ))}
                 </div>
