@@ -46,7 +46,7 @@ const sectorColors = {
   'Autre': '#666',
 }
 
-export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId, setDirectMessageCompanyId, lang = 'fr' }) {
+export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -102,7 +102,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   }
   setSubmittingReport(false)
 }
-  const handleContact = async () => {
+  const handleContact = async (needSubject = '') => {
     setContacting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -122,6 +122,10 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           company_b: companyId,
           status: 'pending'
         })
+      }
+      const cleanNeedSubject = String(needSubject || '').replace(/\s+/g, ' ').trim()
+      if (cleanNeedSubject) {
+        setDirectMessageDraft && setDirectMessageDraft({ subject: cleanNeedSubject.slice(0, 45) })
       }
       setDirectMessageCompanyId && setDirectMessageCompanyId(companyId)
       setSelectedCompanyId && setSelectedCompanyId(null)
@@ -161,6 +165,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     return new Date(t.expires) > new Date()
   })
   const hasNeeds = company.needs_description || activeTags.length > 0
+  const fallbackNeedSubject = activeTags[0]?.label || company.needs_description || company.name
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>
@@ -250,23 +255,25 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>{ui.companyProfile.needs}</p>
             {company.needs_description && (
-              <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0}}>
+              <p onClick={() => handleContact(company.needs_description)}
+                style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0,cursor:'pointer'}}>
                 {company.needs_description}
               </p>
             )}
             {activeTags.length > 0 && (
               <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
                 {activeTags.map((tag, i) => (
-                  <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:500,color:'#333'}}>
+                  <button key={i} onClick={() => handleContact(tag.label)}
+                    style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:500,color:'#333',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
                     {tag.label}
-                  </span>
+                  </button>
                 ))}
               </div>
             )}
             {isStarter && (
               <p style={{fontSize:11,color:'#777',margin:'0 0 8px',lineHeight:1.4}}>{ui.companyProfile.upgradeForNeeds}</p>
             )}
-            <button onClick={handleContact}
+            <button onClick={() => handleContact(fallbackNeedSubject)}
               style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
               {ui.companyProfile.answerNeed}
             </button>
@@ -332,7 +339,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         </div>
 
         {/* Bouton Contacter */}
-        <button onClick={handleContact} disabled={contacting}
+        <button onClick={() => handleContact()} disabled={contacting}
           style={{width:'100%',padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
           {contacting ? ui.companyProfile.connecting : ui.companyProfile.contact(company.name)}
         </button>

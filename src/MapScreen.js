@@ -24,6 +24,13 @@ const sectorColors = {
   'Services': '#993C1D',
 }
 
+const getActiveTags = (needs_tags) => {
+  try {
+    const tags = needs_tags ? JSON.parse(needs_tags) : []
+    return tags.filter(t => !t.expires || new Date(t.expires) > new Date())
+  } catch { return [] }
+}
+
 export default function MapScreen({ user, setScreen, setSelectedCompanyId, setActiveTab, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [companies, setCompanies] = useState([])
@@ -175,10 +182,28 @@ const cantons = [
             >
               <Popup>
                 <div style={{fontFamily:'Plus Jakarta Sans',minWidth:160}}>
+                  {(() => {
+                    const activeTags = getActiveTags(company.needs_tags)
+                    const hasNeeds = company.needs_description || activeTags.length > 0
+                    return (
+                      <>
                   <p style={{fontWeight:700,fontSize:14,margin:'0 0 4px'}}>{company.name}</p>
                   <p style={{fontSize:12,color:'#666',margin:'0 0 2px'}}>{company.sector}</p>
                   <p style={{fontSize:12,color:'#999',margin:'0 0 6px'}}>📍 {company.city}, {company.canton}</p>
                   {!company.hasPreciseCoordinates && <p style={{fontSize:11,color:'#999',margin:'0 0 6px'}}>{ui.map.approximatePosition}</p>}
+                  {hasNeeds && (
+                    <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:8,padding:'6px 8px',margin:'0 0 8px'}}>
+                      <p style={{fontSize:11,color:'#E67E22',fontWeight:700,margin:'0 0 4px'}}>{ui.swipe.needs}</p>
+                      {company.needs_description && <p style={{fontSize:11,color:'#444',lineHeight:1.35,margin:'0 0 4px'}}>{company.needs_description}</p>}
+                      {activeTags.length > 0 && (
+                        <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                          {activeTags.slice(0, 3).map((tag, i) => (
+                            <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'2px 6px',fontSize:10,color:'#333'}}>{tag.label}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {!user && (
   <div style={{marginTop:'0.75rem',display:'flex',flexDirection:'column',gap:8}}>
     <button onClick={() => setScreen && setScreen('register')}
@@ -191,6 +216,9 @@ const cantons = [
     </button>
   </div>
 )}
+                      </>
+                    )
+                  })()}
                 </div>
               </Popup>
             </Marker>
@@ -200,6 +228,11 @@ const cantons = [
 
       {selected && (
         <div style={{padding:'1rem',paddingBottom:'calc(1rem + 72px + env(safe-area-inset-bottom))',borderTop:'1px solid #f0f0f0',background:'white',flexShrink:0}}>
+          {(() => {
+            const selectedActiveTags = getActiveTags(selected.needs_tags)
+            const selectedHasNeeds = selected.needs_description || selectedActiveTags.length > 0
+            return (
+              <>
           <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
             <div style={{width:44,height:44,borderRadius:'50%',background:sectorColors[selected.sector]||'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
               <span style={{color:'white',fontWeight:700,fontSize:14}}>{selected.name.substring(0,2).toUpperCase()}</span>
@@ -213,6 +246,22 @@ const cantons = [
             <button onClick={() => setSelected(null)}
               style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:20,flexShrink:0}}>✕</button>
           </div>
+
+          {selectedHasNeeds && (
+            <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'0.75rem',marginTop:'0.75rem'}}>
+              <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:6}}>{ui.swipe.needs}</p>
+              {selected.needs_description && (
+                <p style={{fontSize:12,color:'#444',lineHeight:1.45,marginBottom: selectedActiveTags.length > 0 ? 8 : 0}}>{selected.needs_description}</p>
+              )}
+              {selectedActiveTags.length > 0 && (
+                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                  {selectedActiveTags.map((tag, i) => (
+                    <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'3px 8px',fontSize:11,fontWeight:500,color:'#333'}}>{tag.label}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={{marginTop:'0.75rem',display:'flex',gap:8}}>
             {user ? (
@@ -230,6 +279,9 @@ const cantons = [
               </button>
             )}
           </div>
+              </>
+            )
+          })()}
         </div>
       )}
 

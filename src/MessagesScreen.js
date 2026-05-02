@@ -4,8 +4,13 @@ import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
 
 const STARTER_DAILY_MESSAGE_LIMIT = 5
+const MESSAGE_CHAR_LIMITS = {
+  Starter: 100,
+  Basic: 1000,
+  Premium: 2000,
+}
 
-export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, onDirectOpenHandled, lang = 'fr' }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
@@ -43,10 +48,13 @@ useEffect(() => {
     )
     if (match) {
       setSelectedMatch(match)
+      if (openMessageDraft?.subject) {
+        setNewMessage(current => current.trim() ? current : ui.messages.needDraft(openMessageDraft.subject))
+      }
       onDirectOpenHandled && onDirectOpenHandled()
     }
   }
-}, [openMatchWithCompanyId, matches, onDirectOpenHandled])
+}, [openMatchWithCompanyId, openMessageDraft, matches, onDirectOpenHandled, ui.messages])
 
   useEffect(() => {
     if (selectedMatch) {
@@ -230,6 +238,10 @@ const handleFileUpload = async (e) => {
 }
   const sendMessage = async () => {
     if (!newMessage.trim() || !myCompany) return
+    if (newMessage.length > messageCharLimit) {
+      alert(ui.messages.messageTooLong(messageCharLimit))
+      return
+    }
     let starterCountBeforeSend = dailyMessageCount
     if (isStarter) {
       starterCountBeforeSend = await loadDailyMessageCount(myCompany.id)
@@ -276,6 +288,9 @@ if (data) {
   const canLeaveReview = isBasicOrPremium && messages.length >= 1
   const starterMessagesRemaining = Math.max(0, STARTER_DAILY_MESSAGE_LIMIT - dailyMessageCount)
   const starterLimitReached = isStarter && starterMessagesRemaining <= 0
+  const messageCharLimit = MESSAGE_CHAR_LIMITS[plan] || MESSAGE_CHAR_LIMITS.Starter
+  const messageCharsRemaining = Math.max(0, messageCharLimit - newMessage.length)
+  const messageLimitReached = newMessage.length >= messageCharLimit
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
@@ -457,10 +472,17 @@ if (data) {
         {/* Input message */}
 {canSendMessages ? (
   <div style={{padding:'0.75rem 1rem',borderTop:'1px solid #f0f0f0',background:'white'}}>
-    {isStarter && (
-      <p style={{fontSize:11,color: starterLimitReached ? '#E24B4A' : '#666',margin:'0 0 8px',textAlign:'center',fontWeight:600}}>
-        {ui.messages.starterDailyLimit(starterMessagesRemaining, STARTER_DAILY_MESSAGE_LIMIT)}
-      </p>
+    {(isStarter || messageLimitReached) && (
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,margin:'0 0 8px'}}>
+        {isStarter ? (
+          <p style={{fontSize:11,color: starterLimitReached ? '#E24B4A' : '#666',margin:0,fontWeight:600}}>
+            {ui.messages.starterDailyLimit(starterMessagesRemaining, STARTER_DAILY_MESSAGE_LIMIT)}
+          </p>
+        ) : <span />}
+        <p style={{fontSize:11,color: messageLimitReached ? '#E24B4A' : '#999',margin:0,fontWeight:600,whiteSpace:'nowrap'}}>
+          {newMessage.length}/{messageCharLimit}
+        </p>
+      </div>
     )}
     <div style={{display:'flex',gap:8,alignItems:'center'}}>
     {plan === 'Premium' && (
@@ -471,13 +493,20 @@ if (data) {
       onChange={handleFileUpload} />
   </label>
 )}
-<input
+<textarea
   value={newMessage}
   onChange={e => setNewMessage(e.target.value)}
-  onKeyDown={e => e.key === 'Enter' && sendMessage()}
+  onKeyDown={e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }}
       disabled={starterLimitReached}
+      maxLength={messageCharLimit}
       placeholder={starterLimitReached ? ui.messages.starterLimitPlaceholder : ui.messages.messagePlaceholder}
-      style={{flex:1,padding:'10px 14px',border:'1px solid #eee',borderRadius:24,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',background: starterLimitReached ? '#f5f5f5' : 'white'}}
+      rows={1}
+      style={{flex:1,minHeight:40,maxHeight:86,padding:'10px 14px',border:'1px solid #eee',borderRadius:20,fontSize:16,lineHeight:1.25,outline:'none',fontFamily:'Plus Jakarta Sans',background: starterLimitReached ? '#f5f5f5' : 'white',resize:'none'}}
     />
     <button onClick={sendMessage} disabled={!newMessage.trim() || starterLimitReached}
       style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() && !starterLimitReached ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() && !starterLimitReached ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>

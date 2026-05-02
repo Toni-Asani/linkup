@@ -1272,6 +1272,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [directMessageCompanyId, setDirectMessageCompanyId] = useState(null)
+  const [directMessageDraft, setDirectMessageDraft] = useState(null)
   const ui = getUiText(lang)
 
 useEffect(() => {
@@ -1305,7 +1306,10 @@ const loadUnreadCount = async () => {
 const handleTabChange = (tab) => {
   setActiveTab(tab)
   setSelectedCompanyId(null)
-  if (tab !== 'messages') setDirectMessageCompanyId(null)
+  if (tab !== 'messages') {
+    setDirectMessageCompanyId(null)
+    setDirectMessageDraft(null)
+  }
 }
 
   const tabStyle = (tab) => ({
@@ -1388,13 +1392,14 @@ const handleTabChange = (tab) => {
   setActiveTab={setActiveTab}
   setSelectedCompanyId={setSelectedCompanyId}
   setDirectMessageCompanyId={setDirectMessageCompanyId}
+  setDirectMessageDraft={setDirectMessageDraft}
 />
   ) : (
     <>
       {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} lang={lang} />}
       {activeTab === 'swipe' && <SwipeScreen user={user} plan={userPlan} lang={lang} />}
       {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} lang={lang} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} onDirectOpenHandled={() => setDirectMessageCompanyId(null)} lang={lang} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} lang={lang} />}
       {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
       {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
     </>
