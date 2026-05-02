@@ -179,10 +179,12 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.followers}</p>
           <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.followersLabel}</p>
         </div>
-        <div style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)'}}>
-          <p style={{fontSize:24,fontWeight:700,color:'#3B6D11',margin:0}}>{remaining}</p>
-          <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.founderPlaces}</p>
-        </div>
+        {!isNativeApp() && (
+          <div style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)'}}>
+            <p style={{fontSize:24,fontWeight:700,color:'#3B6D11',margin:0}}>{remaining}</p>
+            <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.founderPlaces}</p>
+          </div>
+        )}
       </div>
 
       <div style={{padding:'1.25rem 1rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
@@ -228,23 +230,24 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
           )}
         </div>
 
-        {/* Offre fondateurs */}
-        <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-            <p style={{fontSize:14,color:'#E24B4A',fontWeight:700,margin:0}}>{ui.home.founderOffer}</p>
-            <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>{ui.home.remaining(remaining)}</span>
+        {!isNativeApp() && (
+          <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+              <p style={{fontSize:14,color:'#E24B4A',fontWeight:700,margin:0}}>{ui.home.founderOffer}</p>
+              <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>{ui.home.remaining(remaining)}</span>
+            </div>
+            <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,marginBottom:8}}>
+              <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
+            </div>
+            <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
+              {ui.home.founderDesc(remaining)}
+            </p>
+            <button onClick={() => setActiveTab('pricing')}
+              style={{marginTop:'0.75rem',width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+              {ui.home.activateFounder}
+            </button>
           </div>
-          <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,marginBottom:8}}>
-            <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
-          </div>
-          <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
-            {ui.home.founderDesc(remaining)}
-          </p>
-          <button onClick={() => setActiveTab('pricing')}
-            style={{marginTop:'0.75rem',width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-            {ui.home.activateFounder}
-          </button>
-        </div>
+        )}
 
         {/* Compléter profil si incomplet */}
         {(!company?.description || !company?.sector) && (

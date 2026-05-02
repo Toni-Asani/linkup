@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile } from './moderation'
 import { geocodeSwissAddress } from './geo'
+import { isNativeApp } from './platform'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -527,15 +528,16 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
           <InfoRow label={ui.profile.email} value={user.email} />
         </InfoCard>
 
-        {/* Offre fondateurs */}
-        <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
-          <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>{ui.profile.founderOffer}</p>
-          <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>{ui.profile.founderDesc}</p>
-          <button onClick={() => setActiveTab && setActiveTab('pricing')}
-            style={{marginTop:'0.75rem',padding:'10px 20px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-            {ui.common.viewPlans}
-          </button>
-        </div>
+        {!isNativeApp() && (
+          <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
+            <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>{ui.profile.founderOffer}</p>
+            <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>{ui.profile.founderDesc}</p>
+            <button onClick={() => setActiveTab && setActiveTab('pricing')}
+              style={{marginTop:'0.75rem',padding:'10px 20px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+              {ui.common.viewPlans}
+            </button>
+          </div>
+        )}
 
         <button onClick={() => setEditing(true)}
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>

@@ -36,6 +36,7 @@ const getPlans = (ui) => [
     appleProductId: APPLE_PRODUCT_IDS.premium,
     features: ui.pricing.premiumFeatures,
     limits: ui.pricing.premiumLimits,
+    founderFeature: ui.pricing.premiumFounderFeature,
     cta: ui.pricing.choosePremium,
     disabled: false,
     highlighted: true,
@@ -102,7 +103,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   }
 
   const saveSubscription = async (plan, transaction = {}) => {
-    const isFounder = plan.id === 'premium' && remaining > 0
+    const isFounder = !nativeIOS && plan.id === 'premium' && remaining > 0
     const fallbackDays = isFounder ? 60 : 30
     const currentPeriodEndsAt = transaction.expirationDate || new Date(Date.now() + fallbackDays * 24 * 60 * 60 * 1000).toISOString()
     const { error } = await supabase.from('subscriptions').upsert({
@@ -223,16 +224,17 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
         <p style={{fontSize:14,color:'#666'}}>{ui.pricing.subtitle}</p>
       </div>
 
-      {/* Compteur fondateurs */}
-      <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.875rem',marginBottom:'1.25rem',textAlign:'center'}}>
-        <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,margin:0}}>
-          {ui.pricing.limitedOffer(remaining)}
-        </p>
-        <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,margin:'8px 0 4px'}}>
-          <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
+      {!nativeIOS && (
+        <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.875rem',marginBottom:'1.25rem',textAlign:'center'}}>
+          <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,margin:0}}>
+            {ui.pricing.limitedOffer(remaining)}
+          </p>
+          <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,margin:'8px 0 4px'}}>
+            <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
+          </div>
+          <p style={{fontSize:12,color:'#666',margin:0}}>{ui.pricing.founderDesc}</p>
         </div>
-        <p style={{fontSize:12,color:'#666',margin:0}}>{ui.pricing.founderDesc}</p>
-      </div>
+      )}
 
       {testModeEnabled && (
         <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,padding:'0.875rem',marginBottom:'1.25rem'}}>
@@ -274,6 +276,9 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
         {plans.map(plan => {
           const isCurrent = currentPlan === plan.id
           const isHighlighted = plan.highlighted
+          const features = !nativeIOS && plan.founder && plan.founderFeature && remaining > 0
+            ? [...plan.features, plan.founderFeature]
+            : plan.features
 
           return (
             <div key={plan.id} style={{
@@ -286,7 +291,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
               {isHighlighted && (
                 <div style={{background:plan.color,padding:'6px',textAlign:'center'}}>
                   <span style={{color:'white',fontSize:12,fontWeight:600}}>
-                    {ui.pricing.recommended}
+                    {nativeIOS ? ui.pricing.recommendedPlain : ui.pricing.recommended}
                   </span>
                 </div>
               )}
@@ -310,7 +315,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
                           {getPriceLabel(plan)}
                           <span style={{fontSize:13,fontWeight:400,color:'#999'}}>{ui.common.month}</span>
                         </p>
-                        {plan.founder && remaining > 0 && (
+                        {!nativeIOS && plan.founder && remaining > 0 && (
                           <p style={{fontSize:11,color:'#E24B4A',margin:'2px 0 0',fontWeight:600}}>
                             {ui.pricing.twoMonthsFree}
                           </p>
@@ -321,7 +326,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
                 </div>
 
                 <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:'1rem'}}>
-                  {plan.features.map((f, i) => (
+                  {features.map((f, i) => (
                     <div key={i} style={{display:'flex',alignItems:'center',gap:8}}>
                       <div style={{width:16,height:16,borderRadius:'50%',background:plan.color+'20',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                         <span style={{fontSize:10,color:plan.color}}>✓</span>
