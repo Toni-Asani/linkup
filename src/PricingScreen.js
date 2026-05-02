@@ -12,7 +12,7 @@ const getPlans = (ui) => [
     color: '#666',
     features: ui.pricing.starterFeatures,
     limits: ui.pricing.starterLimits,
-    cta: ui.common.currentPlan,
+    cta: ui.common.free,
     disabled: true
   },
   {
@@ -52,10 +52,13 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   const [restoring, setRestoring] = useState(false)
   const [appleProducts, setAppleProducts] = useState({})
   const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
+  const [testModeEnabled, setTestModeEnabled] = useState(false)
+  const [testPlanChanging, setTestPlanChanging] = useState(null)
 
   useEffect(() => {
     loadCurrentPlan()
     loadFounderSlots()
+    loadTestModeAccess()
   }, [])
 
   useEffect(() => {
@@ -75,6 +78,16 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
     const { data } = await supabase
       .from('founder_slots').select('*').eq('id', 1).single()
     if (data) setFounderSlots({ used: data.used, max: data.max_slots })
+  }
+
+  const loadTestModeAccess = async () => {
+    const { data } = await supabase
+      .from('test_subscription_users')
+      .select('enabled')
+      .eq('user_id', user.id)
+      .eq('enabled', true)
+      .maybeSingle()
+    setTestModeEnabled(Boolean(data?.enabled))
   }
 
   const loadAppleProducts = async () => {
@@ -177,6 +190,22 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
     }
   }
 
+  const handleTestPlanChange = async (plan) => {
+    setTestPlanChanging(plan.id)
+    try {
+      const { data, error } = await supabase.rpc('hubbing_set_test_subscription_plan', {
+        plan_name: plan.id
+      })
+      if (error) throw error
+      setCurrentPlan(data?.plan || plan.id)
+      alert(ui.pricing.testModeSuccess(plan.name))
+    } catch (e) {
+      alert(ui.pricing.purchaseError(e.message))
+    } finally {
+      setTestPlanChanging(null)
+    }
+  }
+
   const remaining = founderSlots.max - founderSlots.used
   const getPriceLabel = (plan) => {
     if (nativeIOS && plan.appleProductId && appleProducts[plan.appleProductId]?.displayPrice) {
@@ -204,6 +233,41 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
         </div>
         <p style={{fontSize:12,color:'#666',margin:0}}>{ui.pricing.founderDesc}</p>
       </div>
+
+      {testModeEnabled && (
+        <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,padding:'0.875rem',marginBottom:'1.25rem'}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#334155',marginBottom:4}}>
+            {ui.pricing.testModeTitle}
+          </div>
+          <p style={{fontSize:12,color:'#64748B',margin:'0 0 0.75rem',lineHeight:1.4}}>
+            {ui.pricing.testModeDesc}
+          </p>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:8}}>
+            {plans.map(plan => {
+              const active = currentPlan === plan.id
+              return (
+                <button
+                  key={`test-${plan.id}`}
+                  onClick={() => handleTestPlanChange(plan)}
+                  disabled={active || Boolean(testPlanChanging)}
+                  style={{
+                    border:`1px solid ${active ? plan.color : '#CBD5E1'}`,
+                    background: active ? plan.color : 'white',
+                    color: active ? 'white' : '#334155',
+                    borderRadius:10,
+                    padding:'9px 6px',
+                    fontSize:12,
+                    fontWeight:700,
+                    cursor: active || testPlanChanging ? 'default' : 'pointer'
+                  }}
+                >
+                  {testPlanChanging === plan.id ? ui.common.loading : plan.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Plans */}
       <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
