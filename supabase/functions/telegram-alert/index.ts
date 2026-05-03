@@ -130,7 +130,10 @@ serve(async (req) => {
     })
   } catch (error) {
     console.error('Telegram alert error:', error)
-    return new Response(JSON.stringify({ error: 'Unable to send alert' }), {
+    return new Response(JSON.stringify({
+      error: 'Unable to send alert',
+      details: cleanLine(error instanceof Error ? error.message : String(error)),
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
