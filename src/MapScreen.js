@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
@@ -29,6 +29,25 @@ const getActiveTags = (needs_tags) => {
     const tags = needs_tags ? JSON.parse(needs_tags) : []
     return tags.filter(t => !t.expires || new Date(t.expires) > new Date())
   } catch { return [] }
+}
+
+const DETAIL_PANEL_HEIGHT = 220
+
+function MapSelectionFocus({ selected }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!selected?.mapLat || !selected?.mapLng) return
+
+    const timeout = window.setTimeout(() => {
+      map.invalidateSize()
+      map.setView([selected.mapLat, selected.mapLng], Math.max(map.getZoom(), 10), { animate: true })
+    }, 120)
+
+    return () => window.clearTimeout(timeout)
+  }, [map, selected])
+
+  return null
 }
 
 export default function MapScreen({ user, setScreen, setSelectedCompanyId, setActiveTab, lang = 'fr' }) {
@@ -108,11 +127,14 @@ const cantons = [
   {code:'ZG', name:'Zoug'},
   {code:'ZH', name:'Zurich'},
 ]
-  const createIcon = (color) => L.divIcon({
+  const createIcon = (color, isSelected = false) => L.divIcon({
     className: '',
-    html: `<div style="width:28px;height:28px;background:${color};border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    html: `<div style="position:relative;width:${isSelected ? 36 : 28}px;height:${isSelected ? 48 : 28}px;">
+      ${isSelected ? '<div style="position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-size:24px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">📍</div>' : ''}
+      <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:${isSelected ? 34 : 28}px;height:${isSelected ? 34 : 28}px;background:${color};border-radius:50%;border:${isSelected ? 4 : 3}px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.35);"></div>
+    </div>`,
+    iconSize: [isSelected ? 36 : 28, isSelected ? 48 : 28],
+    iconAnchor: [isSelected ? 18 : 14, isSelected ? 34 : 14],
   })
   const isSatellite = mapStyle === 'satellite'
 
@@ -181,19 +203,24 @@ const cantons = [
             url={isSatellite ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'}
             attribution={isSatellite ? 'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community' : '&copy; OpenStreetMap'}
           />
-          {filtered.map(company => (
-            <Marker
-              key={company.id}
-              position={[company.mapLat, company.mapLng]}
-              icon={createIcon(sectorColors[company.sector] || '#E24B4A')}
-              eventHandlers={{ click: () => setSelected(company) }}
-            />
-          ))}
+          <MapSelectionFocus selected={selected} />
+          {filtered.map(company => {
+            const isSelectedCompany = selected?.id === company.id
+            return (
+              <Marker
+                key={company.id}
+                position={[company.mapLat, company.mapLng]}
+                icon={createIcon(sectorColors[company.sector] || '#E24B4A', isSelectedCompany)}
+                zIndexOffset={isSelectedCompany ? 1000 : 0}
+                eventHandlers={{ click: () => setSelected(company) }}
+              />
+            )
+          })}
         </MapContainer>
       </div>
 
       {selected && (
-        <div style={{height:260,flex:'0 0 260px',borderTop:'1px solid #f0f0f0',background:'white',overflow:'hidden'}}>
+        <div style={{height:DETAIL_PANEL_HEIGHT,flex:`0 0 ${DETAIL_PANEL_HEIGHT}px`,borderTop:'1px solid #f0f0f0',background:'white',overflow:'hidden'}}>
         <div style={{height:'100%',overflowY:'auto',WebkitOverflowScrolling:'touch',padding:'0.875rem 1rem 1rem'}}>
           {(() => {
             const selectedActiveTags = getActiveTags(selected.needs_tags)
