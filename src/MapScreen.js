@@ -115,7 +115,7 @@ const cantons = [
   })
 
   return (
-    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',width:'100%',maxWidth:'100%',overflowY:selected ? 'auto' : 'hidden',overflowX:'hidden',WebkitOverflowScrolling:'touch',background:'white'}}>
+    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',width:'100%',maxWidth:'100%',overflow:'hidden',background:'white',position:'relative'}}>
 
       {!user && (
   <div style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -163,11 +163,11 @@ const cantons = [
   </select>
 </div>
 
-      <div style={{flex:selected ? '0 0 auto' : 1,position:'relative',height:selected ? 230 : undefined,minHeight:selected ? 230 : 350}}>
+      <div style={{flex:1,minHeight:0,position:'relative'}}>
         <MapContainer
           center={[46.8182, 8.2275]}
           zoom={8}
-          style={{height:'100%',width:'100%',minHeight:selected ? 230 : 350}}
+          style={{height:'100%',width:'100%',minHeight:350}}
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -227,7 +227,8 @@ const cantons = [
       </div>
 
       {selected && (
-        <div style={{padding:'0.875rem 1rem calc(1.25rem + env(safe-area-inset-bottom))',borderTop:'1px solid #f0f0f0',background:'white',flex:'0 0 auto'}}>
+        <div style={{position:'absolute',left:0,right:0,bottom:34,zIndex:900,padding:'0 0.75rem',pointerEvents:'none'}}>
+        <div style={{background:'white',border:'1px solid #f0f0f0',borderRadius:18,boxShadow:'0 -12px 35px rgba(0,0,0,0.14)',maxHeight:'36vh',overflowY:'auto',WebkitOverflowScrolling:'touch',padding:'0.875rem 1rem 1rem',pointerEvents:'auto'}}>
           {(() => {
             const selectedActiveTags = getActiveTags(selected.needs_tags)
             const selectedHasNeeds = selected.needs_description || selectedActiveTags.length > 0
@@ -241,7 +242,7 @@ const cantons = [
               <p style={{fontWeight:700,fontSize:15,margin:0}}>{selected.name}</p>
               <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{selected.sector} · {selected.city}, {selected.canton}</p>
               {!selected.hasPreciseCoordinates && <p style={{fontSize:11,color:'#bbb',margin:'2px 0 0'}}>{ui.map.approximatePosition}</p>}
-              {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.35,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{selected.description}</p>}
+              {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.35}}>{selected.description}</p>}
             </div>
             <button onClick={() => setSelected(null)}
               style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:20,flexShrink:0}}>✕</button>
@@ -251,7 +252,7 @@ const cantons = [
             <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'0.75rem',marginTop:'0.75rem'}}>
               <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:6}}>{ui.swipe.needs}</p>
               {selected.needs_description && (
-                <p style={{fontSize:12,color:'#444',lineHeight:1.4,marginBottom: selectedActiveTags.length > 0 ? 8 : 0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{selected.needs_description}</p>
+                <p style={{fontSize:12,color:'#444',lineHeight:1.4,marginBottom: selectedActiveTags.length > 0 ? 8 : 0}}>{selected.needs_description}</p>
               )}
               {selectedActiveTags.length > 0 && (
                 <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
@@ -282,6 +283,7 @@ const cantons = [
               </>
             )
           })()}
+        </div>
         </div>
       )}
 
