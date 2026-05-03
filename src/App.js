@@ -13,6 +13,7 @@ import { getUiText } from './i18n'
 import { geocodeSwissAddress } from './geo'
 import { isNativeApp } from './platform'
 import { notifyTelegramActivity } from './telegramAlerts'
+import { HubbingIcon } from './icons'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 
@@ -1128,10 +1129,9 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   const ui = getUiText(lang)
 
   const tabStyle = (tab) => ({
-    flex:1, padding:'8px 0 4px', background:'none', border:'none', cursor:'pointer',
-    fontSize:11, color: activeTab === tab ? '#E24B4A' : '#999',
-    fontWeight: activeTab === tab ? 600 : 400,
-    borderTop: activeTab === tab ? '2px solid #E24B4A' : '2px solid transparent',
+    flex:1, padding:'8px 0 6px', background:'none', border:'none', cursor:'pointer',
+    fontSize:11, color: activeTab === tab ? '#E24B4A' : '#6B7280',
+    fontWeight: activeTab === tab ? 700 : 500,
     fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   })
 
@@ -1276,14 +1276,17 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
   zIndex:9999
 }}>
         {[
-          {id:'swipe',label:ui.nav.swipe,icon:'💼'},
-          {id:'map',label:ui.nav.map,icon:'🗺️'},
-          {id:'messages',label:ui.nav.messages,icon:'💬'},
-          {id:'pricing',label:ui.nav.pricing,icon:'💳'},
+          {id:'swipe',label:ui.nav.swipe,icon:'swipe'},
+          {id:'map',label:ui.nav.map,icon:'map'},
+          {id:'messages',label:ui.nav.messages,icon:'messages'},
+          {id:'pricing',label:ui.nav.pricing,icon:'pricing'},
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}>
-            <div style={{fontSize:20,marginBottom:2}}>{tab.icon}</div>
-            {tab.label}
+            <div style={{height:26,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:2}}>
+              <HubbingIcon name={tab.icon} active={activeTab === tab.id} />
+            </div>
+            <span style={{display:'block'}}>{tab.label}</span>
+            <span style={{display:'block',width:4,height:4,borderRadius:'50%',background:activeTab === tab.id ? '#E24B4A' : 'transparent',margin:'4px auto 0'}} />
           </button>
         ))}
       </div>
@@ -1341,10 +1344,9 @@ const handleTabChange = (tab) => {
 }
 
   const tabStyle = (tab) => ({
-    flex:1, padding:'8px 0 4px', background:'none', border:'none', cursor:'pointer',
-    fontSize:11, color: activeTab === tab ? '#E24B4A' : '#999',
-    fontWeight: activeTab === tab ? 600 : 400,
-    borderTop: activeTab === tab ? '2px solid #E24B4A' : '2px solid transparent',
+    flex:1, padding:'8px 0 6px', background:'none', border:'none', cursor:'pointer',
+    fontSize:11, color: activeTab === tab ? '#E24B4A' : '#6B7280',
+    fontWeight: activeTab === tab ? 700 : 500,
     fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   })
 
@@ -1449,22 +1451,23 @@ const handleTabChange = (tab) => {
   zIndex:9999
 }}>
   {[
-    {id:'home',label:ui.nav.home,icon:'🏠'},
-    {id:'swipe',label:ui.nav.swipe,icon:'💼'},
-    {id:'map',label:ui.nav.map,icon:'🗺️'},
-    {id:'messages',label:ui.nav.messages,icon:'💬'},
-    {id:'profile',label:ui.nav.profile,icon:'👤'},
+    {id:'home',label:ui.nav.home,icon:'home'},
+    {id:'swipe',label:ui.nav.swipe,icon:'swipe'},
+    {id:'map',label:ui.nav.map,icon:'map'},
+    {id:'messages',label:ui.nav.messages,icon:'messages'},
+    {id:'profile',label:ui.nav.profile,icon:'profile'},
   ].map(tab => (
     <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={tabStyle(tab.id)}>
-      <div style={{position:'relative',display:'inline-block',fontSize:20,marginBottom:2}}>
-        {tab.icon}
+      <div style={{position:'relative',height:26,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:2}}>
+        <HubbingIcon name={tab.icon} active={activeTab === tab.id} />
         {tab.id === 'messages' && unreadCount > 0 && (
-          <div style={{position:'absolute',top:-4,right:-6,background:'#E24B4A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{position:'absolute',top:-3,right:'calc(50% - 20px)',background:'#E24B4A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </div>
         )}
       </div>
-      {tab.label}
+      <span style={{display:'block'}}>{tab.label}</span>
+      <span style={{display:'block',width:4,height:4,borderRadius:'50%',background:activeTab === tab.id ? '#E24B4A' : 'transparent',margin:'4px auto 0'}} />
     </button>
   ))}
 </div>
