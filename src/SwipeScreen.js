@@ -75,11 +75,13 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [decision, setDecision] = useState(null)
   const [showMatchModal, setShowMatchModal] = useState(false)
+  const [matchNotice, setMatchNotice] = useState('sent')
   const [allSeen, setAllSeen] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [filterRadius, setFilterRadius] = useState(300)
   const [filterSector, setFilterSector] = useState('')
   const [myCompanyCoords, setMyCompanyCoords] = useState(null)
+  const [matchedCompanyIds, setMatchedCompanyIds] = useState(new Set())
   const [ratings, setRatings] = useState({})
   const decisionRef = useRef(null)
   const currentRef = useRef(0)
@@ -127,20 +129,35 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     setLoading(true)
     setAllSeen(false)
     let seenIds = []
-    if (user && !ignoreHistory) {
+    if (user) {
       const { data: myCompany } = await supabase.from('companies').select('id, lat, lng').eq('user_id', user.id).single()
       if (myCompany) {
-        if (myCompany.lat && myCompany.lng) setMyCompanyCoords({ lat: myCompany.lat, lng: myCompany.lng })
-        const { data: history } = await supabase.from('swipe_history').select('company_id').eq('user_id', user.id)
-        seenIds = (history || []).map(h => h.company_id)
+        if (myCompany.lat && myCompany.lng) {
+          setMyCompanyCoords({ lat: myCompany.lat, lng: myCompany.lng })
+        } else {
+          setMyCompanyCoords(null)
+        }
         seenIds.push(myCompany.id)
+        if (!ignoreHistory) {
+          const { data: history } = await supabase.from('swipe_history').select('company_id').eq('user_id', user.id)
+          seenIds = [...new Set([...(history || []).map(h => h.company_id), myCompany.id])]
+        }
+
+        const { data: existingMatches } = await supabase
+          .from('matches')
+          .select('company_a, company_b')
+          .or(`company_a.eq.${myCompany.id},company_b.eq.${myCompany.id}`)
+        const matchedIds = new Set((existingMatches || [])
+          .map(match => match.company_a === myCompany.id ? match.company_b : match.company_a)
+          .filter(Boolean))
+        setMatchedCompanyIds(matchedIds)
+      } else {
+        setMyCompanyCoords(null)
+        setMatchedCompanyIds(new Set())
       }
-    } else if (user) {
-      const { data: myCompany } = await supabase.from('companies').select('id, lat, lng').eq('user_id', user.id).single()
-      if (myCompany) {
-        if (myCompany.lat && myCompany.lng) setMyCompanyCoords({ lat: myCompany.lat, lng: myCompany.lng })
-        seenIds.push(myCompany.id)
-      }
+    } else {
+      setMyCompanyCoords(null)
+      setMatchedCompanyIds(new Set())
     }
     let query = supabase.from('companies').select('*').eq('is_suspended', false).limit(100)
     if (seenIds.length > 0) query = query.not('id', 'in', `(${seenIds.join(',')})`)
@@ -164,43 +181,74 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     await supabase.from('swipe_history').upsert({ user_id: user.id, company_id: companyId, direction }, { onConflict: 'user_id,company_id' })
   }
 
-  const handleSwipe = async (direction) => {
+  const animateSwipeAway = (direction) => {
+    decisionRef.current = direction
+    setDecision(direction)
+    window.setTimeout(() => {
+      setCurrent(c => c + 1)
+      setOffset({ x: 0, y: 0 })
+      setDecision(null)
+      decisionRef.current = null
+    }, 280)
+  }
+
+  const persistSwipe = async (company, direction) => {
+    try {
+      if (direction === 'right') {
+        const { data: myCompany } = await supabase.from('companies').select('id').eq('user_id', user.id).single()
+        if (myCompany) {
+          const { data: existing } = await supabase.from('matches').select('id').or(`and(company_a.eq.${myCompany.id},company_b.eq.${company.id}),and(company_a.eq.${company.id},company_b.eq.${myCompany.id})`).maybeSingle()
+          if (!existing) {
+            const { data: newMatch } = await supabase.from('matches').insert({ company_a: myCompany.id, company_b: company.id, status: 'pending' }).select().single()
+            if (newMatch) {
+              setMatchedCompanyIds(current => new Set([...current, company.id]))
+              const { data: otherUser } = await supabase.from('companies').select('user_id').eq('id', company.id).single()
+              if (otherUser) {
+                await supabase.from('notifications').insert([
+                  { user_id: user.id, type: 'new_match', match_id: newMatch.id },
+                  { user_id: otherUser.user_id, type: 'new_match', match_id: newMatch.id }
+                ])
+              }
+            }
+          } else {
+            setMatchedCompanyIds(current => new Set([...current, company.id]))
+          }
+        }
+      }
+      await saveSwipeHistory(company.id, direction)
+    } catch (error) {
+      console.warn('Swipe persistence failed:', error)
+    }
+  }
+
+  const handleSwipe = (direction) => {
     if (decisionRef.current) return
     const company = companiesRef.current[currentRef.current]
     if (!company) return
 
     if (direction === 'right') {
       if (!user) {
+        setMatchNotice('visitor')
         setShowMatchModal(true)
         setTimeout(() => setShowMatchModal(false), 3000)
-        setDecision(direction)
-        setTimeout(() => { setCurrent(c => c + 1); setOffset({ x: 0, y: 0 }); setDecision(null); decisionRef.current = null }, 400)
+        animateSwipeAway(direction)
         return
       }
-      const { data: myCompany } = await supabase.from('companies').select('id').eq('user_id', user.id).single()
-      if (myCompany) {
-        const { data: existing } = await supabase.from('matches').select('id').or(`and(company_a.eq.${myCompany.id},company_b.eq.${company.id}),and(company_a.eq.${company.id},company_b.eq.${myCompany.id})`).maybeSingle()
-        if (!existing) {
-          const { data: newMatch } = await supabase.from('matches').insert({ company_a: myCompany.id, company_b: company.id, status: 'pending' }).select().single()
-          if (newMatch) {
-            const { data: otherUser } = await supabase.from('companies').select('user_id').eq('id', company.id).single()
-            if (otherUser) {
-              await supabase.from('notifications').insert([
-                { user_id: user.id, type: 'new_match', match_id: newMatch.id },
-                { user_id: otherUser.user_id, type: 'new_match', match_id: newMatch.id }
-              ])
-            }
-          }
-        }
+      if (matchedCompanyIds.has(company.id)) {
+        setMatchNotice('existing')
+        setShowMatchModal(true)
+        setTimeout(() => setShowMatchModal(false), 1500)
+        animateSwipeAway(direction)
+        saveSwipeHistory(company.id, direction).catch(error => console.warn('Swipe history failed:', error))
+        return
       }
+      setMatchNotice('sent')
       setShowMatchModal(true)
       setTimeout(() => setShowMatchModal(false), 1500)
     }
 
-    await saveSwipeHistory(company.id, direction)
-    decisionRef.current = direction
-    setDecision(direction)
-    setTimeout(() => { setCurrent(c => c + 1); setOffset({ x: 0, y: 0 }); setDecision(null); decisionRef.current = null }, 400)
+    animateSwipeAway(direction)
+    if (user) persistSwipe(company, direction)
   }
 
   const handlePointerDown = (e) => {
@@ -273,6 +321,13 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   }
 
   const activeFilters = (filterSector ? 1 : 0) + (filterRadius < 300 ? 1 : 0)
+  const sectorCountBase = myCompanyCoords && filterRadius < 300
+    ? companies.filter(c => !c.lat || !c.lng || haversine(myCompanyCoords.lat, myCompanyCoords.lng, c.lat, c.lng) <= filterRadius)
+    : companies
+  const sectorCounts = sectorCountBase.reduce((acc, item) => {
+    if (item.sector) acc[item.sector] = (acc[item.sector] || 0) + 1
+    return acc
+  }, {})
 
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
@@ -303,7 +358,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
       {showMatchModal && (
         <div style={{position:'fixed',top:'15%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center',width:'80%',maxWidth:300}}>
           {user ? (
-            <><div style={{fontSize:36}}>🎉</div><p style={{fontWeight:700,fontSize:16,marginTop:8}}>{ui.swipe.matchSent}</p></>
+            <><div style={{fontSize:36}}>{matchNotice === 'existing' ? '✓' : '🎉'}</div><p style={{fontWeight:700,fontSize:16,marginTop:8}}>{matchNotice === 'existing' ? ui.swipe.matchAlreadyExists : ui.swipe.matchSent}</p></>
           ) : (
             <>
               <div style={{fontSize:36}}>🔒</div>
@@ -334,8 +389,8 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
               <div>
                 <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.sector}</p>
                 <select value={filterSector} onChange={e => setFilterSector(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
-                  <option value="">{ui.swipe.allSectors}</option>
-                  {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+                  <option value="">{ui.swipe.allSectors} ({sectorCountBase.length})</option>
+                  {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s] || 0})</option>)}
                 </select>
               </div>
             </div>
@@ -380,10 +435,12 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
           background:'white',borderRadius:20,border:'1px solid #eee',
           boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
           transform: getCardTransform(),
-          transition: decision ? 'transform 0.4s ease' : 'none',
+          transition: decision ? 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
           cursor:'grab', zIndex:2, overflow:'hidden',
           touchAction:'pan-y',
           overscrollBehavior:'contain',
+          willChange:'transform',
+          backfaceVisibility:'hidden',
         }}>
           <div style={{height:100,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',flexShrink:0}}>
             {company.logo_url ? (

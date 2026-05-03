@@ -110,7 +110,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
   return (
     <>
     {(showFollowers || showFollowing) && (
-        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:10000}}>
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:10000,paddingBottom:'calc(76px + env(safe-area-inset-bottom))'}}>
           <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:430,maxHeight:'70vh',overflowY:'auto',padding:'1.5rem',paddingBottom:'calc(1.5rem + env(safe-area-inset-bottom))'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
               <h3 style={{fontSize:18,fontWeight:700,margin:0}}>{showFollowers ? ui.home.followersTitle : ui.home.followingTitle}</h3>
@@ -139,7 +139,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
           </div>
         </div>
       )}
-    <div style={{flex:1,overflowY:'auto'}}>
+    <div style={{flex:1,overflowY:'auto',paddingBottom:'calc(90px + env(safe-area-inset-bottom))'}}>
 
 {/* Header coloré */}
       <div style={{

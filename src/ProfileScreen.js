@@ -447,8 +447,8 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
 
       {/* Stats */}
       <div style={{display:'flex',margin:'-1.25rem 1rem 0',gap:12,position:'relative',zIndex:1}}>
-        <StatCard value={stats.matches} label={ui.profile.matches} color="#E24B4A" />
-        <StatCard value="0" label={ui.profile.messages} color="#E24B4A" />
+        <StatCard value={stats.matches} label={ui.profile.matches} color="#E24B4A" onClick={() => setActiveTab && setActiveTab('messages')} />
+        <StatCard value="0" label={ui.profile.messages} color="#E24B4A" onClick={() => setActiveTab && setActiveTab('messages')} />
         <div style={{flex:1,background:'white',borderRadius:12,padding:'1rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}
           onClick={() => setActiveTab && setActiveTab('pricing')}>
           <p style={{fontSize:13,fontWeight:700,color:'#3B6D11',margin:0}}>{currentPlan}</p>
@@ -655,9 +655,9 @@ function Input({ value, onChange, placeholder, style }) {
   )
 }
 
-function StatCard({ value, label, color }) {
+function StatCard({ value, label, color, onClick }) {
   return (
-    <div style={{flex:1,background:'white',borderRadius:12,padding:'1rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)'}}>
+    <div onClick={onClick} style={{flex:1,background:'white',borderRadius:12,padding:'1rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:onClick ? 'pointer' : 'default'}}>
       <p style={{fontSize:24,fontWeight:700,color,margin:0}}>{value}</p>
       <p style={{fontSize:11,color:'#999',marginTop:3}}>{label}</p>
     </div>
