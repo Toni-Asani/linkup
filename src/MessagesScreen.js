@@ -10,6 +10,26 @@ const MESSAGE_CHAR_LIMITS = {
   Premium: 2000,
 }
 
+function CompanyAvatar({ company, size = 48, fontSize = 16 }) {
+  const [imageFailed, setImageFailed] = useState(false)
+  const initials = company?.name?.substring(0, 2).toUpperCase() || '??'
+  const showImage = company?.logo_url && !imageFailed
+
+  return (
+    <div style={{width:size,height:size,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,overflow:'hidden',border:'1px solid #f1f1f1'}}>
+      {showImage ? (
+        <img src={company.logo_url} alt={company.name || 'Entreprise'}
+          onError={() => setImageFailed(true)}
+          style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
+      ) : (
+        <span style={{color:'white',fontWeight:700,fontSize}}>
+          {initials}
+        </span>
+      )}
+    </div>
+  )
+}
+
 export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, onUnreadChange, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [matches, setMatches] = useState([])
@@ -424,11 +444,7 @@ if (data) {
             style={{background:'none',border:'none',cursor:'pointer',color:'#666',fontSize:20,padding:0}}>
             ←
           </button>
-          <div style={{width:40,height:40,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <span style={{color:'white',fontWeight:700,fontSize:14}}>
-              {other?.name?.substring(0,2).toUpperCase()}
-            </span>
-          </div>
+          <CompanyAvatar company={other} size={40} fontSize={14} />
           <div style={{flex:1,cursor:'pointer'}} onClick={() => setSelectedCompanyId && setSelectedCompanyId(other?.id)}>
   <p style={{fontWeight:700,fontSize:15,margin:0}}>{other?.name}</p>
   <p style={{fontSize:12,color:'#999',margin:0}}>{other?.sector} · {other?.city} — <span style={{color:'#E24B4A'}}>{ui.messages.viewProfile}</span></p>
@@ -616,11 +632,7 @@ if (data) {
                 onMouseEnter={e => e.currentTarget.style.background='#fafafa'}
                 onMouseLeave={e => e.currentTarget.style.background='white'}
               >
-                <div style={{width:48,height:48,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <span style={{color:'white',fontWeight:700,fontSize:16}}>
-                    {other.name?.substring(0,2).toUpperCase()}
-                  </span>
-                </div>
+                <CompanyAvatar company={other} />
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <p style={{fontWeight:700,fontSize:15,margin:0}}>{other.name}</p>
