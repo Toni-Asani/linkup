@@ -6,7 +6,7 @@ import {
   UserRound,
 } from 'lucide-react'
 
-function SwipePanelsIcon({ size = 23, color = '#4B5563', strokeWidth = 2 }) {
+function SwipeGestureIcon({ size = 23, color = '#4B5563', strokeWidth = 2 }) {
   return (
     <svg
       width={size}
@@ -19,18 +19,21 @@ function SwipePanelsIcon({ size = 23, color = '#4B5563', strokeWidth = 2 }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <rect x="4" y="7" width="12" height="11" rx="2" />
-      <rect x="8" y="4" width="12" height="11" rx="2" />
-      <path d="M8 12h8" />
-      <path d="m11 9-3 3 3 3" />
-      <path d="m13 9 3 3-3 3" />
+      <path d="M6.6 4.6H2.8" />
+      <path d="m4.6 2.6-2 2 2 2" />
+      <path d="M17.4 4.6h3.8" />
+      <path d="m19.4 2.6 2 2-2 2" />
+      <path d="M8 13V6a1.6 1.6 0 0 1 3.2 0v6.2" />
+      <path d="M11.2 10.8a1.45 1.45 0 0 1 2.9 0v2" />
+      <path d="M14.1 11.8a1.45 1.45 0 0 1 2.9 0v2" />
+      <path d="M17 13a1.45 1.45 0 0 1 2.9 0v3.4a4.6 4.6 0 0 1-4.6 4.6h-4.2a4.7 4.7 0 0 1-3.6-1.7l-4-4.9a1.55 1.55 0 0 1 2.3-2.1L8 14.5" />
     </svg>
   )
 }
 
 const icons = {
   home: House,
-  swipe: SwipePanelsIcon,
+  swipe: SwipeGestureIcon,
   map: Map,
   messages: MessageCircle,
   pricing: CreditCard,
