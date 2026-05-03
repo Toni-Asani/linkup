@@ -12,6 +12,7 @@ import PrivacyPolicy from './PrivacyPolicy'
 import { getUiText } from './i18n'
 import { geocodeSwissAddress } from './geo'
 import { isNativeApp } from './platform'
+import { notifyTelegramActivity } from './telegramAlerts'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 
@@ -320,6 +321,16 @@ export default function App() {
   const isStandalonePwa = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true
   const isMarketingSite = (hostname === 'hubbing.ch' || hostname === 'www.hubbing.ch') && !isStandalonePwa
   const t = translations[lang]
+
+  useEffect(() => {
+    if (isNativeApp()) return
+    notifyTelegramActivity('visit', {
+      source: isMarketingSite ? 'marketing' : 'app',
+    }, {
+      cooldownMinutes: 15,
+      cooldownKey: `visit_${hostname}_${window.location.pathname}`,
+    })
+  }, [hostname, isMarketingSite])
 
   useEffect(() => {
   supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -866,8 +877,24 @@ function LoginScreen({ setScreen, t }) {
   const handleLogin = async () => {
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setError(error.message)
+    } else if (!isNativeApp() && data?.user?.id) {
+      const userId = data.user.id
+      const [{ data: companyData }, { data: subscriptionData }] = await Promise.all([
+        supabase.from('companies').select('name, city, canton').eq('user_id', userId).maybeSingle(),
+        supabase.from('subscriptions').select('plan, status').eq('user_id', userId).maybeSingle(),
+      ])
+      notifyTelegramActivity('login', {
+        email: data.user.email || email,
+        company: companyData?.name,
+        city: companyData?.city,
+        canton: companyData?.canton,
+        plan: subscriptionData?.plan || 'Starter',
+        status: subscriptionData?.status,
+      }, { cooldownMinutes: 0 })
+    }
     setLoading(false)
   }
 
