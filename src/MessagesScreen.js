@@ -44,6 +44,7 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
   const [dailyMessageCount, setDailyMessageCount] = useState(0)
+  const [conversationSubject, setConversationSubject] = useState('')
   const messagesEndRef = useRef(null)
   const [uploadingFile, setUploadingFile] = useState(false)
   const [longPressMatch, setLongPressMatch] = useState(null)
@@ -70,7 +71,10 @@ useEffect(() => {
     if (match) {
       setSelectedMatch(match)
       if (openMessageDraft?.subject) {
-        setNewMessage(current => current.trim() ? current : ui.messages.needDraft(openMessageDraft.subject))
+        setConversationSubject(openMessageDraft.subject)
+        setNewMessage('')
+      } else {
+        setConversationSubject('')
       }
       onDirectOpenHandled && onDirectOpenHandled()
     }
@@ -383,6 +387,8 @@ if (data) {
       longPressTriggeredRef.current = false
       return
     }
+    setConversationSubject('')
+    setNewMessage('')
     setSelectedMatch(match)
   }
 
@@ -440,7 +446,7 @@ if (data) {
 
         {/* Header conversation */}
         <div style={{padding:'1rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',gap:12,background:'white'}}>
-          <button onClick={() => setSelectedMatch(null)}
+          <button onClick={() => { setSelectedMatch(null); setConversationSubject(''); setNewMessage('') }}
             style={{background:'none',border:'none',cursor:'pointer',color:'#666',fontSize:20,padding:0}}>
             ←
           </button>
@@ -457,6 +463,17 @@ if (data) {
             </button>
           )}
         </div>
+
+        {conversationSubject && (
+          <div style={{padding:'0.625rem 1rem',background:'#f9f9f9',borderBottom:'1px solid #eeeeee'}}>
+            <div style={{maxWidth:520,margin:'0 auto',background:'#f1f3f5',border:'1px solid #e5e7eb',borderRadius:12,padding:'8px 12px',display:'flex',alignItems:'center',justifyContent:'center',gap:6,textAlign:'center'}}>
+              <span style={{fontSize:13}}>🔒</span>
+              <p style={{margin:0,fontSize:12,fontWeight:700,color:'#555',lineHeight:1.35}}>
+                {ui.messages.needSubjectLabel(conversationSubject)}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         <div style={{flex:1,overflowY:'auto',padding:'1rem',display:'flex',flexDirection:'column',gap:8,background:'#f9f9f9'}}>
