@@ -63,6 +63,8 @@ const dictionaries = {
       createAccountToContact: (name) => `Créer un compte pour contacter ${name} →`,
       registeredCount: (count) => `${count} entreprise${count > 1 ? 's' : ''} inscrite${count > 1 ? 's' : ''} sur Hubbing`,
       approximatePosition: 'Position approximative',
+      standardView: 'Plan',
+      satelliteView: 'Satellite',
     },
     swipe: {
       noResults: 'Aucun résultat pour ces filtres',
@@ -340,6 +342,8 @@ dictionaries.de = {
     createAccountToContact: (name) => `Konto erstellen, um ${name} zu kontaktieren →`,
     registeredCount: (count) => `${count} Unternehmen auf Hubbing registriert`,
     approximatePosition: 'Ungefähre Position',
+    standardView: 'Karte',
+    satelliteView: 'Satellit',
   },
   swipe: {
     noResults: 'Keine Ergebnisse für diese Filter',
@@ -650,6 +654,8 @@ Object.assign(dictionaries.it, {
     createAccountToContact: (name) => `Crea un account per contattare ${name} →`,
     registeredCount: (count) => `${count} aziende registrate su Hubbing`,
     approximatePosition: 'Posizione approssimativa',
+    standardView: 'Mappa',
+    satelliteView: 'Satellite',
   },
   swipe: {
     noResults: 'Nessun risultato per questi filtri',
@@ -901,6 +907,8 @@ Object.assign(dictionaries.en, {
     createAccountToContact: (name) => `Create an account to contact ${name} →`,
     registeredCount: (count) => `${count} compan${count > 1 ? 'ies' : 'y'} registered on Hubbing`,
     approximatePosition: 'Approximate position',
+    standardView: 'Map',
+    satelliteView: 'Satellite',
   },
   swipe: {
     noResults: 'No results for these filters',

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import L from 'leaflet'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
@@ -38,6 +38,7 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
   const [filter, setFilter] = useState('')
   const [search, setSearch] = useState('')
   const [filterCanton, setFilterCanton] = useState('')
+  const [mapStyle, setMapStyle] = useState('standard')
 
   useEffect(() => { loadCompanies() }, [])
 
@@ -113,6 +114,7 @@ const cantons = [
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   })
+  const isSatellite = mapStyle === 'satellite'
 
   return (
     <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',width:'100%',maxWidth:'100%',overflow:'hidden',background:'white',position:'relative'}}>
@@ -163,15 +165,21 @@ const cantons = [
   </select>
 </div>
 
-      <div style={{flex:1,minHeight:0,position:'relative'}}>
+      <div style={{flex:1,minHeight:selected ? 170 : 350,position:'relative'}}>
+        <button
+          onClick={() => setMapStyle(isSatellite ? 'standard' : 'satellite')}
+          style={{position:'absolute',top:10,right:10,zIndex:500,background:'white',color:'#333',border:'1px solid rgba(0,0,0,0.12)',borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:700,boxShadow:'0 4px 14px rgba(0,0,0,0.16)',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+          {isSatellite ? ui.map.standardView : ui.map.satelliteView}
+        </button>
         <MapContainer
           center={[46.8182, 8.2275]}
           zoom={8}
-          style={{height:'100%',width:'100%',minHeight:350}}
+          style={{height:'100%',width:'100%'}}
         >
           <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; OpenStreetMap'
+            key={mapStyle}
+            url={isSatellite ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'}
+            attribution={isSatellite ? 'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community' : '&copy; OpenStreetMap'}
           />
           {filtered.map(company => (
             <Marker
@@ -179,56 +187,14 @@ const cantons = [
               position={[company.mapLat, company.mapLng]}
               icon={createIcon(sectorColors[company.sector] || '#E24B4A')}
               eventHandlers={{ click: () => setSelected(company) }}
-            >
-              <Popup>
-                <div style={{fontFamily:'Plus Jakarta Sans',minWidth:160}}>
-                  {(() => {
-                    const activeTags = getActiveTags(company.needs_tags)
-                    const hasNeeds = company.needs_description || activeTags.length > 0
-                    return (
-                      <>
-                  <p style={{fontWeight:700,fontSize:14,margin:'0 0 4px'}}>{company.name}</p>
-                  <p style={{fontSize:12,color:'#666',margin:'0 0 2px'}}>{company.sector}</p>
-                  <p style={{fontSize:12,color:'#999',margin:'0 0 6px'}}>📍 {company.city}, {company.canton}</p>
-                  {!company.hasPreciseCoordinates && <p style={{fontSize:11,color:'#999',margin:'0 0 6px'}}>{ui.map.approximatePosition}</p>}
-                  {hasNeeds && (
-                    <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:8,padding:'6px 8px',margin:'0 0 8px'}}>
-                      <p style={{fontSize:11,color:'#E67E22',fontWeight:700,margin:'0 0 4px'}}>{ui.swipe.needs}</p>
-                      {company.needs_description && <p style={{fontSize:11,color:'#444',lineHeight:1.35,margin:'0 0 4px'}}>{company.needs_description}</p>}
-                      {activeTags.length > 0 && (
-                        <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-                          {activeTags.slice(0, 3).map((tag, i) => (
-                            <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'2px 6px',fontSize:10,color:'#333'}}>{tag.label}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {!user && (
-  <div style={{marginTop:'0.75rem',display:'flex',flexDirection:'column',gap:8}}>
-    <button onClick={() => setScreen && setScreen('register')}
-      style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-      {ui.map.createAccount}
-    </button>
-    <button onClick={() => setScreen && setScreen('login')}
-      style={{width:'100%',padding:'12px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-      {ui.map.login}
-    </button>
-  </div>
-)}
-                      </>
-                    )
-                  })()}
-                </div>
-              </Popup>
-            </Marker>
+            />
           ))}
         </MapContainer>
       </div>
 
       {selected && (
-        <div style={{position:'absolute',left:0,right:0,bottom:34,zIndex:900,padding:'0 0.75rem',pointerEvents:'none'}}>
-        <div style={{background:'white',border:'1px solid #f0f0f0',borderRadius:18,boxShadow:'0 -12px 35px rgba(0,0,0,0.14)',maxHeight:'36vh',overflowY:'auto',WebkitOverflowScrolling:'touch',padding:'0.875rem 1rem 1rem',pointerEvents:'auto'}}>
+        <div style={{height:260,flex:'0 0 260px',borderTop:'1px solid #f0f0f0',background:'white',overflow:'hidden'}}>
+        <div style={{height:'100%',overflowY:'auto',WebkitOverflowScrolling:'touch',padding:'0.875rem 1rem 1rem'}}>
           {(() => {
             const selectedActiveTags = getActiveTags(selected.needs_tags)
             const selectedHasNeeds = selected.needs_description || selectedActiveTags.length > 0
