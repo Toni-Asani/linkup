@@ -31,7 +31,7 @@ const getActiveTags = (needs_tags) => {
   } catch { return [] }
 }
 
-const DETAIL_PANEL_HEIGHT = 220
+const DETAIL_PANEL_MAX_HEIGHT = 220
 
 function MapSelectionFocus({ selected }) {
   const map = useMap()
@@ -129,12 +129,12 @@ const cantons = [
 ]
   const createIcon = (color, isSelected = false) => L.divIcon({
     className: '',
-    html: `<div style="position:relative;width:${isSelected ? 36 : 28}px;height:${isSelected ? 48 : 28}px;">
-      ${isSelected ? '<div style="position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-size:24px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">📍</div>' : ''}
+    html: `<div style="position:relative;width:${isSelected ? 36 : 28}px;height:${isSelected ? 42 : 28}px;">
+      ${isSelected ? '<div style="position:absolute;left:50%;top:-10px;transform:translateX(-50%);font-size:24px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">📍</div>' : ''}
       <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:${isSelected ? 34 : 28}px;height:${isSelected ? 34 : 28}px;background:${color};border-radius:50%;border:${isSelected ? 4 : 3}px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.35);"></div>
     </div>`,
-    iconSize: [isSelected ? 36 : 28, isSelected ? 48 : 28],
-    iconAnchor: [isSelected ? 18 : 14, isSelected ? 34 : 14],
+    iconSize: [isSelected ? 36 : 28, isSelected ? 42 : 28],
+    iconAnchor: [isSelected ? 18 : 14, isSelected ? 25 : 14],
   })
   const isSatellite = mapStyle === 'satellite'
 
@@ -220,8 +220,8 @@ const cantons = [
       </div>
 
       {selected && (
-        <div style={{height:DETAIL_PANEL_HEIGHT,flex:`0 0 ${DETAIL_PANEL_HEIGHT}px`,borderTop:'1px solid #f0f0f0',background:'white',overflow:'hidden'}}>
-        <div style={{height:'100%',overflowY:'auto',WebkitOverflowScrolling:'touch',padding:'0.875rem 1rem 1rem'}}>
+        <div style={{maxHeight:DETAIL_PANEL_MAX_HEIGHT,flex:'0 0 auto',borderTop:'1px solid #f0f0f0',background:'white',overflow:'hidden'}}>
+        <div style={{maxHeight:DETAIL_PANEL_MAX_HEIGHT,overflowY:'auto',WebkitOverflowScrolling:'touch',padding:'0.875rem 1rem 1rem'}}>
           {(() => {
             const selectedActiveTags = getActiveTags(selected.needs_tags)
             const selectedHasNeeds = selected.needs_description || selectedActiveTags.length > 0
