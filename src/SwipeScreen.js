@@ -47,6 +47,8 @@ const sectorColors = {
 }
 
 const sectors = Object.keys(sectorColors)
+const SWIPE_THRESHOLD = 85
+const SWIPE_ANIMATION_MS = 420
 
 const haversine = (lat1, lng1, lat2, lng2) => {
   const R = 6371
@@ -189,7 +191,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
       setOffset({ x: 0, y: 0 })
       setDecision(null)
       decisionRef.current = null
-    }, 280)
+    }, SWIPE_ANIMATION_MS)
   }
 
   const persistSwipe = async (company, direction) => {
@@ -276,8 +278,8 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
     e.currentTarget.releasePointerCapture?.(e.pointerId)
     const deltaX = (e.clientX || drag.lastX) - drag.startX
-    if (deltaX > 60) handleSwipe('right')
-    else if (deltaX < -60) handleSwipe('left')
+    if (deltaX > SWIPE_THRESHOLD) handleSwipe('right')
+    else if (deltaX < -SWIPE_THRESHOLD) handleSwipe('left')
     else setOffset({ x: 0, y: 0 })
   }
 
@@ -305,8 +307,8 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     if (!drag.active || drag.source !== 'touch' || decisionRef.current) return
     dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
     const deltaX = drag.lastX - drag.startX
-    if (deltaX > 60) handleSwipe('right')
-    else if (deltaX < -60) handleSwipe('left')
+    if (deltaX > SWIPE_THRESHOLD) handleSwipe('right')
+    else if (deltaX < -SWIPE_THRESHOLD) handleSwipe('left')
     else setOffset({ x: 0, y: 0 })
   }
 
@@ -315,8 +317,8 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   const passOpacity = Math.max(0, Math.min(-offset.x / 80, 1))
 
   const getCardTransform = () => {
-    if (decision === 'right') return 'translateX(150%) rotate(20deg)'
-    if (decision === 'left') return 'translateX(-150%) rotate(-20deg)'
+    if (decision === 'right') return 'translateX(125%) rotate(15deg)'
+    if (decision === 'left') return 'translateX(-125%) rotate(-15deg)'
     return `translateX(${offset.x}px) translateY(${offset.y}px) rotate(${rotate}deg)`
   }
 
@@ -435,7 +437,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
           background:'white',borderRadius:20,border:'1px solid #eee',
           boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
           transform: getCardTransform(),
-          transition: decision ? 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
+          transition: decision ? `transform ${SWIPE_ANIMATION_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1)` : 'none',
           cursor:'grab', zIndex:2, overflow:'hidden',
           touchAction:'pan-y',
           overscrollBehavior:'contain',
