@@ -4,6 +4,7 @@ import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile } from './moderation'
 import { geocodeSwissAddress } from './geo'
 import { isNativeApp } from './platform'
+import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -57,7 +58,7 @@ const cantons = [
   'TI','UR','VD','VS','ZG','ZH'
 ]
 
-export default function ProfileScreen({ user, setActiveTab, lang = 'fr' }) {
+export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', lang = 'fr' }) {
   const ui = getUiText(lang)
   const [uploadingContact, setUploadingContact] = useState(false)
   const [company, setCompany] = useState(null)
@@ -66,7 +67,7 @@ export default function ProfileScreen({ user, setActiveTab, lang = 'fr' }) {
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [stats, setStats] = useState({ matches: 0 })
-  const [currentPlan, setCurrentPlan] = useState('Starter')
+  const [currentPlan, setCurrentPlan] = useState(plan)
   const [form, setForm] = useState({})
   const [success, setSuccess] = useState(false)
   const [newTag, setNewTag] = useState('')
@@ -79,8 +80,9 @@ export default function ProfileScreen({ user, setActiveTab, lang = 'fr' }) {
     const { data } = await supabase
       .from('companies').select('*').eq('user_id', user.id).single()
     if (data) {
-      setCompany(data)
-      setForm(data)
+      const companyWithSubscription = await attachCompanySubscriptions(supabase, data)
+      setCompany(companyWithSubscription)
+      setForm(companyWithSubscription)
       loadStats(data.id)
       const { data: sub } = await supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
       if (sub) setCurrentPlan(sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1))
@@ -251,6 +253,7 @@ notif_email: form.notif_email ?? true,
 
   const color = sectorColors[company.sector] || '#E24B4A'
   const initials = company.name?.substring(0, 2).toUpperCase()
+  const companyIsPremium = isPremiumCompany(company) || currentPlan === 'Premium'
 
   const getTagStatus = (expires) => {
     if (!expires) return 'active'
@@ -440,7 +443,10 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{display:'none'}} />
         {uploadingLogo && <p style={{color:'rgba(255,255,255,0.8)',fontSize:12,marginTop:4}}>{ui.profile.downloading}</p>}
-        <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem'}}>{company.name}</h2>
+        <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem',display:'flex',alignItems:'center',justifyContent:'center',gap:7,flexWrap:'wrap'}}>
+          <span>{company.name}</span>
+          {companyIsPremium && <VerifiedBadge size={22} />}
+        </h2>
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
         {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}      </div>
   </div>

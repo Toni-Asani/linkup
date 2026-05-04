@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { isNativeApp } from './platform'
+import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire': '#3B6D11', 'Design & Communication': '#533AB7',
@@ -10,7 +11,7 @@ const sectorColors = {
   'Transport & Logistique': '#444441', 'Services': '#993C1D',
 }
 
-export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, lang = 'fr' }) {
+export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, plan = 'Starter', lang = 'fr' }) {
   const ui = getUiText(lang)
   const [company, setCompany] = useState(null)
   const [stats, setStats] = useState({ matches: 0, messages: 0, followers: 0, totalCompanies: 0 })
@@ -28,7 +29,8 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
       .from('companies').select('*').eq('user_id', user.id).single()
 
     if (comp) {
-      setCompany(comp)
+      const compWithSubscription = await attachCompanySubscriptions(supabase, comp)
+      setCompany(compWithSubscription)
 
       // Matchs que j'ai initiés
       const { data: myMatches } = await supabase
@@ -46,8 +48,17 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
       const followingMatches = followingMatchesRaw.map(m => ({
         ...m,
         company_b: m.company_b_profile || followingCompaniesById[m.company_b]
+      })).filter(m => m.company_b)
+      const followingCompaniesWithSubscriptions = await attachCompanySubscriptions(
+        supabase,
+        followingMatches.map(m => m.company_b)
+      )
+      const followingSubscriptionsById = Object.fromEntries((followingCompaniesWithSubscriptions || []).map(c => [c.id, c]))
+      const enrichedFollowingMatches = followingMatches.map(m => ({
+        ...m,
+        company_b: followingSubscriptionsById[m.company_b.id] || m.company_b
       }))
-      setMatchedCompanies(followingMatches.filter(m => m.company_b))
+      setMatchedCompanies(enrichedFollowingMatches)
 
       // Entreprises qui me suivent
       const { data: followersData, count: followers } = await supabase
@@ -65,8 +76,17 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
       const followerMatches = followerMatchesRaw.map(m => ({
         ...m,
         company_a: m.company_a_profile || followerCompaniesById[m.company_a]
+      })).filter(m => m.company_a)
+      const followerCompaniesWithSubscriptions = await attachCompanySubscriptions(
+        supabase,
+        followerMatches.map(m => m.company_a)
+      )
+      const followerSubscriptionsById = Object.fromEntries((followerCompaniesWithSubscriptions || []).map(c => [c.id, c]))
+      const enrichedFollowerMatches = followerMatches.map(m => ({
+        ...m,
+        company_a: followerSubscriptionsById[m.company_a.id] || m.company_a
       }))
-      setFollowerCompanies(followerMatches.filter(m => m.company_a))
+      setFollowerCompanies(enrichedFollowerMatches)
 
       // Messages envoyés
       const { count: msgCount } = await supabase
@@ -78,9 +98,9 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
         .from('companies').select('*', { count: 'exact', head: true })
 
       setStats({
-        matches: followingMatches.filter(m => m.company_b).length,
+        matches: enrichedFollowingMatches.length,
         messages: msgCount || 0,
-        followers: followerMatches.filter(m => m.company_a).length || followers || 0,
+        followers: enrichedFollowerMatches.length || followers || 0,
         totalCompanies: totalCompanies || 0
       })
     }
@@ -100,6 +120,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
 
   const color = company ? (sectorColors[company.sector] || '#E24B4A') : '#E24B4A'
   const remaining = founderSlots.max - founderSlots.used
+  const companyIsPremium = plan === 'Premium' || isPremiumCompany(company)
 
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
@@ -129,7 +150,10 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
                       <span style={{color:'white',fontWeight:700,fontSize:14}}>{other.name?.substring(0,2).toUpperCase()}</span>
                     </div>
                     <div style={{flex:1}}>
-                      <p style={{fontWeight:600,fontSize:14,margin:0}}>{other.name}</p>
+                      <p style={{fontWeight:600,fontSize:14,margin:0,display:'flex',alignItems:'center',gap:5}}>
+                        <span>{other.name}</span>
+                        {isPremiumCompany(other) && <VerifiedBadge size={14} />}
+                      </p>
                       <p style={{fontSize:12,color:'#999',margin:0}}>{other.sector} · {other.city}</p>
                     </div>
                   </div>
@@ -153,8 +177,9 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
         )}
         <div style={{position:'relative',zIndex:1}}>
         <p style={{color:'rgba(255,255,255,0.8)',fontSize:14,marginBottom:4}}>{getGreeting()} 👋</p>
-        <h2 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.2}}>
-          {company?.name || user.email}
+        <h2 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.2,display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+          <span>{company?.name || user.email}</span>
+          {companyIsPremium && <VerifiedBadge size={22} />}
         </h2>
         {company?.sector && (
           <p style={{color:'rgba(255,255,255,0.75)',fontSize:13,marginTop:4}}>
@@ -219,7 +244,10 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, l
                       </span>
                     </div>
                     <div style={{flex:1}}>
-                      <p style={{fontWeight:600,fontSize:14,margin:0}}>{other.name}</p>
+                      <p style={{fontWeight:600,fontSize:14,margin:0,display:'flex',alignItems:'center',gap:5}}>
+                        <span>{other.name}</span>
+                        {isPremiumCompany(other) && <VerifiedBadge size={14} />}
+                      </p>
                       <p style={{fontSize:12,color:'#999',margin:0}}>{other.sector} · {other.city}</p>
                     </div>
                     <span style={{color:'#ddd',fontSize:16}}>›</span>
