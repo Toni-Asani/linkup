@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { Fragment, useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
@@ -167,19 +167,17 @@ useEffect(() => {
 
     if (unreadIncomingIds.length === 0) return
 
-    const readAt = new Date().toISOString()
-    const { error } = await supabase
-      .from('messages')
-      .update({ read_at: readAt })
-      .in('id', unreadIncomingIds)
+    const { data, error } = await supabase
+      .rpc('mark_match_messages_read', { p_match_id: matchId })
 
     if (error) {
       console.warn('Unable to mark messages as read:', error.message)
       return
     }
 
+    const updatedById = new Map((data || []).map(msg => [msg.id, msg]))
     setMessages(prev => prev.map(msg =>
-      unreadIncomingIds.includes(msg.id) ? { ...msg, read_at: msg.read_at || readAt } : msg
+      updatedById.has(msg.id) ? { ...msg, ...updatedById.get(msg.id) } : msg
     ))
   }
 
@@ -420,6 +418,28 @@ const handleFileUpload = async (e) => {
   const locale = localeForLang(lang)
   const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
   const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'short' })
+  const getMessageDateKey = (dateStr) => {
+    const date = new Date(dateStr)
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+  }
+  const isSameMessageDay = (dateA, dateB) =>
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  const formatMessageDay = (dateStr) => {
+    const messageDate = new Date(dateStr)
+    const today = new Date()
+    const yesterday = new Date()
+    yesterday.setDate(today.getDate() - 1)
+
+    if (isSameMessageDay(messageDate, today)) return ui.messages.today
+    if (isSameMessageDay(messageDate, yesterday)) return ui.messages.yesterday
+
+    const options = messageDate.getFullYear() === today.getFullYear()
+      ? { weekday: 'long', day: 'numeric', month: 'long' }
+      : { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }
+    return messageDate.toLocaleDateString(locale, options)
+  }
 
   const isStarter = plan === 'Starter'
   const isBasicOrPremium = plan === 'Basic' || plan === 'Premium'
@@ -479,6 +499,11 @@ const handleFileUpload = async (e) => {
   if (selectedMatch) {
     const other = getOtherCompany(selectedMatch)
     if (!other) return null
+    const visibleMessages = messages.filter(msg => {
+      if (msg.deleted_for_all) return false
+      if (msg.deleted_for && msg.deleted_for.includes(myCompany?.id)) return false
+      return true
+    })
     return (
       <div style={{flex:1,display:'flex',flexDirection:'column',height:'100%',minHeight:0}}>
 
@@ -561,20 +586,26 @@ const handleFileUpload = async (e) => {
 
         {/* Messages */}
         <div style={{flex:1,overflowY:'auto',padding:'1rem',display:'flex',flexDirection:'column',gap:8,background:'#f9f9f9'}}>
-          {messages.length === 0 && (
+          {visibleMessages.length === 0 && (
             <div style={{textAlign:'center',padding:'2rem',color:'#999'}}>
               <p style={{fontSize:32,marginBottom:8}}>👋</p>
               <p style={{fontSize:14}}>{ui.messages.startConversation(other?.name)}</p>
               <p style={{fontSize:12,marginTop:4}}>{ui.messages.introduce}</p>
             </div>
           )}
-          {messages.filter(msg => {
-  if (msg.deleted_for_all) return false
-  if (msg.deleted_for && msg.deleted_for.includes(myCompany?.id)) return false
-  return true
-}).map(msg => {
+          {visibleMessages.map((msg, index) => {
   const isMe = msg.sender_id === myCompany?.id
+  const previous = visibleMessages[index - 1]
+  const showDateSeparator = !previous || getMessageDateKey(previous.created_at) !== getMessageDateKey(msg.created_at)
   return (
+            <Fragment key={msg.id}>
+              {showDateSeparator && (
+                <div style={{display:'flex',justifyContent:'center',margin:'6px 0 10px'}}>
+                  <span style={{background:'#eeeeee',color:'#777',borderRadius:999,padding:'5px 10px',fontSize:11,fontWeight:700,boxShadow:'0 1px 3px rgba(0,0,0,0.06)'}}>
+                    {formatMessageDay(msg.created_at)}
+                  </span>
+                </div>
+              )}
               <div key={msg.id} style={{display:'flex',justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems:'flex-end', gap:4}}>
   <button onClick={async () => {
   if (isMe) {
@@ -616,6 +647,7 @@ const handleFileUpload = async (e) => {
                   </p>
                 </div>
               </div>
+            </Fragment>
             )
           })}
           <div ref={messagesEndRef} />
