@@ -4,7 +4,7 @@ import L from 'leaflet'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { getCompanyCoordinates } from './geo'
-import { VerifiedBadge, isPremiumCompany } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
 import 'leaflet/dist/leaflet.css'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -63,12 +63,18 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
   useEffect(() => { loadCompanies() }, [])
 
   const loadCompanies = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('companies')
-      .select('*, subscriptions(plan, status)')
+      .select('*')
       .eq('is_suspended', false)
       .limit(200)
-    const mappedCompanies = (data || [])
+    if (error) {
+      console.warn('Unable to load map companies:', error.message)
+      setCompanies([])
+      return
+    }
+    const companiesWithSubscriptions = await attachCompanySubscriptions(supabase, data || [])
+    const mappedCompanies = companiesWithSubscriptions
       .map(company => {
         const coords = getCompanyCoordinates(company)
         if (!coords) return null

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
-import { VerifiedBadge, isPremiumCompany } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -162,18 +162,27 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
       setMyCompanyCoords(null)
       setMatchedCompanyIds(new Set())
     }
-    let query = supabase.from('companies').select('*, subscriptions(plan, status)').eq('is_suspended', false).limit(100)
+    let query = supabase.from('companies').select('*').eq('is_suspended', false).limit(100)
     if (seenIds.length > 0) query = query.not('id', 'in', `(${seenIds.join(',')})`)
-    const { data } = await query
+    const { data, error } = await query
+    if (error) {
+      console.warn('Unable to load swipe companies:', error.message)
+      setAllSeen(true)
+      setCompanies([])
+      setFilteredCompanies([])
+      setLoading(false)
+      return
+    }
+    const companiesWithSubscriptions = await attachCompanySubscriptions(supabase, data || [])
     if (!data || data.length === 0) {
       setAllSeen(true)
       setCompanies([])
       setFilteredCompanies([])
     } else {
-      setCompanies(data)
-      setFilteredCompanies(data)
+      setCompanies(companiesWithSubscriptions)
+      setFilteredCompanies(companiesWithSubscriptions)
       setCurrent(0)
-      const avgRatings = await loadRatings(data)
+      const avgRatings = await loadRatings(companiesWithSubscriptions)
       setRatings(avgRatings)
     }
     setLoading(false)

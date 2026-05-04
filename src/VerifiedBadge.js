@@ -7,6 +7,32 @@ export function isPremiumCompany(company) {
   return plan === 'premium' && (!status || status === 'active' || status === 'trialing')
 }
 
+export async function attachCompanySubscriptions(supabase, companies) {
+  const list = Array.isArray(companies) ? companies : [companies].filter(Boolean)
+  const userIds = [...new Set(list.map(company => company?.user_id).filter(Boolean))]
+  if (list.length === 0 || userIds.length === 0) return companies
+
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('user_id, plan, status')
+    .in('user_id', userIds)
+
+  if (error) {
+    console.warn('Unable to load company subscriptions:', error.message)
+    return companies
+  }
+
+  const subscriptionsByUser = new Map((data || []).map(subscription => [subscription.user_id, subscription]))
+  const enriched = list.map(company => ({
+    ...company,
+    subscriptions: subscriptionsByUser.has(company.user_id)
+      ? [subscriptionsByUser.get(company.user_id)]
+      : [],
+  }))
+
+  return Array.isArray(companies) ? enriched : enriched[0]
+}
+
 export function isVerifiedBadgeFeature(feature) {
   const text = String(feature || '').toLowerCase()
   return /badge|verified|verifiziert|verificato|verifie|verifie|vérifié/.test(text)

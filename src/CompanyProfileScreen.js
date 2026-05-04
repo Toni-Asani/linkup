@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
-import { VerifiedBadge, isPremiumCompany } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -65,8 +65,9 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
 
   const loadCompany = async () => {
     const { data } = await supabase
-      .from('companies').select('*, subscriptions(plan, status)').eq('id', companyId).single()
-    setCompany(data)
+      .from('companies').select('*').eq('id', companyId).single()
+    const companyWithSubscription = await attachCompanySubscriptions(supabase, data)
+    setCompany(companyWithSubscription)
     setLoading(false)
     const { data: reviews } = await supabase
       .from('reviews')
