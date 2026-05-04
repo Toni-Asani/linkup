@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { APPLE_PRODUCT_IDS, HubbingPurchases } from './applePurchases'
 import { isNativeIOS } from './platform'
+import { VerifiedBadge, isVerifiedBadgeFeature } from './VerifiedBadge'
 
 const getPlans = (ui) => [
   {
@@ -332,6 +333,9 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
                         <span style={{fontSize:10,color:plan.color}}>✓</span>
                       </div>
                       <span style={{fontSize:13,color:'#444'}}>{f}</span>
+                      {plan.id === 'premium' && isVerifiedBadgeFeature(f) && (
+                        <VerifiedBadge size={18} />
+                      )}
                     </div>
                   ))}
                   {(plan.limits || []).map((f, i) => (

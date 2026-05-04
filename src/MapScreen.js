@@ -4,6 +4,7 @@ import L from 'leaflet'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { getCompanyCoordinates } from './geo'
+import { VerifiedBadge, isPremiumCompany } from './VerifiedBadge'
 import 'leaflet/dist/leaflet.css'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -64,7 +65,7 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
   const loadCompanies = async () => {
     const { data } = await supabase
       .from('companies')
-      .select('*')
+      .select('*, subscriptions(plan, status)')
       .eq('is_suspended', false)
       .limit(200)
     const mappedCompanies = (data || [])
@@ -232,7 +233,10 @@ const cantons = [
               <span style={{color:'white',fontWeight:700,fontSize:14}}>{selected.name.substring(0,2).toUpperCase()}</span>
             </div>
             <div style={{flex:1}}>
-              <p style={{fontWeight:700,fontSize:15,margin:0}}>{selected.name}</p>
+              <p style={{fontWeight:700,fontSize:15,margin:0,display:'flex',alignItems:'center',gap:5}}>
+                <span>{selected.name}</span>
+                {isPremiumCompany(selected) && <VerifiedBadge size={17} />}
+              </p>
               <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{selected.sector} · {selected.city}, {selected.canton}</p>
               {!selected.hasPreciseCoordinates && <p style={{fontSize:11,color:'#bbb',margin:'2px 0 0'}}>{ui.map.approximatePosition}</p>}
               {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.35}}>{selected.description}</p>}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
+import { VerifiedBadge, isPremiumCompany } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -64,7 +65,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
 
   const loadCompany = async () => {
     const { data } = await supabase
-      .from('companies').select('*').eq('id', companyId).single()
+      .from('companies').select('*, subscriptions(plan, status)').eq('id', companyId).single()
     setCompany(data)
     setLoading(false)
     const { data: reviews } = await supabase
@@ -152,6 +153,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const initials = company.name?.substring(0, 2).toUpperCase()
   const isBasic = plan === 'Basic' || plan === 'Premium'
   const isPremium = plan === 'Premium'
+  const companyIsPremium = isPremiumCompany(company)
   const isStarter = !isBasic
   const goToPricing = () => {
     setSelectedCompanyId && setSelectedCompanyId(null)
@@ -223,7 +225,10 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             </div>
           )}
         </div>
-        <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem'}}>{company.name}</h2>
+        <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+          <span>{company.name}</span>
+          {companyIsPremium && <VerifiedBadge size={22} />}
+        </h2>
         {company.is_suspended && (
           <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:8,padding:'6px 12px',marginTop:8,display:'inline-block'}}>
             <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>{ui.companyProfile.inactive}</span>

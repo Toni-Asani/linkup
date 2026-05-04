@@ -14,6 +14,7 @@ import { geocodeSwissAddress } from './geo'
 import { isNativeApp } from './platform'
 import { notifyTelegramActivity } from './telegramAlerts'
 import { HubbingIcon } from './icons'
+import { VerifiedBadge, isVerifiedBadgeFeature } from './VerifiedBadge'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 
@@ -414,8 +415,8 @@ function PlanBadge({ user }) {
   }, [user])
   const colors = { Starter: '#666', Basic: '#185FA5', Premium: '#E24B4A' }
   return (
-    <span style={{color: colors[plan] || '#666', fontSize:12, fontWeight:600}}>
-      {plan === 'Premium' ? '⭐' : plan === 'Basic' ? '✦' : ''} {plan} →
+    <span style={{color: colors[plan] || '#666', fontSize:12, fontWeight:600,display:'inline-flex',alignItems:'center',gap:4}}>
+      {plan === 'Premium' ? <VerifiedBadge size={14} /> : plan === 'Basic' ? '✦' : ''} {plan} →
     </span>
   )
 }
@@ -1241,7 +1242,7 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
             {[
               {name:'Starter',price:ui.common.free,color:'#666',features:ui.pricing.starterFeatures.slice(0, 4),limits:ui.pricing.starterLimits.slice(0, 2)},
               {name:'Basic',price:`CHF 19${ui.common.month}`,color:'#185FA5',features:ui.pricing.basicFeatures.slice(0, 4),limits:ui.pricing.basicLimits.slice(0, 2)},
-              {name:'Premium',price:`CHF 39${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 5),limits:ui.pricing.premiumLimits,highlight:true},
+              {name:'Premium',price:`CHF 39${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 6),limits:ui.pricing.premiumLimits,highlight:true},
             ].map(plan => (
               <div key={plan.name} onClick={() => setShowModal(true)}
                 style={{border: plan.highlight ? `2px solid ${plan.color}` : '1px solid #eee',borderRadius:12,padding:'1rem',marginBottom:'0.75rem',cursor:'pointer',background:'white'}}>
@@ -1250,7 +1251,10 @@ function VisitorMode({ setScreen, t, lang, setLang }) {
                   <span style={{fontSize:14,fontWeight:600,color:'#1a1a1a'}}>{plan.price}</span>
                 </div>
                 {plan.features.map((f,i) => (
-                  <p key={i} style={{fontSize:12,color:'#666',margin:'3px 0'}}>✓ {f}</p>
+                  <p key={i} style={{fontSize:12,color:'#666',margin:'3px 0',display:'flex',alignItems:'center',gap:5}}>
+                    <span>✓ {f}</span>
+                    {plan.name === 'Premium' && isVerifiedBadgeFeature(f) && <VerifiedBadge size={16} />}
+                  </p>
                 ))}
                 {(plan.limits || []).map((f,i) => (
                   <p key={`limit-${i}`} style={{fontSize:12,color:'#999',margin:'3px 0'}}>− {f}</p>
