@@ -2,7 +2,6 @@ import {
   CreditCard,
   House,
   Map,
-  MessageCircle,
   UserRound,
 } from 'lucide-react'
 
@@ -31,11 +30,32 @@ function SwipeGestureIcon({ size = 23, color = '#4B5563', strokeWidth = 2 }) {
   )
 }
 
+function MessageDotsIcon({ size = 23, color = '#4B5563', strokeWidth = 2 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 11.6c0 4.4-4 8-9 8a10 10 0 0 1-3.7-.7L3 21l1.8-4.4A7.5 7.5 0 0 1 3 11.6c0-4.4 4-8 9-8s9 3.6 9 8Z" />
+      <circle cx="8.5" cy="11.6" r="1" fill={color} stroke="none" />
+      <circle cx="12" cy="11.6" r="1" fill={color} stroke="none" />
+      <circle cx="15.5" cy="11.6" r="1" fill={color} stroke="none" />
+    </svg>
+  )
+}
+
 const icons = {
   home: House,
   swipe: SwipeGestureIcon,
   map: Map,
-  messages: MessageCircle,
+  messages: MessageDotsIcon,
   pricing: CreditCard,
   profile: UserRound,
 }

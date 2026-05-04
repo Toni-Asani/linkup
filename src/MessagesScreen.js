@@ -91,12 +91,21 @@ useEffect(() => {
           event: 'INSERT', schema: 'public', table: 'messages',
           filter: `match_id=eq.${selectedMatch.id}`
         }, payload => {
-          setMessages(prev => [...prev, payload.new])
+          setMessages(prev => prev.some(msg => msg.id === payload.new.id) ? prev : [...prev, payload.new])
+          if (myCompany?.id && payload.new.sender_id !== myCompany.id) {
+            markMessagesRead(selectedMatch.id, [payload.new])
+          }
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'messages',
+          filter: `match_id=eq.${selectedMatch.id}`
+        }, payload => {
+          setMessages(prev => prev.map(msg => msg.id === payload.new.id ? { ...msg, ...payload.new } : msg))
         })
         .subscribe()
       return () => supabase.removeChannel(sub)
     }
-  }, [selectedMatch])
+  }, [selectedMatch, myCompany?.id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -128,6 +137,30 @@ useEffect(() => {
       .eq('read', false)
     setUnreadByMatch(current => ({ ...current, [matchId]: 0 }))
     onUnreadChange && onUnreadChange()
+  }
+
+  const markMessagesRead = async (matchId, messageList = messages) => {
+    if (!matchId || !myCompany?.id) return
+    const unreadIncomingIds = (messageList || [])
+      .filter(msg => msg.sender_id !== myCompany.id && !msg.read_at && !msg.deleted_for_all)
+      .map(msg => msg.id)
+
+    if (unreadIncomingIds.length === 0) return
+
+    const readAt = new Date().toISOString()
+    const { error } = await supabase
+      .from('messages')
+      .update({ read_at: readAt })
+      .in('id', unreadIncomingIds)
+
+    if (error) {
+      console.warn('Unable to mark messages as read:', error.message)
+      return
+    }
+
+    setMessages(prev => prev.map(msg =>
+      unreadIncomingIds.includes(msg.id) ? { ...msg, read_at: msg.read_at || readAt } : msg
+    ))
   }
 
   const notifyMessageRecipient = async (match) => {
@@ -182,6 +215,7 @@ const loadMyCompanyAndMatches = async () => {
       .order('created_at', { ascending: true })
     setMessages(data || [])
     await markNotificationsRead(matchId)
+    await markMessagesRead(matchId, data || [])
   }
 
   const checkExistingReview = async () => {
@@ -526,7 +560,14 @@ if (data) {
 ) : (
   <p style={{margin:0}}>{msg.content}</p>
 )}
-                  <p style={{fontSize:10,margin:'4px 0 0',opacity:0.7,textAlign:'right'}}>{formatTime(msg.created_at)}</p>
+                  <p style={{fontSize:10,margin:'4px 0 0',opacity:0.75,textAlign:'right'}}>
+                    {formatTime(msg.created_at)}
+                    {isMe && (
+                      <span style={{marginLeft:6,fontWeight:700,color: msg.read_at ? '#DCFCE7' : 'rgba(255,255,255,0.82)'}}>
+                        {msg.read_at ? `✓✓ ${ui.messages.read}` : `✓ ${ui.messages.sent}`}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
             )
