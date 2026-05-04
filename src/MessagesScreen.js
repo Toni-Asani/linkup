@@ -45,11 +45,13 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const [submittingReview, setSubmittingReview] = useState(false)
   const [dailyMessageCount, setDailyMessageCount] = useState(0)
   const [conversationSubject, setConversationSubject] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
   const messagesEndRef = useRef(null)
   const [uploadingFile, setUploadingFile] = useState(false)
   const [longPressMatch, setLongPressMatch] = useState(null)
   const [unreadByMatch, setUnreadByMatch] = useState({})
   const fileAttachRef = useRef(null)
+  const sendingMessageRef = useRef(false)
   const longPressTimerRef = useRef(null)
   const longPressTriggeredRef = useRef(false)
   const touchStartPointRef = useRef(null)
@@ -329,42 +331,60 @@ const handleFileUpload = async (e) => {
   setUploadingFile(false)
   if (fileAttachRef.current) fileAttachRef.current.value = ''
 }
+  const addMessageIfMissing = (message) => {
+    if (!message?.id) return
+    setMessages(prev => prev.some(existing => existing.id === message.id) ? prev : [...prev, message])
+  }
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || !myCompany) return
-    if (newMessage.length > messageCharLimit) {
+    const content = newMessage.trim()
+    if (!content || !myCompany || !selectedMatch || sendingMessageRef.current) return
+    if (content.length > messageCharLimit) {
       alert(ui.messages.messageTooLong(messageCharLimit))
       return
     }
-    let starterCountBeforeSend = dailyMessageCount
-    if (isStarter) {
-      starterCountBeforeSend = await loadDailyMessageCount(myCompany.id)
-      if (starterCountBeforeSend >= STARTER_DAILY_MESSAGE_LIMIT) {
-        alert(ui.messages.starterLimitReached)
+
+    sendingMessageRef.current = true
+    setSendingMessage(true)
+
+    try {
+      let starterCountBeforeSend = dailyMessageCount
+      if (isStarter) {
+        starterCountBeforeSend = await loadDailyMessageCount(myCompany.id)
+        if (starterCountBeforeSend >= STARTER_DAILY_MESSAGE_LIMIT) {
+          alert(ui.messages.starterLimitReached)
+          return
+        }
+      }
+      const moderation = await moderateTextContent(content, 'message')
+      if (!moderation.allowed) {
+        alert(moderation.reason === 'direct_contact_info'
+          ? ui.messages.directContactBlocked
+          : ui.messages.messageBlocked)
         return
       }
+      setNewMessage('')
+      const msg = { match_id: selectedMatch.id, sender_id: myCompany.id, content }
+      const { data, error } = await supabase.from('messages').insert(msg).select().single()
+      if (error) throw error
+      if (data) {
+        addMessageIfMissing(data)
+        await notifyMessageRecipient(selectedMatch)
+        if (isStarter) {
+          const nextCount = starterCountBeforeSend + 1
+          setDailyMessageCount(nextCount)
+          if (nextCount >= STARTER_DAILY_MESSAGE_LIMIT) {
+            alert(ui.messages.starterLimitReached)
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Unable to send message:', e?.message || e)
+      setNewMessage(current => current || content)
+    } finally {
+      sendingMessageRef.current = false
+      setSendingMessage(false)
     }
-    const moderation = await moderateTextContent(newMessage, 'message')
-    if (!moderation.allowed) {
-      alert(moderation.reason === 'direct_contact_info'
-        ? ui.messages.directContactBlocked
-        : ui.messages.messageBlocked)
-      return
-    }
-    const content = newMessage.trim()
-setNewMessage('')
-const msg = { match_id: selectedMatch.id, sender_id: myCompany.id, content }
-const { data } = await supabase.from('messages').insert(msg).select().single()
-if (data) {
-  setMessages(prev => [...prev, data])
-  await notifyMessageRecipient(selectedMatch)
-  if (isStarter) {
-    const nextCount = starterCountBeforeSend + 1
-    setDailyMessageCount(nextCount)
-    if (nextCount >= STARTER_DAILY_MESSAGE_LIMIT) {
-      alert(ui.messages.starterLimitReached)
-    }
-  }
-}
   }
 
   const getOtherCompany = (match) => {
@@ -620,15 +640,15 @@ if (data) {
       sendMessage()
     }
   }}
-      disabled={starterLimitReached}
+      disabled={starterLimitReached || sendingMessage}
       maxLength={messageCharLimit}
       placeholder={starterLimitReached ? ui.messages.starterLimitPlaceholder : ui.messages.messagePlaceholder}
       rows={1}
       style={{flex:1,minHeight:40,maxHeight:86,padding:'10px 14px',border:'1px solid #eee',borderRadius:20,fontSize:16,lineHeight:1.25,outline:'none',fontFamily:'Plus Jakarta Sans',background: starterLimitReached ? '#f5f5f5' : 'white',resize:'none'}}
     />
-    <button onClick={sendMessage} disabled={!newMessage.trim() || starterLimitReached}
-      style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() && !starterLimitReached ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() && !starterLimitReached ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-      ↑
+    <button onClick={sendMessage} disabled={!newMessage.trim() || starterLimitReached || sendingMessage}
+      style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() && !starterLimitReached && !sendingMessage ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() && !starterLimitReached && !sendingMessage ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+      {sendingMessage ? '…' : '↑'}
     </button>
     </div>
   </div>
