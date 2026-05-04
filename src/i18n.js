@@ -114,7 +114,7 @@ const dictionaries = {
       introduce: 'Présentez-vous !',
       messagePlaceholder: 'Votre message...',
       sent: 'Envoyé',
-      read: 'Vu',
+      read: 'Lu',
       needDraft: (subject) => `Besoin : ${subject}\n\n`,
       needSubjectLabel: (subject) => `Sujet du besoin : ${subject}`,
       basicOnly: '💬 Messagerie disponible dès le plan Basic',

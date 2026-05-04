@@ -30,6 +30,24 @@ function CompanyAvatar({ company, size = 48, fontSize = 16 }) {
   )
 }
 
+function MessageStatus({ read, ui }) {
+  return (
+    <span style={{
+      marginLeft: 6,
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 3,
+      fontWeight: 800,
+      color: read ? '#BFEFFF' : 'rgba(255,255,255,0.82)'
+    }}>
+      <span style={{letterSpacing: read ? -3 : 0, fontSize: 12, lineHeight: 1}}>
+        {read ? '✓✓' : '✓'}
+      </span>
+      <span>{read ? ui.messages.read : ui.messages.sent}</span>
+    </span>
+  )
+}
+
 export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, onUnreadChange, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [matches, setMatches] = useState([])
@@ -594,11 +612,7 @@ const handleFileUpload = async (e) => {
 )}
                   <p style={{fontSize:10,margin:'4px 0 0',opacity:0.75,textAlign:'right'}}>
                     {formatTime(msg.created_at)}
-                    {isMe && (
-                      <span style={{marginLeft:6,fontWeight:700,color: msg.read_at ? '#DCFCE7' : 'rgba(255,255,255,0.82)'}}>
-                        {msg.read_at ? `✓✓ ${ui.messages.read}` : `✓ ${ui.messages.sent}`}
-                      </span>
-                    )}
+                    {isMe && <MessageStatus read={Boolean(msg.read_at)} ui={ui} />}
                   </p>
                 </div>
               </div>
