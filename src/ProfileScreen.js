@@ -281,6 +281,21 @@ notif_email: form.notif_email ?? true,
     return ui.profile.until(new Date(expires).toLocaleDateString(localeForLang(lang)))
   }
 
+  const selectFieldStyle = {
+    height: 58,
+    minHeight: 58,
+    padding: '0 42px 0 16px',
+    border: '1px solid #ddd',
+    borderRadius: 10,
+    fontSize: 16,
+    lineHeight: '58px',
+    outline: 'none',
+    background: 'white',
+    color: '#1a1a1a',
+    fontFamily: 'Plus Jakarta Sans',
+    width: '100%',
+  }
+
   if (editing) return (
     <div style={{flex:1,overflowY:'auto',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
@@ -291,13 +306,13 @@ notif_email: form.notif_email ?? true,
       <Label>{ui.profile.company}</Label>
       <Input value={form.name||''} onChange={e => setForm({...form,name:e.target.value})} placeholder={ui.profile.companyName} />
       <select value={form.sector||''} onChange={e => setForm({...form,sector:e.target.value})}
-        style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
+        style={selectFieldStyle}>
         <option value="">{ui.profile.sector}</option>
         {sectors.map(s => <option key={s} value={s}>{s}</option>)}
       </select>
       <div style={{display:'flex',gap:12}}>
         <select value={form.canton||''} onChange={e => setForm({...form,canton:e.target.value})}
-          style={{flex:1,padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
+          style={{...selectFieldStyle, flex:'0 0 104px', width:104}}>
           <option value="">Canton</option>
           {cantons.map(c => <option key={c} value={c}>{c}</option>)}
         </select>

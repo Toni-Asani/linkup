@@ -190,7 +190,11 @@ const loadMyCompanyAndMatches = async () => {
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
-  setMatches(matchData || [])
+  const validMatches = (matchData || []).filter(match => {
+    const other = match.company_a?.id === myComp.id ? match.company_b : match.company_a
+    return other?.id && other.id !== myComp.id
+  })
+  setMatches(validMatches)
   await loadUnreadNotifications()
   setLoading(false)
 }
@@ -365,8 +369,15 @@ if (data) {
 
   const getOtherCompany = (match) => {
     if (!myCompany) return null
-    return match.company_a?.id === myCompany.id ? match.company_b : match.company_a
+    const other = match.company_a?.id === myCompany.id ? match.company_b : match.company_a
+    return other?.id === myCompany.id ? null : other
   }
+
+  useEffect(() => {
+    if (selectedMatch && myCompany && !getOtherCompany(selectedMatch)) {
+      setSelectedMatch(null)
+    }
+  }, [selectedMatch, myCompany])
 
   const locale = localeForLang(lang)
   const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
@@ -429,6 +440,7 @@ if (data) {
   // Vue conversation
   if (selectedMatch) {
     const other = getOtherCompany(selectedMatch)
+    if (!other) return null
     return (
       <div style={{flex:1,display:'flex',flexDirection:'column',height:'100%',minHeight:0}}>
 
