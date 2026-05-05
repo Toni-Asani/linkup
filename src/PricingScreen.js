@@ -5,6 +5,9 @@ import { APPLE_PRODUCT_IDS, HubbingPurchases } from './applePurchases'
 import { isNativeIOS } from './platform'
 import { VerifiedBadge, isVerifiedBadgeFeature } from './VerifiedBadge'
 
+const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
+const PRIVACY_POLICY_URL = 'https://app.hubbing.ch?screen=privacy'
+
 const getPlans = (ui) => [
   {
     id: 'starter',
@@ -362,6 +365,22 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
       <p style={{fontSize:11,color:'#999',textAlign:'center',marginTop:'1rem',lineHeight:1.5}}>
         {nativeIOS ? ui.pricing.appleFooter : ui.pricing.footer}
       </p>
+      <div style={{marginTop:'0.85rem',padding:'0.9rem',background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,textAlign:'center'}}>
+        <p style={{fontSize:12,fontWeight:700,color:'#334155',margin:'0 0 0.6rem'}}>
+          {ui.pricing.legalLinksTitle}
+        </p>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexWrap:'wrap'}}>
+          <a href={TERMS_OF_USE_URL} target="_blank" rel="noopener noreferrer"
+            style={{fontSize:12,color:'#185FA5',fontWeight:700,textDecoration:'underline'}}>
+            {ui.pricing.termsOfUseEula}
+          </a>
+          <span style={{fontSize:12,color:'#CBD5E1'}}>·</span>
+          <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer"
+            style={{fontSize:12,color:'#185FA5',fontWeight:700,textDecoration:'underline'}}>
+            {ui.pricing.privacyPolicyLink}
+          </a>
+        </div>
+      </div>
       {nativeIOS && (
         <button onClick={handleRestorePurchases} disabled={restoring}
           style={{margin:'0.75rem auto 0',display:'block',background:'none',border:'none',color:'#E24B4A',fontSize:13,fontWeight:600,cursor:restoring ? 'default' : 'pointer'}}>

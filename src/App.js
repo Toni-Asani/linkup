@@ -346,7 +346,7 @@ const translations = {
 export default function App() {
   const [screen, setScreen] = useState(() => {
     const requestedScreen = new URLSearchParams(window.location.search).get('screen')
-    return ['home', 'login', 'register', 'visitor'].includes(requestedScreen) ? requestedScreen : 'home'
+    return ['home', 'login', 'register', 'visitor', 'legal', 'privacy'].includes(requestedScreen) ? requestedScreen : 'home'
   })
   const [visitorInitialTab, setVisitorInitialTab] = useState('swipe')
   const [user, setUser] = useState(null)
