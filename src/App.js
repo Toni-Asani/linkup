@@ -105,7 +105,9 @@ const translations = {
     errorFields: 'Veuillez remplir tous les champs obligatoires',
     errorCGU: 'Veuillez accepter les CGU pour continuer',
     errorEmail: 'Veuillez utiliser votre email professionnel (ex: vous@votreentreprise.ch)',
+    errorEmailAlreadyUsed: 'Cet email est déjà utilisé. Connectez-vous ou utilisez la réinitialisation du mot de passe.',
     errorZefix: 'Numéro IDE introuvable. Vérifiez que votre entreprise est enregistrée en Suisse.',
+    errorIdeAlreadyUsed: 'Ce numéro IDE est déjà utilisé sur Hubbing. Si cette entreprise vous appartient, connectez-vous ou contactez Hubbing.',
     errorZefixNotFound: 'Entreprise non trouvée dans le registre suisse (Zefix).',
     errorZefixRetry: 'Impossible de vérifier le numéro IDE. Réessayez.',
     demoMode: 'Mode visiteur',
@@ -174,7 +176,9 @@ const translations = {
     errorFields: 'Bitte füllen Sie alle Pflichtfelder aus',
     errorCGU: 'Bitte akzeptieren Sie die AGB',
     errorEmail: 'Bitte verwenden Sie Ihre geschäftliche E-Mail (z.B. sie@ihrfirma.ch)',
+    errorEmailAlreadyUsed: 'Diese E-Mail wird bereits verwendet. Melden Sie sich an oder setzen Sie Ihr Passwort zurück.',
     errorZefix: 'UID-Nummer nicht gefunden. Prüfen Sie, ob Ihr Unternehmen in der Schweiz registriert ist.',
+    errorIdeAlreadyUsed: 'Diese UID-Nummer wird bereits auf Hubbing verwendet. Melden Sie sich an oder kontaktieren Sie Hubbing.',
     errorZefixNotFound: 'Unternehmen nicht im Schweizer Register (Zefix) gefunden.',
     errorZefixRetry: 'UID-Nummer konnte nicht verifiziert werden. Versuchen Sie es erneut.',
     demoMode: 'Besucher-Modus',
@@ -243,7 +247,9 @@ const translations = {
     errorFields: 'Si prega di compilare tutti i campi obbligatori',
     errorCGU: 'Si prega di accettare i CGU per continuare',
     errorEmail: "Utilizzare l'email professionale (es: voi@vostraazienda.ch)",
+    errorEmailAlreadyUsed: 'Questa email è già utilizzata. Accedi o reimposta la password.',
     errorZefix: 'Numero IDE non trovato. Verificare che la sua azienda sia registrata in Svizzera.',
+    errorIdeAlreadyUsed: 'Questo numero IDE è già utilizzato su Hubbing. Accedi o contatta Hubbing.',
     errorZefixNotFound: 'Azienda non trovata nel registro svizzero (Zefix).',
     errorZefixRetry: 'Impossibile verificare il numero IDE. Riprovare.',
     demoMode: 'Modalità visitatore',
@@ -312,7 +318,9 @@ const translations = {
     errorFields: 'Please fill in all required fields',
     errorCGU: 'Please accept the T&C to continue',
     errorEmail: 'Please use your professional email (e.g. you@yourcompany.ch)',
+    errorEmailAlreadyUsed: 'This email is already used. Log in or reset your password.',
     errorZefix: 'IDE number not found. Check that your company is registered in Switzerland.',
+    errorIdeAlreadyUsed: 'This IDE number is already used on Hubbing. Log in or contact Hubbing.',
     errorZefixNotFound: 'Company not found in the Swiss register (Zefix).',
     errorZefixRetry: 'Unable to verify IDE number. Please try again.',
     demoMode: 'Visitor mode',
@@ -958,15 +966,17 @@ const handleRegister = async () => {
     setLoading(true)
     setError('')
 
+    const normalizedEmail = email.trim().toLowerCase()
+    const clean = zefix.replace(/[^0-9]/g, '').trim()
     const forbiddenDomains = ['gmail.com','hotmail.com','yahoo.com','outlook.com','icloud.com','live.com','msn.com','hotmail.fr','yahoo.fr','gmail.fr','bluewin.ch','gmx.ch','gmx.net','web.de']
-    const emailDomain = email.split('@')[1]?.toLowerCase()
+    const emailDomain = normalizedEmail.split('@')[1]?.toLowerCase()
     if (forbiddenDomains.includes(emailDomain)) {
       setError(t.errorEmail)
       setLoading(false)
       return
     }
 
-if (!email || !password || !company || !zefix || !contactName || !contactTitle || !address || !city || !canton || !npa) {      setError(t.errorFields)
+if (!normalizedEmail || !password || !company || !zefix || !contactName || !contactTitle || !address || !city || !canton || !npa) {      setError(t.errorFields)
       setLoading(false)
       return
     }
@@ -980,15 +990,44 @@ if (zefixStatus === 'invalid') {
   setLoading(false)
   return
 }
-    const clean = zefix.replace(/[^0-9]/g, '').trim()
     if (clean.length === 9) {
   setZefixStatus('valid')
 } else {
   setZefixStatus('idle')
+  setError(t.errorZefix)
+  setLoading(false)
+  return
 }
 
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
+    try {
+      const { data: ideAvailable, error: ideCheckError } = await supabase.rpc('hubbing_company_ide_available', {
+        p_zefix: clean
+      })
+      if (ideCheckError) throw ideCheckError
+      if (ideAvailable === false) {
+        setError(t.errorIdeAlreadyUsed)
+        setLoading(false)
+        return
+      }
+    } catch (ideCheckError) {
+      console.error('IDE availability check failed:', ideCheckError)
+      setError(t.errorZefixRetry)
+      setLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password })
+    if (error) {
+      const alreadyUsed = /already|registered|exists|user/i.test(error.message || '')
+      setError(alreadyUsed ? t.errorEmailAlreadyUsed : error.message)
+      setLoading(false)
+      return
+    }
+    if (Array.isArray(data?.user?.identities) && data.user.identities.length === 0) {
+      setError(t.errorEmailAlreadyUsed)
+      setLoading(false)
+      return
+    }
     
     const userId = data?.user?.id || data?.session?.user?.id
     if (userId) {
@@ -1001,7 +1040,7 @@ if (zefixStatus === 'invalid') {
       const { error: insertError } = await supabase.from('companies').insert({
         user_id: userId,
       name: company,
-      zefix_uid: zefix,
+      zefix_uid: clean,
       contact_name: contactName,
       contact_title: contactTitle,
       address: `${address}, ${npa} ${city}`,
@@ -1010,7 +1049,13 @@ if (zefixStatus === 'invalid') {
      lat: coords?.lat ?? null,
      lng: coords?.lng ?? null,
       })
-      if (insertError) console.error('Insert error:', insertError)
+      if (insertError) {
+        console.error('Insert error:', insertError)
+        const duplicateIde = insertError.code === '23505' || /zefix|companies_zefix|duplicate/i.test(insertError.message || '')
+        setError(duplicateIde ? t.errorIdeAlreadyUsed : insertError.message)
+        setLoading(false)
+        return
+      }
     }
     try {
       const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/registration-email`, {
@@ -1020,9 +1065,9 @@ if (zefixStatus === 'invalid') {
           'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({
-          email,
+          email: normalizedEmail,
           company,
-          zefix,
+          zefix: clean,
           contactName,
           contactTitle,
           address: `${address}, ${npa} ${city}`,
