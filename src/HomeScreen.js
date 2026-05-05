@@ -163,7 +163,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
           </div>
         </div>
       )}
-    <div style={{flex:1,overflowY:'auto',paddingBottom:'calc(90px + env(safe-area-inset-bottom))'}}>
+    <div style={{flex:1,overflowY:'auto',paddingBottom:'calc(18px + env(safe-area-inset-bottom))'}}>
 
 {/* Header coloré */}
       <div style={{
@@ -212,7 +212,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         )}
       </div>
 
-      <div style={{padding:'1.25rem 1rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
+      <div style={{padding:'1.25rem 1rem 0.75rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
 
         {/* Entreprises que je suis */}
         <div style={{background:'white',border:'1px solid #f0f0f0',borderRadius:12,overflow:'hidden'}}>

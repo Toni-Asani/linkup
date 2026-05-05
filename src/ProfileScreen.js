@@ -342,12 +342,15 @@ notif_email: form.notif_email ?? true,
     border: '1px solid #ddd',
     borderRadius: 10,
     fontSize: 16,
-    lineHeight: '58px',
+    lineHeight: 'normal',
     outline: 'none',
     background: 'white',
     color: '#1a1a1a',
     fontFamily: 'Plus Jakarta Sans',
     width: '100%',
+    boxSizing: 'border-box',
+    WebkitAppearance: 'menulist',
+    appearance: 'menulist',
   }
 
   if (editing) return (
@@ -359,11 +362,18 @@ notif_email: form.notif_email ?? true,
 
       <Label>{ui.profile.company}</Label>
       <Input value={form.name||''} onChange={e => setForm({...form,name:e.target.value})} placeholder={ui.profile.companyName} />
-      <select value={form.sector||''} onChange={e => setForm({...form,sector:e.target.value})}
-        style={selectFieldStyle}>
-        <option value="">{ui.profile.sector}</option>
-        {sectors.map(s => <option key={s} value={s}>{s}</option>)}
-      </select>
+      <div style={{position:'relative',height:58,minHeight:58,border:'1px solid #ddd',borderRadius:10,background:'white',display:'flex',alignItems:'center',padding:'0 42px 0 16px',overflow:'hidden'}}>
+        <span style={{fontSize:16,color:form.sector ? '#1a1a1a' : '#999',fontFamily:'Plus Jakarta Sans',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+          {form.sector || ui.profile.sector}
+        </span>
+        <span style={{position:'absolute',right:16,top:'50%',transform:'translateY(-50%)',color:'#1a1a1a',fontSize:14,pointerEvents:'none'}}>▼</span>
+        <select value={form.sector||''} onChange={e => setForm({...form,sector:e.target.value})}
+          aria-label={ui.profile.sector}
+          style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',fontSize:16}}>
+          <option value="">{ui.profile.sector}</option>
+          {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
       <div style={{display:'flex',gap:12}}>
         <select value={form.canton||''} onChange={e => setForm({...form,canton:e.target.value})}
           style={{...selectFieldStyle, flex:'0 0 104px', width:104}}>
