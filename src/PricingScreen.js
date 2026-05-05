@@ -6,7 +6,7 @@ import { isNativeIOS } from './platform'
 import { VerifiedBadge, isVerifiedBadgeFeature } from './VerifiedBadge'
 
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
-const PRIVACY_POLICY_URL = 'https://app.hubbing.ch?screen=privacy'
+const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 
 const getPlans = (ui) => [
   {
