@@ -51,6 +51,7 @@ const sectorColors = {
 const sectors = Object.keys(sectorColors)
 const SWIPE_THRESHOLD = 85
 const SWIPE_ANIMATION_MS = 420
+const UNDO_ANIMATION_MS = 360
 
 const haversine = (lat1, lng1, lat2, lng2) => {
   const R = 6371
@@ -78,6 +79,8 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   const [loading, setLoading] = useState(false)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [decision, setDecision] = useState(null)
+  const [undoReturning, setUndoReturning] = useState(false)
+  const [undoTransition, setUndoTransition] = useState(false)
   const [showMatchModal, setShowMatchModal] = useState(false)
   const [matchNotice, setMatchNotice] = useState('sent')
   const [allSeen, setAllSeen] = useState(false)
@@ -92,9 +95,15 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   const currentRef = useRef(0)
   const companiesRef = useRef([])
   const undoneSwipeIdsRef = useRef(new Set())
+  const undoFrameRef = useRef(null)
+  const undoTimerRef = useRef(null)
   const dragRef = useRef({ active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null })
 
   useEffect(() => { loadCompanies() }, [])
+  useEffect(() => () => {
+    if (undoFrameRef.current) window.cancelAnimationFrame(undoFrameRef.current)
+    if (undoTimerRef.current) window.clearTimeout(undoTimerRef.current)
+  }, [])
   useEffect(() => { currentRef.current = current }, [current])
   useEffect(() => { companiesRef.current = filteredCompanies }, [filteredCompanies])
   useEffect(() => { decisionRef.current = decision }, [decision])
@@ -113,6 +122,9 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     setCurrent(0)
     setSwipeHistory([])
     undoneSwipeIdsRef.current.clear()
+    setUndoReturning(false)
+    setUndoTransition(false)
+    setOffset({ x: 0, y: 0 })
     setAllSeen(result.length === 0 && companies.length > 0)
   }
 
@@ -234,17 +246,34 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   }
 
   const handleUndoSwipe = () => {
-    if (decisionRef.current || swipeHistory.length === 0) return
+    if (decisionRef.current || undoReturning || swipeHistory.length === 0) return
     const action = swipeHistory[swipeHistory.length - 1]
+    const startX = -(Math.min(window.innerWidth || 430, 430) + 90)
+    if (undoFrameRef.current) window.cancelAnimationFrame(undoFrameRef.current)
+    if (undoTimerRef.current) window.clearTimeout(undoTimerRef.current)
     undoneSwipeIdsRef.current.add(action.id)
     setSwipeHistory(history => history.slice(0, -1))
     setCurrent(action.index)
-    setOffset({ x: 0, y: 0 })
+    setOffset({ x: startX, y: 0 })
     setDecision(null)
     decisionRef.current = null
+    setUndoReturning(true)
+    setUndoTransition(false)
     setAllSeen(false)
     setShowMatchModal(false)
     dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
+    undoFrameRef.current = window.requestAnimationFrame(() => {
+      undoFrameRef.current = window.requestAnimationFrame(() => {
+        setUndoTransition(true)
+        setOffset({ x: 0, y: 0 })
+        undoTimerRef.current = window.setTimeout(() => {
+          setUndoReturning(false)
+          setUndoTransition(false)
+          undoFrameRef.current = null
+          undoTimerRef.current = null
+        }, UNDO_ANIMATION_MS)
+      })
+    })
     cleanupUndoneSwipe(action)
   }
 
@@ -292,7 +321,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   }
 
   const handleSwipe = (direction) => {
-    if (decisionRef.current) return
+    if (decisionRef.current || undoReturning) return
     const company = companiesRef.current[currentRef.current]
     if (!company) return
     const action = recordSwipeAction(company, direction)
@@ -335,7 +364,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   }
 
   const handlePointerDown = (e) => {
-    if (decisionRef.current) return
+    if (decisionRef.current || undoReturning) return
     if (e.pointerType === 'touch') return
     dragRef.current = { active: true, startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastY: e.clientY, pointerId: e.pointerId, source: 'pointer' }
     e.currentTarget.setPointerCapture?.(e.pointerId)
@@ -365,7 +394,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   }
 
   const handleTouchStart = (e) => {
-    if (decisionRef.current || e.touches.length !== 1) return
+    if (decisionRef.current || undoReturning || e.touches.length !== 1) return
     const touch = e.touches[0]
     dragRef.current = { active: true, startX: touch.clientX, startY: touch.clientY, lastX: touch.clientX, lastY: touch.clientY, pointerId: 'touch', source: 'touch' }
   }
@@ -393,7 +422,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     else setOffset({ x: 0, y: 0 })
   }
 
-  const rotate = offset.x * 0.08
+  const rotate = offset.x * (undoReturning ? 0.025 : 0.08)
   const likeOpacity = Math.max(0, Math.min(offset.x / 80, 1))
   const passOpacity = Math.max(0, Math.min(-offset.x / 80, 1))
 
@@ -524,7 +553,11 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
           background:'white',borderRadius:20,border:'1px solid #eee',
           boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
           transform: getCardTransform(),
-          transition: decision ? `transform ${SWIPE_ANIMATION_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1)` : 'none',
+          transition: decision
+            ? `transform ${SWIPE_ANIMATION_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1)`
+            : undoTransition
+              ? `transform ${UNDO_ANIMATION_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`
+              : 'none',
           cursor:'grab', zIndex:2, overflow:'hidden',
           touchAction:'pan-y',
           overscrollBehavior:'contain',
@@ -597,9 +630,9 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
       </div>
 
       <div style={{display:'flex',gap:'1.25rem',alignItems:'center',justifyContent:'center',flexShrink:0,paddingBottom:'0.9rem'}}>
-        <button onClick={handleUndoSwipe} disabled={swipeHistory.length === 0 || Boolean(decision)}
+        <button onClick={handleUndoSwipe} disabled={swipeHistory.length === 0 || Boolean(decision) || undoReturning}
           aria-label={ui.swipe.previousCard}
-          style={{width:50,height:50,borderRadius:'50%',background:'white',border:'2px solid #CBD5E1',color:swipeHistory.length === 0 || decision ? '#CBD5E1' : '#64748B',cursor:swipeHistory.length === 0 || decision ? 'default' : 'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.06)'}}>
+          style={{width:50,height:50,borderRadius:'50%',background:'white',border:'2px solid #CBD5E1',color:swipeHistory.length === 0 || decision || undoReturning ? '#CBD5E1' : '#64748B',cursor:swipeHistory.length === 0 || decision || undoReturning ? 'default' : 'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.06)'}}>
           <RotateCcw size={22} strokeWidth={2.4} />
         </button>
         <button onClick={() => handleSwipe('left')} aria-label={ui.swipe.pass}
