@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Check, RotateCcw, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
@@ -85,10 +86,12 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   const [filterSector, setFilterSector] = useState('')
   const [myCompanyCoords, setMyCompanyCoords] = useState(null)
   const [matchedCompanyIds, setMatchedCompanyIds] = useState(new Set())
+  const [swipeHistory, setSwipeHistory] = useState([])
   const [ratings, setRatings] = useState({})
   const decisionRef = useRef(null)
   const currentRef = useRef(0)
   const companiesRef = useRef([])
+  const undoneSwipeIdsRef = useRef(new Set())
   const dragRef = useRef({ active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null })
 
   useEffect(() => { loadCompanies() }, [])
@@ -108,6 +111,8 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     }
     setFilteredCompanies(result)
     setCurrent(0)
+    setSwipeHistory([])
+    undoneSwipeIdsRef.current.clear()
     setAllSeen(result.length === 0 && companies.length > 0)
   }
 
@@ -193,6 +198,56 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     await supabase.from('swipe_history').upsert({ user_id: user.id, company_id: companyId, direction }, { onConflict: 'user_id,company_id' })
   }
 
+  const recordSwipeAction = (company, direction) => {
+    const action = {
+      id: `${company.id}-${Date.now()}`,
+      companyId: company.id,
+      index: currentRef.current,
+      direction,
+      createdMatchId: null
+    }
+    setSwipeHistory(history => [...history, action].slice(-10))
+    return action
+  }
+
+  const cleanupUndoneSwipe = async (action, createdMatchId = action.createdMatchId) => {
+    if (!user || !action?.companyId) return
+    try {
+      await supabase
+        .from('swipe_history')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('company_id', action.companyId)
+
+      if (createdMatchId) {
+        await supabase.from('notifications').delete().eq('match_id', createdMatchId)
+        await supabase.from('matches').delete().eq('id', createdMatchId)
+        setMatchedCompanyIds(currentIds => {
+          const nextIds = new Set(currentIds)
+          nextIds.delete(action.companyId)
+          return nextIds
+        })
+      }
+    } catch (error) {
+      console.warn('Swipe undo cleanup failed:', error)
+    }
+  }
+
+  const handleUndoSwipe = () => {
+    if (decisionRef.current || swipeHistory.length === 0) return
+    const action = swipeHistory[swipeHistory.length - 1]
+    undoneSwipeIdsRef.current.add(action.id)
+    setSwipeHistory(history => history.slice(0, -1))
+    setCurrent(action.index)
+    setOffset({ x: 0, y: 0 })
+    setDecision(null)
+    decisionRef.current = null
+    setAllSeen(false)
+    setShowMatchModal(false)
+    dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
+    cleanupUndoneSwipe(action)
+  }
+
   const animateSwipeAway = (direction) => {
     decisionRef.current = direction
     setDecision(direction)
@@ -205,6 +260,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   }
 
   const persistSwipe = async (company, direction) => {
+    let createdMatchId = null
     try {
       if (direction === 'right') {
         const { data: myCompany } = await supabase.from('companies').select('id').eq('user_id', user.id).single()
@@ -213,6 +269,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
           if (!existing) {
             const { data: newMatch } = await supabase.from('matches').insert({ company_a: myCompany.id, company_b: company.id, status: 'pending' }).select().single()
             if (newMatch) {
+              createdMatchId = newMatch.id
               setMatchedCompanyIds(current => new Set([...current, company.id]))
               const { data: otherUser } = await supabase.from('companies').select('user_id').eq('id', company.id).single()
               if (otherUser) {
@@ -231,12 +288,26 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     } catch (error) {
       console.warn('Swipe persistence failed:', error)
     }
+    return { createdMatchId }
   }
 
   const handleSwipe = (direction) => {
     if (decisionRef.current) return
     const company = companiesRef.current[currentRef.current]
     if (!company) return
+    const action = recordSwipeAction(company, direction)
+
+    const persistCurrentSwipe = () => {
+      if (!user) return
+      persistSwipe(company, direction).then(result => {
+        const nextAction = { ...action, createdMatchId: result?.createdMatchId || null }
+        if (undoneSwipeIdsRef.current.has(action.id)) {
+          cleanupUndoneSwipe(nextAction)
+          return
+        }
+        setSwipeHistory(history => history.map(item => item.id === action.id ? nextAction : item))
+      })
+    }
 
     if (direction === 'right') {
       if (!user) {
@@ -251,7 +322,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
         setShowMatchModal(true)
         setTimeout(() => setShowMatchModal(false), 1500)
         animateSwipeAway(direction)
-        saveSwipeHistory(company.id, direction).catch(error => console.warn('Swipe history failed:', error))
+        persistCurrentSwipe()
         return
       }
       setMatchNotice('sent')
@@ -260,7 +331,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     }
 
     animateSwipeAway(direction)
-    if (user) persistSwipe(company, direction)
+    persistCurrentSwipe()
   }
 
   const handlePointerDown = (e) => {
@@ -352,6 +423,12 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
       <div style={{fontSize:48}}>{activeFilters > 0 ? '🔍' : '🎉'}</div>
       <h3 style={{fontSize:20,fontWeight:700}}>{activeFilters > 0 ? ui.swipe.noResults : ui.swipe.allSeen}</h3>
       <p style={{color:'#999',fontSize:14}}>{activeFilters > 0 ? ui.swipe.noResultsDesc : ui.swipe.allSeenDesc}</p>
+      {swipeHistory.length > 0 && (
+        <button onClick={handleUndoSwipe} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px 20px',background:'white',color:'#444',border:'1px solid #ddd',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
+          <RotateCcw size={18} strokeWidth={2.4} />
+          {ui.swipe.previousCard}
+        </button>
+      )}
       {activeFilters > 0 && <button onClick={() => { setFilterSector(''); setFilterRadius(300) }} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clearFilters}</button>}
       <button onClick={() => loadCompanies(true)} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.reviewAll}</button>
       <button onClick={() => loadCompanies(false)} style={{padding:'12px 24px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.newOnly}</button>
@@ -519,9 +596,20 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
         </div>
       </div>
 
-      <div style={{display:'flex',gap:'2rem',alignItems:'center',flexShrink:0,paddingBottom:'0.9rem'}}>
-        <button onClick={() => handleSwipe('left')} style={{width:56,height:56,borderRadius:'50%',background:'white',border:'2px solid #E24B4A',color:'#E24B4A',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>✗</button>
-        <button onClick={() => handleSwipe('right')} style={{width:64,height:64,borderRadius:'50%',background:'#E24B4A',border:'none',color:'white',fontSize:24,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(226,75,74,0.4)'}}>✓</button>
+      <div style={{display:'flex',gap:'1.25rem',alignItems:'center',justifyContent:'center',flexShrink:0,paddingBottom:'0.9rem'}}>
+        <button onClick={handleUndoSwipe} disabled={swipeHistory.length === 0 || Boolean(decision)}
+          aria-label={ui.swipe.previousCard}
+          style={{width:50,height:50,borderRadius:'50%',background:'white',border:'2px solid #CBD5E1',color:swipeHistory.length === 0 || decision ? '#CBD5E1' : '#64748B',cursor:swipeHistory.length === 0 || decision ? 'default' : 'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.06)'}}>
+          <RotateCcw size={22} strokeWidth={2.4} />
+        </button>
+        <button onClick={() => handleSwipe('left')} aria-label={ui.swipe.pass}
+          style={{width:56,height:56,borderRadius:'50%',background:'white',border:'2px solid #E24B4A',color:'#E24B4A',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>
+          <X size={27} strokeWidth={2.5} />
+        </button>
+        <button onClick={() => handleSwipe('right')} aria-label={ui.swipe.match}
+          style={{width:64,height:64,borderRadius:'50%',background:'#E24B4A',border:'none',color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(226,75,74,0.4)'}}>
+          <Check size={30} strokeWidth={2.6} />
+        </button>
       </div>
 
       {!user && <p style={{fontSize:11,color:'#999',textAlign:'center',flexShrink:0}}>{ui.swipe.pressCheck}</p>}

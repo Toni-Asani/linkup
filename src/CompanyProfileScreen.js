@@ -108,9 +108,11 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     setContacting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
       const { data: myCompany } = await supabase
         .from('companies').select('id').eq('user_id', user.id).single()
       if (!myCompany) return
+      if (myCompany.id === companyId) return
 
       const { data: existing } = await supabase
         .from('matches')
@@ -119,11 +121,24 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         .maybeSingle()
 
       if (!existing) {
-        await supabase.from('matches').insert({
+        const { data: newMatch } = await supabase.from('matches').insert({
           company_a: myCompany.id,
           company_b: companyId,
           status: 'pending'
-        })
+        }).select('id').single()
+        if (newMatch) {
+          const { data: otherUser } = await supabase
+            .from('companies')
+            .select('user_id')
+            .eq('id', companyId)
+            .single()
+          if (otherUser?.user_id) {
+            await supabase.from('notifications').insert([
+              { user_id: user.id, type: 'new_match', match_id: newMatch.id },
+              { user_id: otherUser.user_id, type: 'new_match', match_id: newMatch.id }
+            ])
+          }
+        }
       }
       const cleanNeedSubject = String(needSubject || '').replace(/\s+/g, ' ').trim()
       if (cleanNeedSubject) {
