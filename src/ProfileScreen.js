@@ -72,6 +72,9 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [success, setSuccess] = useState(false)
   const [newTag, setNewTag] = useState('')
   const [tags, setTags] = useState([])
+  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' })
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordNotice, setPasswordNotice] = useState(null)
   const fileInputRef = useRef(null)
 
   useEffect(() => { loadProfile() }, [])
@@ -192,6 +195,57 @@ const handleContactPhotoUpload = async (e) => {
 
   const removeTag = (tag) => {
     setTags(tags.filter(t => t !== tag))
+  }
+
+  const notifyPasswordChange = async () => {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+    const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
+    if (!token || !supabaseUrl) return false
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/password-change-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ lang }),
+    })
+
+    return response.ok
+  }
+
+  const handlePasswordUpdate = async () => {
+    if (passwordSaving) return
+    setPasswordNotice(null)
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordNotice({ type: 'error', message: ui.profile.passwordMinLength })
+      return
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordNotice({ type: 'error', message: ui.profile.passwordMismatch })
+      return
+    }
+
+    setPasswordSaving(true)
+    const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword })
+    if (error) {
+      setPasswordNotice({ type: 'error', message: ui.profile.passwordUpdateError(error.message) })
+    } else {
+      let emailSent = false
+      try {
+        emailSent = await notifyPasswordChange()
+      } catch (notifyError) {
+        console.warn('Password change notification email failed:', notifyError?.message || notifyError)
+      }
+      setPasswordForm({ newPassword: '', confirmPassword: '' })
+      setPasswordNotice({
+        type: emailSent ? 'success' : 'warning',
+        message: emailSent ? ui.profile.passwordUpdated : ui.profile.passwordUpdatedEmailFailed,
+      })
+    }
+    setPasswordSaving(false)
   }
 
   const handleSave = async () => {
@@ -412,6 +466,39 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
       <div style={{position:'absolute',top:2,left: form.notif_email !== false ? 22 : 2,width:20,height:20,borderRadius:'50%',background:'white',boxShadow:'0 1px 4px rgba(0,0,0,0.2)',transition:'left 0.2s'}}></div>
     </div>
   </div>
+</div>
+<Label>{ui.profile.security}</Label>
+<div style={{display:'flex',flexDirection:'column',gap:10,background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
+  <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>{ui.profile.passwordHelp}</p>
+  <Input
+    type="password"
+    autoComplete="new-password"
+    value={passwordForm.newPassword}
+    onChange={e => {
+      setPasswordForm({...passwordForm,newPassword:e.target.value})
+      setPasswordNotice(null)
+    }}
+    placeholder={ui.profile.newPassword}
+  />
+  <Input
+    type="password"
+    autoComplete="new-password"
+    value={passwordForm.confirmPassword}
+    onChange={e => {
+      setPasswordForm({...passwordForm,confirmPassword:e.target.value})
+      setPasswordNotice(null)
+    }}
+    placeholder={ui.profile.confirmPassword}
+  />
+  {passwordNotice && (
+    <p style={{fontSize:12,color: passwordNotice.type === 'success' ? '#166534' : passwordNotice.type === 'warning' ? '#B45309' : '#E24B4A',fontWeight:600,margin:0}}>
+      {passwordNotice.message}
+    </p>
+  )}
+  <button onClick={handlePasswordUpdate} disabled={passwordSaving}
+    style={{padding:'12px',background:passwordSaving ? '#eee' : '#1a1a1a',color:passwordSaving ? '#999' : 'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:passwordSaving ? 'default' : 'pointer'}}>
+    {passwordSaving ? ui.profile.passwordChanging : ui.profile.changePassword}
+  </button>
 </div>
       <button onClick={handleSave} disabled={saving}
         style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer',marginTop:'0.5rem'}}>
@@ -669,9 +756,9 @@ function DeleteAccountButton({ user, lang = 'fr' }) {
   )
 }
 
-function Input({ value, onChange, placeholder, style }) {
+function Input({ value, onChange, placeholder, style, type = 'text', autoComplete }) {
   return (
-    <input value={value} onChange={onChange} placeholder={placeholder}
+    <input type={type} value={value} onChange={onChange} placeholder={placeholder} autoComplete={autoComplete}
       style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',width:'100%',...style}} />
   )
 }

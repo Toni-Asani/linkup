@@ -111,7 +111,7 @@ useEffect(() => {
           event: 'INSERT', schema: 'public', table: 'messages',
           filter: `match_id=eq.${selectedMatch.id}`
         }, payload => {
-          setMessages(prev => prev.some(msg => msg.id === payload.new.id) ? prev : [...prev, payload.new])
+          addMessageIfMissing(payload.new)
           if (myCompany?.id && payload.new.sender_id !== myCompany.id) {
             markMessagesRead(selectedMatch.id, [payload.new])
           }
@@ -159,6 +159,65 @@ useEffect(() => {
     onUnreadChange && onUnreadChange()
   }
 
+  const getMatchActivityAt = (match) => match?.last_message?.created_at || match?.created_at
+
+  const sortMatchesByActivity = (matchList) => [...(matchList || [])].sort((a, b) =>
+    new Date(getMatchActivityAt(b) || 0) - new Date(getMatchActivityAt(a) || 0)
+  )
+
+  const isMessageVisibleForCompany = (message, companyId) => {
+    if (!message || message.deleted_for_all) return false
+    const deletedFor = Array.isArray(message.deleted_for) ? message.deleted_for : []
+    return !deletedFor.includes(companyId)
+  }
+
+  const loadLatestMessagesForMatches = async (matchList, companyId) => {
+    const matchIds = (matchList || []).map(match => match.id).filter(Boolean)
+    if (matchIds.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select('id, match_id, sender_id, content, attachment_name, created_at, deleted_for, deleted_for_all')
+      .in('match_id', matchIds)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.warn('Unable to load latest messages:', error.message)
+      return sortMatchesByActivity(matchList)
+    }
+
+    const latestByMatch = {}
+    ;(data || []).forEach(message => {
+      if (latestByMatch[message.match_id]) return
+      if (!isMessageVisibleForCompany(message, companyId)) return
+      latestByMatch[message.match_id] = message
+    })
+
+    return sortMatchesByActivity(matchList.map(match => ({
+      ...match,
+      last_message: latestByMatch[match.id] || match.last_message || null,
+    })))
+  }
+
+  const updateMatchLastMessage = (message) => {
+    if (!message?.match_id) return
+    setMatches(current => sortMatchesByActivity(current.map(match => {
+      if (match.id !== message.match_id) return match
+      const currentActivity = new Date(getMatchActivityAt(match) || 0).getTime()
+      const nextActivity = new Date(message.created_at || 0).getTime()
+      if (match.last_message && currentActivity > nextActivity) return match
+      return { ...match, last_message: message }
+    })))
+  }
+
+  const getConversationPreview = (match, other) => {
+    const latest = match?.last_message
+    if (!latest) return `${other.sector} · ${other.city}`
+    const content = latest.attachment_name || latest.content || ui.messages.attachment
+    const prefix = latest.sender_id === myCompany?.id ? `${ui.messages.youPrefix} ` : ''
+    return `${prefix}${content}`
+  }
+
   const markMessagesRead = async (matchId, messageList = messages) => {
     if (!matchId || !myCompany?.id) return
     const unreadIncomingIds = (messageList || [])
@@ -180,6 +239,34 @@ useEffect(() => {
       updatedById.has(msg.id) ? { ...msg, ...updatedById.get(msg.id) } : msg
     ))
   }
+
+  useEffect(() => {
+    const matchIds = matches.map(match => match.id).filter(Boolean)
+    if (!myCompany?.id || matchIds.length === 0) return
+
+    const channel = supabase.channel(`message-list-${myCompany.id}-${matchIds.length}`)
+    matchIds.forEach(matchId => {
+      channel.on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `match_id=eq.${matchId}`,
+      }, payload => {
+        const message = payload.new
+        updateMatchLastMessage(message)
+        if (message.sender_id !== myCompany.id && selectedMatch?.id !== message.match_id) {
+          setUnreadByMatch(current => ({
+            ...current,
+            [message.match_id]: (current[message.match_id] || 0) + 1,
+          }))
+          onUnreadChange && onUnreadChange()
+        }
+      })
+    })
+    channel.subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [myCompany?.id, matches.map(match => match.id).join(','), selectedMatch?.id])
 
   const notifyMessageRecipient = async (match) => {
     const other = getOtherCompany(match)
@@ -212,7 +299,8 @@ const loadMyCompanyAndMatches = async () => {
     const other = match.company_a?.id === myComp.id ? match.company_b : match.company_a
     return other?.id && other.id !== myComp.id
   })
-  setMatches(validMatches)
+  const matchesWithActivity = await loadLatestMessagesForMatches(validMatches, myComp.id)
+  setMatches(matchesWithActivity)
   await loadUnreadNotifications()
   setLoading(false)
 }
@@ -331,14 +419,16 @@ const handleFileUpload = async (e) => {
     if (uploadError) throw uploadError
     const { data: urlData } = supabase.storage.from('attachments').getPublicUrl(fileName)
     
-    await supabase.from('messages').insert({
+    const { data: insertedMessage, error: messageError } = await supabase.from('messages').insert({
       match_id: selectedMatch.id,
       sender_id: myCompany.id,
       content: `📎 ${file.name}`,
       attachment_url: urlData.publicUrl,
       attachment_name: file.name,
       attachment_type: file.type
-    })
+    }).select().single()
+    if (messageError) throw messageError
+    if (insertedMessage) addMessageIfMissing(insertedMessage)
     await notifyMessageRecipient(selectedMatch)
     await loadMessages(selectedMatch.id)
   } catch(e) {
@@ -350,6 +440,7 @@ const handleFileUpload = async (e) => {
   const addMessageIfMissing = (message) => {
     if (!message?.id) return
     setMessages(prev => prev.some(existing => existing.id === message.id) ? prev : [...prev, message])
+    updateMatchLastMessage(message)
   }
 
   const sendMessage = async () => {
@@ -778,11 +869,11 @@ const handleFileUpload = async (e) => {
                           {unread > 9 ? '9+' : unread}
                         </span>
                       )}
-                      <span style={{fontSize:11,color:'#999'}}>{formatDate(match.created_at)}</span>
+                      <span style={{fontSize:11,color:'#999'}}>{formatDate(getMatchActivityAt(match))}</span>
                     </div>
                   </div>
                   <p style={{fontSize:13,color:'#999',margin:'2px 0 0',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                    {other.sector} · {other.city}
+                    {getConversationPreview(match, other)}
                   </p>
                 </div>
                 <span style={{color:'#ccc',fontSize:18}}>›</span>
