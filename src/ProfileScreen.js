@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile } from './moderation'
 import { geocodeSwissAddress } from './geo'
-import { isNativeApp } from './platform'
+import { isNativeApp, isNativeIOS } from './platform'
 import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
 
 const sectorColors = {
@@ -684,29 +684,38 @@ function DeleteAccountButton({ user, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
+  const nativeIOS = isNativeIOS()
+
+  const openAppleSubscriptions = () => {
+    window.open('https://apps.apple.com/account/subscriptions', '_blank', 'noopener,noreferrer')
+  }
 
   const handleDelete = async () => {
   setLoading(true)
   try {
-    const { data: company } = await supabase
-      .from('companies').select('name').eq('user_id', user.id).single()
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+    const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
+    if (!token || !supabaseUrl) throw new Error('Missing session')
 
-    await fetch('https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/delete-account', {
+    const response = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: user.id,
-        email: user.email,
-        companyName: company?.name || ui.profile.unknown
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ lang })
     })
-
-    await supabase.from('companies').update({
-      deletion_requested: true,
-      deletion_requested_at: new Date().toISOString()
-    }).eq('user_id', user.id)
+    if (!response.ok) {
+      const details = await response.text()
+      throw new Error(details || 'Account deletion failed')
+    }
 
     setStep(3)
+    setTimeout(async () => {
+      await supabase.auth.signOut().catch(() => null)
+      window.location.href = '/'
+    }, 2500)
   } catch(e) {
     alert(ui.profile.deleteError)
   }
@@ -726,6 +735,17 @@ function DeleteAccountButton({ user, lang = 'fr' }) {
       <p style={{fontSize:13,color:'#666',lineHeight:1.6,marginBottom:'1rem'}}>
         {ui.profile.warningText}
       </p>
+      {nativeIOS && (
+        <div style={{background:'white',border:'1px solid #FECACA',borderRadius:10,padding:'0.75rem',marginBottom:'1rem'}}>
+          <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:'0 0 0.65rem'}}>
+            {ui.profile.appleSubscriptionNotice}
+          </p>
+          <button onClick={openAppleSubscriptions}
+            style={{width:'100%',padding:'10px',background:'#111827',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+            {ui.profile.manageAppleSubscription}
+          </button>
+        </div>
+      )}
       <div style={{display:'flex',gap:8}}>
         <button onClick={() => setStep(0)}
           style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
@@ -745,6 +765,12 @@ function DeleteAccountButton({ user, lang = 'fr' }) {
       <p style={{fontSize:13,color:'#666',lineHeight:1.6,marginBottom:'1rem'}}>
         {ui.profile.finalConfirmText(user.email)}
       </p>
+      {nativeIOS && (
+        <button onClick={openAppleSubscriptions}
+          style={{width:'100%',padding:'11px',background:'#111827',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',marginBottom:'1rem'}}>
+          {ui.profile.manageAppleSubscription}
+        </button>
+      )}
       <div style={{display:'flex',gap:8}}>
         <button onClick={() => setStep(0)}
           style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
