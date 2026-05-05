@@ -52,7 +52,6 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   const [currentPlan, setCurrentPlan] = useState('starter')
   const [loading, setLoading] = useState(null)
   const [restoring, setRestoring] = useState(false)
-  const [appleProducts, setAppleProducts] = useState({})
   const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const [testModeEnabled, setTestModeEnabled] = useState(false)
   const [testPlanChanging, setTestPlanChanging] = useState(null)
@@ -95,9 +94,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   const loadAppleProducts = async () => {
     try {
       const productIds = plans.filter(plan => plan.appleProductId).map(plan => plan.appleProductId)
-      const result = await HubbingPurchases.getProducts({ productIds })
-      const productsById = Object.fromEntries((result.products || []).map(product => [product.id, product]))
-      setAppleProducts(productsById)
+      await HubbingPurchases.getProducts({ productIds })
     } catch (e) {
       console.warn('Apple products unavailable:', e)
     }
@@ -210,11 +207,8 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
 
   const remaining = founderSlots.max - founderSlots.used
   const getPriceLabel = (plan) => {
-    if (nativeIOS && plan.appleProductId && appleProducts[plan.appleProductId]?.displayPrice) {
-      return appleProducts[plan.appleProductId].displayPrice
-    }
     if (plan.price === 0) return ui.common.free
-    return `CHF ${plan.price}`
+    return `CHF ${Number(plan.price).toFixed(2)}`
   }
 
   return (

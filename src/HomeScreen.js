@@ -38,7 +38,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         .select('id, company_a, company_b, status, created_at, company_b_profile:company_b(*)')
         .eq('company_a', comp.id)
         .eq('status', 'pending')
-      const followingMatchesRaw = myMatches || []
+      const followingMatchesRaw = (myMatches || []).filter(match => match.company_b && match.company_b !== comp.id)
       const missingFollowingIds = followingMatchesRaw.filter(m => !m.company_b_profile).map(m => m.company_b).filter(Boolean)
       let followingCompaniesById = {}
       if (missingFollowingIds.length > 0) {
@@ -66,7 +66,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         .select('id, company_a, company_b, status, created_at, company_a_profile:company_a(*)', { count: 'exact' })
         .eq('company_b', comp.id)
         .eq('status', 'pending')
-      const followerMatchesRaw = followersData || []
+      const followerMatchesRaw = (followersData || []).filter(match => match.company_a && match.company_a !== comp.id)
       const missingFollowerIds = followerMatchesRaw.filter(m => !m.company_a_profile).map(m => m.company_a).filter(Boolean)
       let followerCompaniesById = {}
       if (missingFollowerIds.length > 0) {
