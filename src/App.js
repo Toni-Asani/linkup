@@ -67,6 +67,12 @@ const translations = {
     createAccount: 'Créer un compte',
     login: 'Se connecter',
     visitorMode: 'Continuer en mode visiteur',
+    planPreviewCta: 'Voir les tarifs',
+    planPreviews: [
+      { name: 'Starter', price: 'Gratuit', detail: 'Découvrir' },
+      { name: 'Basic', price: 'CHF 19/mois', detail: 'Messages illimités' },
+      { name: 'Premium', price: 'CHF 39/mois', detail: 'Coordonnées complètes' },
+    ],
     legal: 'CGU · Confidentialité · Mentions légales',
     registerTitle: 'Créer un compte',
     registerSubtitle: 'Réservé aux entreprises enregistrées en Suisse',
@@ -130,6 +136,12 @@ const translations = {
     createAccount: 'Konto erstellen',
     login: 'Anmelden',
     visitorMode: 'Als Besucher fortfahren',
+    planPreviewCta: 'Preise ansehen',
+    planPreviews: [
+      { name: 'Starter', price: 'Gratis', detail: 'Entdecken' },
+      { name: 'Basic', price: 'CHF 19/Monat', detail: 'Unbegrenzte Nachrichten' },
+      { name: 'Premium', price: 'CHF 39/Monat', detail: 'Vollständige Kontakte' },
+    ],
     legal: 'AGB · Datenschutz · Impressum',
     registerTitle: 'Konto erstellen',
     registerSubtitle: 'Nur für in der Schweiz registrierte Unternehmen',
@@ -193,6 +205,12 @@ const translations = {
     createAccount: 'Crea un account',
     login: 'Accedi',
     visitorMode: 'Continua in modalità visitatore',
+    planPreviewCta: 'Vedi tariffe',
+    planPreviews: [
+      { name: 'Starter', price: 'Gratis', detail: 'Scoprire' },
+      { name: 'Basic', price: 'CHF 19/mese', detail: 'Messaggi illimitati' },
+      { name: 'Premium', price: 'CHF 39/mese', detail: 'Contatti completi' },
+    ],
     legal: 'CGU · Privacy · Note legali',
     registerTitle: 'Crea un account',
     registerSubtitle: 'Riservato alle aziende registrate in Svizzera',
@@ -256,6 +274,12 @@ const translations = {
     createAccount: 'Create an account',
     login: 'Log in',
     visitorMode: 'Continue as visitor',
+    planPreviewCta: 'View pricing',
+    planPreviews: [
+      { name: 'Starter', price: 'Free', detail: 'Discover' },
+      { name: 'Basic', price: 'CHF 19/month', detail: 'Unlimited messages' },
+      { name: 'Premium', price: 'CHF 39/month', detail: 'Full contact details' },
+    ],
     legal: 'T&C · Privacy · Legal notice',
     registerTitle: 'Create an account',
     registerSubtitle: 'Reserved for companies registered in Switzerland',
@@ -316,6 +340,7 @@ export default function App() {
     const requestedScreen = new URLSearchParams(window.location.search).get('screen')
     return ['home', 'login', 'register', 'visitor'].includes(requestedScreen) ? requestedScreen : 'home'
   })
+  const [visitorInitialTab, setVisitorInitialTab] = useState('swipe')
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
@@ -385,13 +410,13 @@ if (isMarketingSite) return (
 ) : user ? (
   <Dashboard user={user} setUser={setUser} t={t} lang={lang} setLang={setLang} />
 ) : screen === 'home' ? (
-          <LandingScreen setScreen={setScreen} t={t} lang={lang} setLang={setLang} />
+          <LandingScreen setScreen={setScreen} setVisitorInitialTab={setVisitorInitialTab} t={t} lang={lang} setLang={setLang} />
         ) : screen === 'login' ? (
           <LoginScreen setScreen={setScreen} t={t} />
         ) : screen === 'register' ? (
           <RegisterScreen setScreen={setScreen} t={t} />
         ) : screen === 'visitor' ? (
-          <VisitorMode setScreen={setScreen} t={t} lang={lang} setLang={setLang} />
+          <VisitorMode setScreen={setScreen} initialTab={visitorInitialTab} t={t} lang={lang} setLang={setLang} />
         ) : screen === 'legal' ? (
           <LegalScreen setScreen={setScreen} lang={lang} />
           ) : screen === 'privacy' ? (
@@ -771,33 +796,21 @@ const handleWaitlist = async () => {
     </div>
   )
 }
-function LandingScreen({ setScreen, t, lang, setLang }) {
+function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
   const [showLangMenu, setShowLangMenu] = useState(false)
-  const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const langs = [
     { code: 'fr', label: '🇫🇷 Français' },
     { code: 'de', label: '🇩🇪 Deutsch' },
     { code: 'it', label: '🇮🇹 Italiano' },
     { code: 'en', label: '🇬🇧 English' },
   ]
-  const founderRemaining = Math.max(0, founderSlots.max - founderSlots.used)
-  const founderProgress = founderSlots.max > 0 ? Math.min(100, (founderSlots.used / founderSlots.max) * 100) : 0
-
-  useEffect(() => {
-    let active = true
-    supabase
-      .from('founder_slots')
-      .select('used, max_slots')
-      .eq('id', 1)
-      .single()
-      .then(({ data }) => {
-        if (active && data) setFounderSlots({ used: data.used || 0, max: data.max_slots || 100 })
-      })
-    return () => { active = false }
-  }, [])
+  const openVisitorPricing = () => {
+    setVisitorInitialTab && setVisitorInitialTab('pricing')
+    setScreen('visitor')
+  }
 
   return (
-    <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.25rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1.2rem',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.25rem) 1.5rem calc(env(safe-area-inset-bottom) + 1.5rem)',gap:'1rem',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
       <div style={{position:'absolute',top:'calc(env(safe-area-inset-top) + 1rem)',right:'1rem'}}>
         <button onClick={() => setShowLangMenu(!showLangMenu)}
           style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'6px 14px',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',fontWeight:500}}>
@@ -815,27 +828,8 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
         )}
       </div>
 
-      <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:72,height:72,borderRadius:'50%'}} />
-      <h1 style={{fontSize:28,fontWeight:700,color:'#1a1a1a',textAlign:'center'}}>Hubbing</h1>
-      <p style={{color:'#666',textAlign:'center',fontSize:15,lineHeight:1.6}}>{t.appTagline}</p>
-      <button onClick={() => setScreen('register')}
-        style={{width:'100%',background:'linear-gradient(135deg,#FFF5F5 0%,#fff 100%)',border:'1px solid #FECACA',borderRadius:14,padding:'1rem',textAlign:'left',cursor:'pointer',boxShadow:'0 8px 24px rgba(226,75,74,0.08)',fontFamily:'Plus Jakarta Sans'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,marginBottom:8}}>
-          <p style={{fontSize:14,color:'#E24B4A',fontWeight:800,margin:0}}>{t.founderOffer}</p>
-          <span style={{fontSize:11,color:'#E24B4A',fontWeight:800,background:'white',border:'1px solid #FECACA',borderRadius:999,padding:'5px 9px',whiteSpace:'nowrap'}}>
-            {t.founderRemaining(founderRemaining)}
-          </span>
-        </div>
-        <p style={{fontSize:13,color:'#444',margin:'0 0 10px',lineHeight:1.45}}>{t.founderOfferDesc}</p>
-        <div style={{height:6,background:'#fee2e2',borderRadius:999,overflow:'hidden',marginBottom:10}}>
-          <div style={{height:'100%',width:`${founderProgress}%`,background:'#E24B4A',borderRadius:999}} />
-        </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
-          <span style={{fontSize:12,color:'#777',fontWeight:600}}>{t.founderPremiumNote}</span>
-          <span style={{fontSize:13,color:'#E24B4A',fontWeight:800,whiteSpace:'nowrap'}}>{t.founderCta}</span>
-        </div>
-      </button>
-      <InstallAppButton compact />
+      <img src="/LOGO-HUBBING.svg" alt="Hubbing" style={{width:116,height:116,borderRadius:'50%',boxShadow:'0 14px 32px rgba(226,75,74,0.18)'}} />
+      <p style={{color:'#666',textAlign:'center',fontSize:16,lineHeight:1.55,margin:'0 0 0.25rem'}}>{t.appTagline}</p>
       <button onClick={() => setScreen('register')}
         style={{width:'100%',padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
         {t.createAccount}
@@ -844,24 +838,28 @@ function LandingScreen({ setScreen, t, lang, setLang }) {
         style={{width:'100%',padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
         {t.login}
       </button>
-      <button onClick={() => setScreen('visitor')}
+      <button onClick={() => { setVisitorInitialTab && setVisitorInitialTab('swipe'); setScreen('visitor') }}
         style={{width:'100%',padding:'14px',background:'#F8FAFC',color:'#475569',border:'1px solid #CBD5E1',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:'0 6px 18px rgba(71,85,105,0.08)'}}>
         {t.visitorMode}
       </button>
-      {/* Bannière application mobile */}
-      <div style={{background:'#1a1a1a',borderRadius:12,padding:'1rem',width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-        <div>
-          <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>📱 Application mobile</p>
-          <p style={{color:'rgba(255,255,255,0.6)',fontSize:12,marginTop:3}}>Bientôt disponible sur</p>
-          <div style={{display:'flex',gap:8,marginTop:8}}>
-            <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:16}}></span>
-              <span style={{color:'white',fontSize:11,fontWeight:600}}>App Store</span>
-            </div>
-          </div>
-        </div>
-        <span style={{fontSize:32}}>📲</span>
+      <div style={{width:'100%',display:'grid',gridTemplateColumns:'repeat(3, minmax(0, 1fr))',gap:8}}>
+        {t.planPreviews.map((plan, index) => {
+          const colors = ['#64748B', '#185FA5', '#E24B4A']
+          const color = colors[index] || '#E24B4A'
+          return (
+            <button key={plan.name} onClick={openVisitorPricing}
+              style={{minWidth:0,minHeight:104,padding:'0.75rem 0.55rem',background:'white',border:`1px solid ${color}33`,borderRadius:12,boxShadow:'0 8px 20px rgba(15,23,42,0.06)',cursor:'pointer',fontFamily:'Plus Jakarta Sans',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'space-between',textAlign:'left'}}>
+              <span style={{fontSize:13,fontWeight:800,color,whiteSpace:'nowrap'}}>{plan.name}</span>
+              <span style={{fontSize:12,fontWeight:800,color:'#111827',lineHeight:1.25}}>{plan.price}</span>
+              <span style={{fontSize:10,color:'#64748B',lineHeight:1.25,overflowWrap:'anywhere'}}>{plan.detail}</span>
+            </button>
+          )
+        })}
       </div>
+      <button onClick={openVisitorPricing}
+        style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#E24B4A',fontWeight:700,fontFamily:'Plus Jakarta Sans'}}>
+        {t.planPreviewCta} →
+      </button>
       <button onClick={() => setScreen('legal')}
         style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#bbb',textDecoration:'underline'}}>
         {t.legal}
@@ -1123,11 +1121,15 @@ if (zefixStatus === 'invalid') {
   )
 }
 
-function VisitorMode({ setScreen, t, lang, setLang }) {
-  const [activeTab, setActiveTab] = useState('swipe')
+function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [showModal, setShowModal] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const ui = getUiText(lang)
+
+  useEffect(() => {
+    setActiveTab(initialTab)
+  }, [initialTab])
 
   const tabStyle = (tab) => ({
     flex:1, padding:'8px 0 6px', background:'none', border:'none', cursor:'pointer',
