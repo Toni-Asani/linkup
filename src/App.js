@@ -17,6 +17,8 @@ import { HubbingIcon } from './icons'
 import { VerifiedBadge, isVerifiedBadgeFeature } from './VerifiedBadge'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
+const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
+const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
@@ -70,8 +72,8 @@ const translations = {
     planPreviewCta: 'Voir les tarifs',
     planPreviews: [
       { name: 'Starter', price: 'Gratuit', detail: 'Découvrir' },
-      { name: 'Basic', price: 'CHF 19/mois', detail: 'Messages illimités' },
-      { name: 'Premium', price: 'CHF 39/mois', detail: 'Coordonnées complètes' },
+      { name: 'Basic', price: 'CHF 19.-/mois', detail: 'Messages illimités' },
+      { name: 'Premium', price: 'CHF 39.-/mois', detail: 'Coordonnées complètes' },
     ],
     legal: 'CGU · Confidentialité · Mentions légales',
     registerTitle: 'Créer un compte',
@@ -141,8 +143,8 @@ const translations = {
     planPreviewCta: 'Preise ansehen',
     planPreviews: [
       { name: 'Starter', price: 'Gratis', detail: 'Entdecken' },
-      { name: 'Basic', price: 'CHF 19/Monat', detail: 'Unbegrenzte Nachrichten' },
-      { name: 'Premium', price: 'CHF 39/Monat', detail: 'Vollständige Kontakte' },
+      { name: 'Basic', price: 'CHF 19.-/Monat', detail: 'Unbegrenzte Nachrichten' },
+      { name: 'Premium', price: 'CHF 39.-/Monat', detail: 'Vollständige Kontakte' },
     ],
     legal: 'AGB · Datenschutz · Impressum',
     registerTitle: 'Konto erstellen',
@@ -212,8 +214,8 @@ const translations = {
     planPreviewCta: 'Vedi tariffe',
     planPreviews: [
       { name: 'Starter', price: 'Gratis', detail: 'Scoprire' },
-      { name: 'Basic', price: 'CHF 19/mese', detail: 'Messaggi illimitati' },
-      { name: 'Premium', price: 'CHF 39/mese', detail: 'Contatti completi' },
+      { name: 'Basic', price: 'CHF 19.-/mese', detail: 'Messaggi illimitati' },
+      { name: 'Premium', price: 'CHF 39.-/mese', detail: 'Contatti completi' },
     ],
     legal: 'CGU · Privacy · Note legali',
     registerTitle: 'Crea un account',
@@ -283,8 +285,8 @@ const translations = {
     planPreviewCta: 'View pricing',
     planPreviews: [
       { name: 'Starter', price: 'Free', detail: 'Discover' },
-      { name: 'Basic', price: 'CHF 19/month', detail: 'Unlimited messages' },
-      { name: 'Premium', price: 'CHF 39/month', detail: 'Full contact details' },
+      { name: 'Basic', price: 'CHF 19.-/month', detail: 'Unlimited messages' },
+      { name: 'Premium', price: 'CHF 39.-/month', detail: 'Full contact details' },
     ],
     legal: 'T&C · Privacy · Legal notice',
     registerTitle: 'Create an account',
@@ -1288,8 +1290,8 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
             </div>
             {[
               {name:'Starter',price:ui.common.free,color:'#666',features:ui.pricing.starterFeatures.slice(0, 4),limits:ui.pricing.starterLimits.slice(0, 2)},
-              {name:'Basic',price:`CHF 19${ui.common.month}`,color:'#185FA5',features:ui.pricing.basicFeatures.slice(0, 4),limits:ui.pricing.basicLimits.slice(0, 2)},
-              {name:'Premium',price:`CHF 39${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 6),limits:ui.pricing.premiumLimits,highlight:true},
+              {name:'Basic',price:`CHF 19.-${ui.common.month}`,color:'#185FA5',features:ui.pricing.basicFeatures.slice(0, 4),limits:ui.pricing.basicLimits.slice(0, 2)},
+              {name:'Premium',price:`CHF 39.-${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 6),limits:ui.pricing.premiumLimits,highlight:true},
             ].map(plan => (
               <div key={plan.name} onClick={() => setShowModal(true)}
                 style={{border: plan.highlight ? `2px solid ${plan.color}` : '1px solid #eee',borderRadius:12,padding:'1rem',marginBottom:'0.75rem',cursor:'pointer',background:'white'}}>
@@ -1308,6 +1310,22 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
                 ))}
               </div>
             ))}
+            <div style={{marginTop:'0.85rem',padding:'0.9rem',background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,textAlign:'center'}}>
+              <p style={{fontSize:12,fontWeight:700,color:'#334155',margin:'0 0 0.6rem'}}>
+                {ui.pricing.legalLinksTitle}
+              </p>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexWrap:'wrap'}}>
+                <a href={TERMS_OF_USE_URL} target="_blank" rel="noopener noreferrer"
+                  style={{fontSize:12,color:'#185FA5',fontWeight:700,textDecoration:'underline'}}>
+                  {ui.pricing.termsOfUseEula}
+                </a>
+                <span style={{fontSize:12,color:'#CBD5E1'}}>·</span>
+                <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer"
+                  style={{fontSize:12,color:'#185FA5',fontWeight:700,textDecoration:'underline'}}>
+                  {ui.pricing.privacyPolicyLink}
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </div>

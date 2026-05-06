@@ -211,7 +211,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   const remaining = founderSlots.max - founderSlots.used
   const getPriceLabel = (plan) => {
     if (plan.price === 0) return ui.common.free
-    return `CHF ${Number(plan.price).toFixed(2)}`
+    return `CHF ${Number(plan.price)}.-`
   }
 
   return (
