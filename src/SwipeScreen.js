@@ -70,7 +70,7 @@ const getActiveTags = (needs_tags) => {
   } catch { return [] }
 }
 
-export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 'fr' }) {
+export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActiveTab, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
   const ui = getUiText(lang)
   const isPremium = plan === 'Premium'
   const [companies, setCompanies] = useState([])
@@ -90,6 +90,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
   const [myCompanyCoords, setMyCompanyCoords] = useState(null)
   const [matchedCompanyIds, setMatchedCompanyIds] = useState(new Set())
   const [swipeHistory, setSwipeHistory] = useState([])
+  const [openingNeedMessage, setOpeningNeedMessage] = useState(false)
   const [ratings, setRatings] = useState({})
   const decisionRef = useRef(null)
   const currentRef = useRef(0)
@@ -363,6 +364,81 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
     persistCurrentSwipe()
   }
 
+  const ensureMatchWithCompany = async (companyId) => {
+    const { data: myCompany } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+    if (!myCompany || myCompany.id === companyId) return false
+
+    const { data: existing } = await supabase
+      .from('matches')
+      .select('id')
+      .or(`and(company_a.eq.${myCompany.id},company_b.eq.${companyId}),and(company_a.eq.${companyId},company_b.eq.${myCompany.id})`)
+      .maybeSingle()
+
+    if (existing) {
+      setMatchedCompanyIds(current => new Set([...current, companyId]))
+      return true
+    }
+
+    const { data: newMatch } = await supabase
+      .from('matches')
+      .insert({ company_a: myCompany.id, company_b: companyId, status: 'pending' })
+      .select('id')
+      .single()
+
+    if (!newMatch) return false
+    setMatchedCompanyIds(current => new Set([...current, companyId]))
+
+    const { data: otherUser } = await supabase
+      .from('companies')
+      .select('user_id')
+      .eq('id', companyId)
+      .single()
+    if (otherUser?.user_id) {
+      await supabase.from('notifications').insert([
+        { user_id: user.id, type: 'new_match', match_id: newMatch.id },
+        { user_id: otherUser.user_id, type: 'new_match', match_id: newMatch.id }
+      ])
+    }
+    return true
+  }
+
+  const openNeedConversation = async (needSubject, event) => {
+    event?.preventDefault()
+    event?.stopPropagation()
+    dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
+    setOffset({ x: 0, y: 0 })
+
+    if (openingNeedMessage || decisionRef.current || undoReturning) return
+    const company = companiesRef.current[currentRef.current]
+    if (!company) return
+
+    if (!user) {
+      setMatchNotice('visitor')
+      setShowMatchModal(true)
+      return
+    }
+
+    setOpeningNeedMessage(true)
+    try {
+      const canOpen = await ensureMatchWithCompany(company.id)
+      if (!canOpen) return
+      const cleanNeedSubject = String(needSubject || '').replace(/\s+/g, ' ').trim()
+      if (cleanNeedSubject) {
+        setDirectMessageDraft && setDirectMessageDraft({ subject: cleanNeedSubject.slice(0, 45) })
+      }
+      setDirectMessageCompanyId && setDirectMessageCompanyId(company.id)
+      setActiveTab && setActiveTab('messages')
+    } catch (error) {
+      console.warn('Unable to open need conversation:', error)
+    } finally {
+      setOpeningNeedMessage(false)
+    }
+  }
+
   const handlePointerDown = (e) => {
     if (decisionRef.current || undoReturning) return
     if (e.pointerType === 'touch') return
@@ -612,14 +688,27 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', lang = 
               <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:10,padding:'8px 10px'}}>
                 <p style={{fontSize:11,color:'#E67E22',fontWeight:700,marginBottom:4}}>{ui.swipe.needs}</p>
                 {company.needs_description && (
-                  <p style={{fontSize:12,color:'#444',lineHeight:1.4,marginBottom: activeTags.length > 0 ? 4 : 0}}>{company.needs_description}</p>
+                  <button
+                    onClick={event => openNeedConversation(company.needs_description, event)}
+                    onPointerDown={event => event.stopPropagation()}
+                    onTouchStart={event => event.stopPropagation()}
+                    disabled={openingNeedMessage}
+                    style={{display:'block',width:'100%',background:'white',border:'1px solid #FDE8C0',borderRadius:9,padding:'7px 8px',fontSize:12,color:'#444',lineHeight:1.4,margin:'0 0 6px',textAlign:'left',cursor:openingNeedMessage ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans'}}>
+                    {company.needs_description}
+                  </button>
                 )}
                 {activeTags.length > 0 && (
                   <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
                     {activeTags.map((tag, i) => (
-                      <span key={i} style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:500,color:'#333'}}>
+                      <button
+                        key={i}
+                        onClick={event => openNeedConversation(tag.label, event)}
+                        onPointerDown={event => event.stopPropagation()}
+                        onTouchStart={event => event.stopPropagation()}
+                        disabled={openingNeedMessage}
+                        style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:500,color:'#333',cursor:openingNeedMessage ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans'}}>
                         {tag.label}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 )}

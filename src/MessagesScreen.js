@@ -1,4 +1,5 @@
 import { Fragment, useState, useEffect, useRef } from 'react'
+import { Search, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
@@ -68,6 +69,7 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setAc
   const [uploadingFile, setUploadingFile] = useState(false)
   const [longPressMatch, setLongPressMatch] = useState(null)
   const [unreadByMatch, setUnreadByMatch] = useState({})
+  const [conversationSearch, setConversationSearch] = useState('')
   const fileAttachRef = useRef(null)
   const sendingMessageRef = useRef(false)
   const longPressTimerRef = useRef(null)
@@ -586,6 +588,22 @@ const handleFileUpload = async (e) => {
     setSelectedMatch(match)
   }
 
+  const normalizedConversationSearch = conversationSearch.trim().toLowerCase()
+  const visibleMatches = normalizedConversationSearch
+    ? matches.filter(match => {
+      const other = getOtherCompany(match)
+      if (!other) return false
+      const searchableText = [
+        other.name,
+        other.sector,
+        other.city,
+        other.canton,
+        getConversationPreview(match, other),
+      ].filter(Boolean).join(' ').toLowerCase()
+      return searchableText.includes(normalizedConversationSearch)
+    })
+    : matches
+
   // Vue conversation
   if (selectedMatch) {
     const other = getOtherCompany(selectedMatch)
@@ -829,6 +847,27 @@ const handleFileUpload = async (e) => {
         <p style={{fontSize:13,color:'#999',marginTop:2}}>{ui.messages.subtitle}</p>
       </div>
 
+      {!loading && matches.length > 0 && (
+        <div style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f5f5f5',background:'white'}}>
+          <div style={{height:42,border:'1px solid #e5e7eb',borderRadius:14,display:'flex',alignItems:'center',gap:8,padding:'0 12px',background:'#f9fafb'}}>
+            <Search size={18} color="#94A3B8" strokeWidth={2.2} />
+            <input
+              value={conversationSearch}
+              onChange={e => setConversationSearch(e.target.value)}
+              placeholder={ui.messages.searchPlaceholder}
+              style={{flex:1,border:'none',outline:'none',background:'transparent',fontSize:16,fontFamily:'Plus Jakarta Sans',color:'#1a1a1a',minWidth:0}}
+            />
+            {conversationSearch && (
+              <button onClick={() => setConversationSearch('')}
+                aria-label={ui.common.close}
+                style={{width:28,height:28,borderRadius:'50%',border:'none',background:'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#94A3B8',padding:0}}>
+                <X size={17} strokeWidth={2.4} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <p style={{color:'#999'}}>{ui.common.loading}</p>
@@ -839,9 +878,15 @@ const handleFileUpload = async (e) => {
           <h3 style={{fontSize:18,fontWeight:700}}>{ui.messages.noConnections}</h3>
           <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>{ui.messages.noConnectionsDesc}</p>
         </div>
+      ) : visibleMatches.length === 0 ? (
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'0.75rem'}}>
+          <div style={{fontSize:42}}>🔍</div>
+          <h3 style={{fontSize:17,fontWeight:700}}>{ui.messages.noSearchResults}</h3>
+          <p style={{color:'#999',fontSize:13,lineHeight:1.6}}>{ui.messages.searchHint}</p>
+        </div>
       ) : (
         <div style={{flex:1,overflowY:'auto'}}>
-          {matches.map(match => {
+          {visibleMatches.map(match => {
             const other = getOtherCompany(match)
             if (!other) return null
             const unread = unreadByMatch[match.id] || 0

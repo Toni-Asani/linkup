@@ -1496,7 +1496,16 @@ const handleTabChange = (tab) => {
   ) : (
     <>
       {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} plan={userPlan} lang={lang} />}
-      {activeTab === 'swipe' && <SwipeScreen user={user} plan={userPlan} lang={lang} />}
+      {activeTab === 'swipe' && (
+        <SwipeScreen
+          user={user}
+          plan={userPlan}
+          setActiveTab={setActiveTab}
+          setDirectMessageCompanyId={setDirectMessageCompanyId}
+          setDirectMessageDraft={setDirectMessageDraft}
+          lang={lang}
+        />
+      )}
       {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} lang={lang} />}
       {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadUnreadCount} lang={lang} />}
       {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}

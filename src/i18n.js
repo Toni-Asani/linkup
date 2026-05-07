@@ -103,6 +103,9 @@ const dictionaries = {
     messages: {
       title: 'Messages',
       subtitle: 'Vos connexions B2B',
+      searchPlaceholder: 'Rechercher une entreprise...',
+      noSearchResults: 'Aucune conversation trouvée',
+      searchHint: 'Essayez avec le nom, le secteur, la ville ou un mot du dernier message.',
       noConnections: 'Pas encore de connexions',
       noConnectionsDesc: 'Swipez des entreprises pour démarrer des conversations !',
       reviewTitle: (name) => `Évaluer ${name}`,
@@ -408,6 +411,9 @@ dictionaries.de = {
   messages: {
     title: 'Nachrichten',
     subtitle: 'Ihre B2B-Verbindungen',
+    searchPlaceholder: 'Unternehmen suchen...',
+    noSearchResults: 'Keine Unterhaltung gefunden',
+    searchHint: 'Versuchen Sie es mit Name, Branche, Stadt oder einem Wort aus der letzten Nachricht.',
     noConnections: 'Noch keine Verbindungen',
     noConnectionsDesc: 'Swipen Sie Unternehmen, um Gespräche zu starten!',
     reviewTitle: (name) => `${name} bewerten`,
@@ -746,6 +752,9 @@ Object.assign(dictionaries.it, {
   messages: {
     title: 'Messaggi',
     subtitle: 'Le tue connessioni B2B',
+    searchPlaceholder: 'Cerca un’azienda...',
+    noSearchResults: 'Nessuna conversazione trovata',
+    searchHint: 'Prova con nome, settore, città o una parola dell’ultimo messaggio.',
     noConnections: 'Ancora nessuna connessione',
     noConnectionsDesc: 'Scorri le aziende per avviare conversazioni!',
     reviewTitle: (name) => `Valuta ${name}`,
@@ -1025,6 +1034,9 @@ Object.assign(dictionaries.en, {
   messages: {
     title: 'Messages',
     subtitle: 'Your B2B connections',
+    searchPlaceholder: 'Search a company...',
+    noSearchResults: 'No conversation found',
+    searchHint: 'Try the name, sector, city or a word from the latest message.',
     noConnections: 'No connections yet',
     noConnectionsDesc: 'Swipe companies to start conversations!',
     reviewTitle: (name) => `Review ${name}`,
