@@ -40,8 +40,33 @@ export function isPremiumCompany(company) {
 
 export async function attachCompanySubscriptions(supabase, companies) {
   const list = Array.isArray(companies) ? companies : [companies].filter(Boolean)
+  const companyIds = [...new Set(list.map(company => company?.id).filter(Boolean))]
   const userIds = [...new Set(list.map(company => company?.user_id).filter(Boolean))]
-  if (list.length === 0 || userIds.length === 0) return companies
+  if (list.length === 0) return companies
+
+  if (companyIds.length > 0) {
+    const { data, error } = await supabase.rpc('hubbing_company_badges', {
+      p_company_ids: companyIds,
+    })
+
+    if (!error) {
+      const badgesByCompany = new Map((data || []).map(badge => [badge.company_id, badge]))
+      const enriched = list.map(company => {
+        const badge = badgesByCompany.get(company.id)
+        return {
+          ...company,
+          subscriptions: badge?.plan
+            ? [{ plan: badge.plan, status: badge.status || 'active' }]
+            : [],
+        }
+      })
+      return Array.isArray(companies) ? enriched : enriched[0]
+    }
+
+    console.warn('Unable to load company badge plans:', error.message)
+  }
+
+  if (userIds.length === 0) return companies
 
   const { data, error } = await supabase
     .from('subscriptions')
