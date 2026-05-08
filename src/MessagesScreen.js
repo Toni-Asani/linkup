@@ -1,5 +1,5 @@
 import { Fragment, useState, useEffect, useRef } from 'react'
-import { Search, X } from 'lucide-react'
+import { Eye, Lock, Search, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
@@ -49,7 +49,7 @@ function MessageStatus({ read, ui }) {
   )
 }
 
-export default function MessagesScreen({ user, plan, setSelectedCompanyId, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, onUnreadChange, lang = 'fr' }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId, setCompanyProfileReturn, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, onUnreadChange, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
@@ -544,6 +544,16 @@ const handleFileUpload = async (e) => {
   const messageCharsRemaining = Math.max(0, messageCharLimit - newMessage.length)
   const messageLimitReached = newMessage.length >= messageCharLimit
 
+  const openCompanyProfile = (companyId) => {
+    if (!companyId) return
+    if (!isBasicOrPremium) {
+      setActiveTab && setActiveTab('pricing')
+      return
+    }
+    setCompanyProfileReturn && setCompanyProfileReturn({ tab: 'messages', companyId })
+    setSelectedCompanyId && setSelectedCompanyId(companyId)
+  }
+
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current)
@@ -669,10 +679,15 @@ const handleFileUpload = async (e) => {
             ←
           </button>
           <CompanyAvatar company={other} size={40} fontSize={14} />
-          <div style={{flex:1,cursor:'pointer'}} onClick={() => setSelectedCompanyId && setSelectedCompanyId(other?.id)}>
+          <div style={{flex:1,minWidth:0,cursor:isBasicOrPremium ? 'pointer' : 'default'}} onClick={() => openCompanyProfile(other?.id)}>
   <p style={{fontWeight:700,fontSize:15,margin:0}}>{other?.name}</p>
-  <p style={{fontSize:12,color:'#999',margin:0}}>{other?.sector} · {other?.city} — <span style={{color:'#E24B4A'}}>{ui.messages.viewProfile}</span></p>
+  <p style={{fontSize:12,color:'#999',margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{other?.sector} · {other?.city}</p>
 </div>
+          <button onClick={() => openCompanyProfile(other?.id)}
+            style={{height:34,display:'inline-flex',alignItems:'center',gap:5,background:isBasicOrPremium ? '#FFF5F5' : '#F8FAFC',border:`1px solid ${isBasicOrPremium ? '#FECACA' : '#E2E8F0'}`,borderRadius:18,padding:'0 10px',cursor:'pointer',fontSize:12,fontWeight:700,color:isBasicOrPremium ? '#E24B4A' : '#64748B',flexShrink:0,fontFamily:'Plus Jakarta Sans'}}>
+            {isBasicOrPremium ? <Eye size={14} strokeWidth={2.4} /> : <Lock size={13} strokeWidth={2.4} />}
+            {isBasicOrPremium ? ui.messages.viewProfileShort : ui.messages.profileBasicOnly}
+          </button>
           {/* Bouton avis */}
           {canLeaveReview && (
             <button onClick={() => setShowReviewModal(true)}

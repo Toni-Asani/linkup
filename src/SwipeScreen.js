@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Check, RotateCcw, X } from 'lucide-react'
+import { Check, Eye, RotateCcw, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
@@ -70,9 +70,10 @@ const getActiveTags = (needs_tags) => {
   } catch { return [] }
 }
 
-export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActiveTab, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
+export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActiveTab, setSelectedCompanyId, setCompanyProfileReturn, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
   const ui = getUiText(lang)
   const isPremium = plan === 'Premium'
+  const canViewCompanyProfiles = plan === 'Basic' || plan === 'Premium'
   const [companies, setCompanies] = useState([])
   const [filteredCompanies, setFilteredCompanies] = useState([])
   const [current, setCurrent] = useState(0)
@@ -439,6 +440,26 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
     }
   }
 
+  const openCompanyProfile = (event) => {
+    event?.preventDefault()
+    event?.stopPropagation()
+    dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
+    setOffset({ x: 0, y: 0 })
+    const company = companiesRef.current[currentRef.current]
+    if (!company) return
+    if (!user) {
+      setMatchNotice('visitor')
+      setShowMatchModal(true)
+      return
+    }
+    if (!canViewCompanyProfiles) {
+      setActiveTab && setActiveTab('pricing')
+      return
+    }
+    setCompanyProfileReturn && setCompanyProfileReturn({ tab: 'swipe' })
+    setSelectedCompanyId && setSelectedCompanyId(company.id)
+  }
+
   const handlePointerDown = (e) => {
     if (decisionRef.current || undoReturning) return
     if (e.pointerType === 'touch') return
@@ -662,6 +683,17 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               <span style={{background:'#f5f5f5',color:'#666',padding:'2px 8px',borderRadius:20,fontSize:11}}>📍 {company.city}, {company.canton}</span>
               <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>★ {ratings[company.id] || ui.swipe.newLabel}</span>
             </div>
+
+            {canViewCompanyProfiles && (
+              <button
+                onClick={openCompanyProfile}
+                onPointerDown={event => event.stopPropagation()}
+                onTouchStart={event => event.stopPropagation()}
+                style={{display:'inline-flex',alignItems:'center',gap:6,marginBottom:'0.5rem',background:'#FFF5F5',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:999,padding:'7px 11px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+                <Eye size={14} strokeWidth={2.4} />
+                {ui.swipe.viewProfile}
+              </button>
+            )}
 
             {isPremium && company.contact_name && (
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:'0.5rem',background:'#f9f9f9',borderRadius:10,padding:'6px 8px'}}>

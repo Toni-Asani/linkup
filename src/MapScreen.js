@@ -51,7 +51,7 @@ function MapSelectionFocus({ selected }) {
   return null
 }
 
-export default function MapScreen({ user, setScreen, setSelectedCompanyId, setActiveTab, lang = 'fr' }) {
+export default function MapScreen({ user, setScreen, plan = 'Starter', setSelectedCompanyId, setCompanyProfileReturn, setActiveTab, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [companies, setCompanies] = useState([])
   const [selected, setSelected] = useState(null)
@@ -59,6 +59,7 @@ export default function MapScreen({ user, setScreen, setSelectedCompanyId, setAc
   const [search, setSearch] = useState('')
   const [filterCanton, setFilterCanton] = useState('')
   const [mapStyle, setMapStyle] = useState('standard')
+  const canViewCompanyProfiles = plan === 'Basic' || plan === 'Premium'
 
   useEffect(() => { loadCompanies() }, [])
 
@@ -144,6 +145,16 @@ const cantons = [
     iconAnchor: [isSelected ? 18 : 14, isSelected ? 25 : 14],
   })
   const isSatellite = mapStyle === 'satellite'
+  const openSelectedProfile = () => {
+    if (!selected) return
+    if (!canViewCompanyProfiles) {
+      setActiveTab && setActiveTab('pricing')
+      return
+    }
+    setCompanyProfileReturn && setCompanyProfileReturn({ tab: 'map' })
+    setSelectedCompanyId && setSelectedCompanyId(selected.id)
+    setActiveTab && setActiveTab('map')
+  }
 
   return (
     <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',width:'100%',maxWidth:'100%',overflow:'hidden',background:'white',position:'relative'}}>
@@ -269,12 +280,9 @@ const cantons = [
 
           <div style={{marginTop:'0.75rem',display:'flex',gap:8}}>
             {user ? (
-              <button onClick={() => {
-                setSelectedCompanyId(selected.id)
-                setActiveTab('map')
-              }}
-                style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-                {ui.map.viewProfile}
+              <button onClick={openSelectedProfile}
+                style={{flex:1,padding:'12px',background:canViewCompanyProfiles ? '#E24B4A' : '#F8FAFC',color:canViewCompanyProfiles ? 'white' : '#64748B',border:canViewCompanyProfiles ? 'none' : '1px solid #E2E8F0',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                {canViewCompanyProfiles ? ui.map.viewProfile : ui.map.profileBasicOnly}
               </button>
             ) : (
               <button onClick={() => setScreen && setScreen('register')}

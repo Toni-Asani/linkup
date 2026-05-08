@@ -47,7 +47,7 @@ const sectorColors = {
   'Autre': '#666',
 }
 
-export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
+export default function CompanyProfileScreen({ companyId, plan, onBack, setActiveTab, setSelectedCompanyId, setCompanyProfileReturn, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -145,6 +145,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         setDirectMessageDraft && setDirectMessageDraft({ subject: cleanNeedSubject.slice(0, 45) })
       }
       setDirectMessageCompanyId && setDirectMessageCompanyId(companyId)
+      setCompanyProfileReturn && setCompanyProfileReturn(null)
       setSelectedCompanyId && setSelectedCompanyId(null)
       setActiveTab && setActiveTab('messages')
     } catch (e) {
@@ -172,6 +173,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const companyIsPremium = isPremiumCompany(company)
   const isStarter = !isBasic
   const goToPricing = () => {
+    setCompanyProfileReturn && setCompanyProfileReturn(null)
     setSelectedCompanyId && setSelectedCompanyId(null)
     setActiveTab && setActiveTab('pricing')
   }
@@ -184,6 +186,44 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   })
   const hasNeeds = company.needs_description || activeTags.length > 0
   const fallbackNeedSubject = activeTags[0]?.label || company.needs_description || company.name
+
+  if (isStarter) return (
+    <div style={{flex:1,overflowY:'auto',background:'white'}}>
+      <div style={{background:color,padding:'1rem 1.5rem 3rem',position:'relative',textAlign:'center'}}>
+        <button onClick={onBack}
+          style={{position:'absolute',top:16,left:16,background:'rgba(255,255,255,0.2)',border:'none',borderRadius:20,padding:'6px 12px',color:'white',fontSize:13,cursor:'pointer',fontWeight:600}}>
+          {ui.common.back}
+        </button>
+        <div style={{width:80,height:80,margin:'2rem auto 0',borderRadius:'50%',overflow:'hidden',border:'3px solid white'}}>
+          {company.logo_url ? (
+            <img src={company.logo_url} alt="logo" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
+          ) : (
+            <div style={{width:'100%',height:'100%',background:'rgba(255,255,255,0.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <span style={{color:'white',fontWeight:700,fontSize:28}}>{initials}</span>
+            </div>
+          )}
+        </div>
+        <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+          <span>{company.name}</span>
+          {companyIsPremium && <VerifiedBadge size={22} />}
+        </h2>
+        {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
+        {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}
+      </div>
+
+      <div style={{padding:'1.5rem 1rem',marginTop:'-1rem'}}>
+        <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:16,padding:'1.25rem',textAlign:'center',boxShadow:'0 10px 30px rgba(226,75,74,0.08)'}}>
+          <div style={{fontSize:34,marginBottom:'0.5rem'}}>🔒</div>
+          <h3 style={{fontSize:18,fontWeight:800,color:'#1f2937',margin:'0 0 0.5rem'}}>{ui.companyProfile.profileBasicOnlyTitle}</h3>
+          <p style={{fontSize:14,color:'#666',lineHeight:1.55,margin:'0 0 1rem'}}>{ui.companyProfile.profileBasicOnlyDesc}</p>
+          <button onClick={goToPricing}
+            style={{width:'100%',padding:'13px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+            {ui.companyProfile.profileBasicOnlyCta}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>

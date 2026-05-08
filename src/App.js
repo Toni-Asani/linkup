@@ -1367,6 +1367,7 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
 function Dashboard({ user, setUser, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('home')
   const [selectedCompanyId, setSelectedCompanyId] = useState(null)
+  const [companyProfileReturn, setCompanyProfileReturn] = useState(null)
   const [userPlan, setUserPlan] = useState('Starter')
   const [unreadCount, setUnreadCount] = useState(0)
   const [showLangMenu, setShowLangMenu] = useState(false)
@@ -1406,8 +1407,20 @@ const loadUnreadCount = async () => {
 const handleTabChange = (tab) => {
   setActiveTab(tab)
   setSelectedCompanyId(null)
+  setCompanyProfileReturn(null)
   if (tab !== 'messages') {
     setDirectMessageCompanyId(null)
+    setDirectMessageDraft(null)
+  }
+}
+
+const handleCompanyProfileBack = () => {
+  const returnTarget = companyProfileReturn
+  setSelectedCompanyId(null)
+  setCompanyProfileReturn(null)
+  if (returnTarget?.tab) setActiveTab(returnTarget.tab)
+  if (returnTarget?.tab === 'messages' && returnTarget.companyId) {
+    setDirectMessageCompanyId(returnTarget.companyId)
     setDirectMessageDraft(null)
   }
 }
@@ -1487,9 +1500,10 @@ const handleTabChange = (tab) => {
   companyId={selectedCompanyId}
   plan={userPlan}
   lang={lang}
-  onBack={() => setSelectedCompanyId(null)}
+  onBack={handleCompanyProfileBack}
   setActiveTab={setActiveTab}
   setSelectedCompanyId={setSelectedCompanyId}
+  setCompanyProfileReturn={setCompanyProfileReturn}
   setDirectMessageCompanyId={setDirectMessageCompanyId}
   setDirectMessageDraft={setDirectMessageDraft}
 />
@@ -1501,13 +1515,15 @@ const handleTabChange = (tab) => {
           user={user}
           plan={userPlan}
           setActiveTab={setActiveTab}
+          setSelectedCompanyId={setSelectedCompanyId}
+          setCompanyProfileReturn={setCompanyProfileReturn}
           setDirectMessageCompanyId={setDirectMessageCompanyId}
           setDirectMessageDraft={setDirectMessageDraft}
           lang={lang}
         />
       )}
-      {activeTab === 'map' && <MapScreen user={user} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} lang={lang} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadUnreadCount} lang={lang} />}
+      {activeTab === 'map' && <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadUnreadCount} lang={lang} />}
       {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
       {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} />}
     </>
