@@ -25,6 +25,29 @@ type ZefixCompany = {
 
 const normalizeUidDigits = (value = '') => String(value).replace(/[^0-9]/g, '').trim()
 
+const genericEmailDomains = new Set([
+  'gmail.com',
+  'gmail.fr',
+  'hotmail.com',
+  'hotmail.fr',
+  'outlook.com',
+  'icloud.com',
+  'live.com',
+  'msn.com',
+  'yahoo.com',
+  'yahoo.fr',
+  'bluewin.ch',
+  'gmx.ch',
+  'gmx.net',
+  'web.de',
+  'proton.me',
+  'protonmail.com',
+  'pm.me',
+  'mail.ch',
+  'hispeed.ch',
+  'sunrise.ch',
+])
+
 const normalizeText = (value = '') => String(value)
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
@@ -34,6 +57,8 @@ const normalizeText = (value = '') => String(value)
   .replace(/[^a-z0-9]+/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const compactText = (value = '') => normalizeText(value).replace(/[^a-z0-9]/g, '')
 
 const simpleSimilarity = (left = '', right = '') => {
   const a = normalizeText(left)
@@ -47,6 +72,28 @@ const simpleSimilarity = (left = '', right = '') => {
   const shared = [...aWords].filter((word) => bWords.has(word)).length
   const total = new Set([...aWords, ...bWords]).size
   return total ? shared / total : 0
+}
+
+const getEmailDomain = (email = '') => String(email).trim().toLowerCase().split('@')[1] || ''
+
+const getDomainRoot = (domain = '') => {
+  const cleanDomain = domain.replace(/^www\./, '').toLowerCase()
+  const parts = cleanDomain.split('.').filter(Boolean)
+  if (parts.length <= 2) return parts[0] || ''
+  return parts.slice(0, -1).join(' ')
+}
+
+const domainLooksRelatedToCompany = (email = '', companyName = '') => {
+  const domain = getEmailDomain(email)
+  if (!domain || genericEmailDomains.has(domain)) return false
+
+  const domainRoot = getDomainRoot(domain)
+  const compactDomain = compactText(domainRoot)
+  const compactCompany = compactText(companyName)
+  if (!compactDomain || !compactCompany) return false
+
+  if (compactCompany.includes(compactDomain) || compactDomain.includes(compactCompany)) return true
+  return simpleSimilarity(domainRoot, companyName) >= 0.35
 }
 
 const responseJson = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), {
@@ -86,6 +133,7 @@ serve(async (req) => {
     const {
       zefix,
       company,
+      email,
       address,
       npa,
       city,
@@ -164,27 +212,89 @@ serve(async (req) => {
     }
 
     const nameSimilarity = simpleSimilarity(company, zefixCompany.name)
-    const suppliedLocation = normalizeText([npa, city, canton].filter(Boolean).join(' '))
-    const officialLocation = normalizeText([
-      zefixCompany.address?.swissZipCode,
-      zefixCompany.address?.town,
-      zefixCompany.address?.canton,
-      zefixCompany.legalSeat,
-    ].filter(Boolean).join(' '))
-    const locationMatches = suppliedLocation && officialLocation
-      ? officialLocation.includes(suppliedLocation) || suppliedLocation.includes(officialLocation)
-      : null
+    const nameLooksRelated = nameSimilarity >= 0.35
+    const officialZip = String(zefixCompany.address?.swissZipCode || '').trim()
+    const officialTown = String(zefixCompany.address?.town || zefixCompany.legalSeat || '').trim()
+    const officialCanton = String(zefixCompany.address?.canton || '').trim()
+    const zipMatches = npa && officialZip ? normalizeUidDigits(npa) === normalizeUidDigits(officialZip) : null
+    const cityMatches = city && officialTown ? simpleSimilarity(city, officialTown) >= 0.65 : null
+    const cantonMatches = canton && officialCanton ? normalizeText(canton) === normalizeText(officialCanton) : null
+    const strongLocationChecks = [zipMatches, cityMatches].filter(value => value !== null)
+    const locationMatches = strongLocationChecks.length > 0
+      ? strongLocationChecks.every(Boolean)
+      : cantonMatches
+    const emailDomainMatches = domainLooksRelatedToCompany(email, zefixCompany.name)
+    const match = {
+      nameSimilarity,
+      nameLooksRelated,
+      zipMatches,
+      cityMatches,
+      cantonMatches,
+      locationMatches,
+      emailDomainMatches,
+    }
+
+    if (!nameLooksRelated || locationMatches === false) {
+      return responseJson({
+        ok: true,
+        verified: false,
+        requiresManualReview: true,
+        reason: 'company_identity_mismatch',
+        uid,
+        match,
+        supplied: {
+          company,
+          address,
+          npa,
+          city,
+          canton,
+        },
+        company: {
+          name: zefixCompany.name,
+          uid: zefixCompany.uid || uid,
+          chid: zefixCompany.chid,
+          status: status || 'ACTIVE',
+          legalSeat: zefixCompany.legalSeat,
+          legalForm: zefixCompany.legalForm,
+          address: zefixCompany.address,
+        },
+      }, 409)
+    }
+
+    if (!emailDomainMatches) {
+      return responseJson({
+        ok: true,
+        verified: false,
+        requiresManualReview: true,
+        reason: 'email_domain_mismatch',
+        uid,
+        match,
+        supplied: {
+          company,
+          email,
+          address,
+          npa,
+          city,
+          canton,
+        },
+        company: {
+          name: zefixCompany.name,
+          uid: zefixCompany.uid || uid,
+          chid: zefixCompany.chid,
+          status: status || 'ACTIVE',
+          legalSeat: zefixCompany.legalSeat,
+          legalForm: zefixCompany.legalForm,
+          address: zefixCompany.address,
+        },
+      }, 409)
+    }
 
     return responseJson({
       ok: true,
       verified: true,
       source: 'zefix',
       uid,
-      match: {
-        nameSimilarity,
-        nameLooksRelated: nameSimilarity >= 0.35,
-        locationMatches,
-      },
+      match,
       supplied: {
         company,
         address,

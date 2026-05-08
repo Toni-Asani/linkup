@@ -108,6 +108,8 @@ const translations = {
     errorIdeAlreadyUsed: 'Ce numéro IDE est déjà utilisé sur Hubbing. Si cette entreprise vous appartient, connectez-vous ou contactez Hubbing.',
     errorZefixNotFound: 'Entreprise non trouvée dans le registre suisse (Zefix).',
     errorZefixInactive: "Cette entreprise n'est pas active dans Zefix. Contactez Hubbing si c'est une erreur.",
+    errorZefixMismatch: "Les informations saisies ne correspondent pas aux données Zefix. Utilisez le nom et l'adresse officiels de l'entreprise ou contactez Hubbing.",
+    errorEmailCompanyMismatch: "L'email professionnel ne semble pas correspondre à l'entreprise indiquée dans Zefix. Utilisez une adresse email de l'entreprise ou contactez Hubbing.",
     errorZefixRetry: 'Impossible de vérifier le numéro IDE. Réessayez.',
     zefixValidFormat: "Numéro IDE au bon format — vérification Zefix au moment de l'inscription",
     zefixChecking: 'Vérification Zefix en cours...',
@@ -179,6 +181,8 @@ const translations = {
     errorIdeAlreadyUsed: 'Diese UID-Nummer wird bereits auf Hubbing verwendet. Melden Sie sich an oder kontaktieren Sie Hubbing.',
     errorZefixNotFound: 'Unternehmen nicht im Schweizer Register (Zefix) gefunden.',
     errorZefixInactive: 'Dieses Unternehmen ist in Zefix nicht aktiv. Kontaktieren Sie Hubbing, falls dies ein Fehler ist.',
+    errorZefixMismatch: 'Die eingegebenen Angaben stimmen nicht mit den Zefix-Daten überein. Verwenden Sie den offiziellen Namen und die offizielle Adresse oder kontaktieren Sie Hubbing.',
+    errorEmailCompanyMismatch: 'Die geschäftliche E-Mail scheint nicht zum in Zefix angegebenen Unternehmen zu passen. Verwenden Sie eine Firmen-E-Mail oder kontaktieren Sie Hubbing.',
     errorZefixRetry: 'UID-Nummer konnte nicht verifiziert werden. Versuchen Sie es erneut.',
     zefixValidFormat: 'UID-Nummer im richtigen Format — Zefix-Prüfung bei der Registrierung',
     zefixChecking: 'Zefix-Prüfung läuft...',
@@ -250,6 +254,8 @@ const translations = {
     errorIdeAlreadyUsed: 'Questo numero IDE è già utilizzato su Hubbing. Accedi o contatta Hubbing.',
     errorZefixNotFound: 'Azienda non trovata nel registro svizzero (Zefix).',
     errorZefixInactive: 'Questa azienda non è attiva in Zefix. Contatta Hubbing se si tratta di un errore.',
+    errorZefixMismatch: "Le informazioni inserite non corrispondono ai dati Zefix. Usa il nome e l'indirizzo ufficiali dell'azienda o contatta Hubbing.",
+    errorEmailCompanyMismatch: "L'email professionale non sembra corrispondere all'azienda indicata in Zefix. Usa un indirizzo email aziendale o contatta Hubbing.",
     errorZefixRetry: 'Impossibile verificare il numero IDE. Riprovare.',
     zefixValidFormat: "Numero IDE nel formato corretto — verifica Zefix durante l'iscrizione",
     zefixChecking: 'Verifica Zefix in corso...',
@@ -321,6 +327,8 @@ const translations = {
     errorIdeAlreadyUsed: 'This IDE number is already used on Hubbing. Log in or contact Hubbing.',
     errorZefixNotFound: 'Company not found in the Swiss register (Zefix).',
     errorZefixInactive: 'This company is not active in Zefix. Contact Hubbing if this is an error.',
+    errorZefixMismatch: 'The submitted details do not match the Zefix data. Use the official company name and address or contact Hubbing.',
+    errorEmailCompanyMismatch: 'The professional email does not seem to match the company listed in Zefix. Use a company email address or contact Hubbing.',
     errorZefixRetry: 'Unable to verify IDE number. Please try again.',
     zefixValidFormat: 'IDE number format is valid — Zefix verification will run during registration',
     zefixChecking: 'Checking Zefix...',
@@ -958,6 +966,7 @@ const verifyZefixForRegistration = async (clean) => {
       body: JSON.stringify({
         zefix: clean,
         company,
+        email: email.trim().toLowerCase(),
         address,
         npa,
         city,
@@ -981,6 +990,21 @@ const verifyZefixForRegistration = async (clean) => {
     if (response.status === 422 && payload?.reason === 'inactive_company') {
       setZefixStatus('invalid')
       return { blocked: true, message: t.errorZefixInactive }
+    }
+
+    if (response.status === 409 && payload?.reason === 'company_identity_mismatch') {
+      setZefixStatus('invalid')
+      return { blocked: true, message: t.errorZefixMismatch }
+    }
+
+    if (response.status === 409 && payload?.reason === 'email_domain_mismatch') {
+      setZefixStatus('invalid')
+      return { blocked: true, message: t.errorEmailCompanyMismatch }
+    }
+
+    if (payload?.requiresManualReview) {
+      setZefixStatus('invalid')
+      return { blocked: true, message: t.errorZefixMismatch }
     }
 
     if (response.ok && payload?.verified) {
