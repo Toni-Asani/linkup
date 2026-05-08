@@ -15,6 +15,7 @@ import { isNativeApp } from './platform'
 import { notifyTelegramActivity } from './telegramAlerts'
 import { HubbingIcon } from './icons'
 import { VerifiedBadge } from './VerifiedBadge'
+import { clearAppBadge, syncUnreadAppBadge } from './appBadge'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
@@ -372,6 +373,7 @@ export default function App() {
   })
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     setUser(session?.user ?? null)
+    if (!session) clearAppBadge()
   })
   return () => subscription.unsubscribe()
 }, [])
@@ -1354,13 +1356,21 @@ const loadUnreadCount = async () => {
     .eq('read', false)
   setUnreadCount(count || 0)
 }
+
+  useEffect(() => {
+    syncUnreadAppBadge(unreadCount)
+  }, [unreadCount])
+
   useEffect(() => {
   supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
     .then(({ data }) => {
       if (data) setUserPlan(data.plan.charAt(0).toUpperCase() + data.plan.slice(1))
     })
-}, [user])
-  const handleLogout = async () => { await supabase.auth.signOut() }
+  }, [user])
+  const handleLogout = async () => {
+    await clearAppBadge()
+    await supabase.auth.signOut()
+  }
 
 const handleTabChange = (tab) => {
   setActiveTab(tab)
