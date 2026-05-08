@@ -16,6 +16,25 @@ const escapeHtml = (value = '') => String(value ?? '').replace(/[&<>"']/g, char 
 
 const cleanHeader = (value = '') => String(value ?? '').replace(/[\r\n]+/g, ' ').trim()
 
+const hubbingSignatureHtml = `<table role="presentation" style="width:100%;border-collapse:collapse;margin-top:28px;background:#E24B4A;border-radius:16px;overflow:hidden">
+  <tr>
+    <td style="width:72px;padding:16px 0 16px 18px;vertical-align:middle">
+      <span style="display:block;width:52px;height:52px;background:#ffffff;border-radius:14px;text-align:center">
+        <img src="https://www.hubbing.ch/logo192.png" width="52" height="52" style="display:block;border-radius:14px" alt="Hubbing" />
+      </span>
+    </td>
+    <td style="padding:16px 18px 16px 12px;vertical-align:middle;color:#ffffff">
+      <p style="margin:0 0 3px;font-size:15px;font-weight:700;line-height:1.35;color:#ffffff">L'équipe Hubbing</p>
+      <p style="margin:0 0 6px;font-size:13px;line-height:1.35;color:#ffffff">Réseau B2B pour entreprises suisses</p>
+      <p style="margin:0;font-size:12px;line-height:1.45;color:#ffffff">
+        <a href="mailto:contact@hubbing.ch" style="color:#ffffff;text-decoration:none">contact@hubbing.ch</a>
+        <span style="opacity:0.75"> · </span>
+        <a href="https://www.hubbing.ch" style="color:#ffffff;text-decoration:none">hubbing.ch</a>
+      </p>
+    </td>
+  </tr>
+</table>`
+
 const sendEmail = async (payload: Record<string, unknown>) => {
   const apiKey = Deno.env.get('RESEND_API_KEY')
   if (!apiKey) throw new Error('Missing RESEND_API_KEY')
@@ -74,14 +93,22 @@ serve(async (req) => {
     const validationSubject = `Hubbing - validation de ${companyForSubject}`
     const validationBody = `Bonjour ${contactName || ''},
 
-Bonne nouvelle, votre entreprise ${company} a ete validee sur Hubbing.
+Bonne nouvelle : votre entreprise ${company} a été vérifiée avec succès à partir de son numéro IDE et des informations disponibles via Zefix.
 
-Votre profil peut maintenant etre utilise normalement sur la plateforme.
+Votre profil est désormais validé sur Hubbing. Vous pouvez compléter vos informations, découvrir des entreprises suisses, matcher avec de nouveaux partenaires B2B et échanger directement depuis la messagerie sécurisée de l'application.
 
-Merci de faire partie des premieres entreprises presentes sur Hubbing.
+Notre équipe travaille constamment à l'amélioration de Hubbing afin d'apporter une expérience plus fluide, plus fiable et plus utile aux entreprises suisses. De nouvelles fonctionnalités et optimisations seront ajoutées progressivement.
+
+Nous vous invitons donc à rester attentif aux prochaines mises à jour disponibles sur l'App Store.
+
+Merci de faire partie du réseau Hubbing.
 
 Cordialement,
-L'equipe Hubbing`
+L'équipe Hubbing
+Réseau B2B pour entreprises suisses
+contact@hubbing.ch
+https://www.hubbing.ch
+https://app.hubbing.ch`
 
     const reviewSubject = `Hubbing - informations a completer pour ${companyForSubject}`
     const reviewBody = `Bonjour ${contactName || ''},
@@ -93,7 +120,11 @@ Lors de notre verification, certaines informations doivent etre completees ou co
 Merci de repondre a cet email afin que nous puissions finaliser la verification.
 
 Cordialement,
-L'equipe Hubbing`
+L'équipe Hubbing
+Réseau B2B pour entreprises suisses
+contact@hubbing.ch
+https://www.hubbing.ch
+https://app.hubbing.ch`
 
     const validationMailto = `mailto:${email}?subject=${encodeURIComponent(validationSubject)}&body=${encodeURIComponent(validationBody)}`
     const reviewMailto = `mailto:${email}?subject=${encodeURIComponent(reviewSubject)}&body=${encodeURIComponent(reviewBody)}`
@@ -130,7 +161,7 @@ L'equipe Hubbing`
           <p style="font-size:13px;line-height:1.6;color:#777;margin:22px 0 0">
             Les 100 premiers abonnes Premium beneficient de l'offre Fondateurs : <strong>2 mois Premium offerts</strong>.
           </p>
-          <p style="font-size:12px;color:#bbb;margin-top:28px">Hubbing - Reseau B2B suisse - <a href="mailto:contact@hubbing.ch" style="color:#999">contact@hubbing.ch</a></p>
+          ${hubbingSignatureHtml}
         </div>`,
       }),
       sendEmail({
@@ -158,12 +189,13 @@ L'equipe Hubbing`
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
             <a href="https://www.zefix.ch/fr/search/entity/welcome" style="display:inline-block;padding:11px 14px;background:#1a1a1a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Ouvrir Zefix</a>
             <a href="https://www.uid.admin.ch" style="display:inline-block;padding:11px 14px;background:#f5f5f5;color:#1a1a1a;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Registre IDE</a>
-            <a href="${escapeHtml(validationMailto)}" style="display:inline-block;padding:11px 14px;background:#16a34a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : valide</a>
+            <a href="${escapeHtml(validationMailto)}" style="display:inline-block;padding:11px 14px;background:#16a34a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : IDE valide</a>
             <a href="${escapeHtml(reviewMailto)}" style="display:inline-block;padding:11px 14px;background:#E24B4A;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : infos a completer</a>
           </div>
           <p style="font-size:12px;line-height:1.6;color:#999;margin-top:18px">
             Conseil : copier le numero IDE puis verifier la concordance du nom, de l'adresse et du statut de l'entreprise dans Zefix ou le registre IDE.
           </p>
+          ${hubbingSignatureHtml}
         </div>`,
       }),
     ])
