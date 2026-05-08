@@ -70,6 +70,7 @@ serve(async (req) => {
       city,
       canton,
       userId,
+      zefixVerification,
     } = await req.json()
 
     if (!email || !company) {
@@ -89,7 +90,50 @@ serve(async (req) => {
     const safeCanton = escapeHtml(canton || 'Non renseigné')
     const safeUserId = escapeHtml(userId || 'Non disponible')
     const companyForSubject = cleanHeader(company)
+    const zefixVerificationInfo = zefixVerification && typeof zefixVerification === 'object'
+      ? zefixVerification as Record<string, unknown>
+      : null
+    const zefixCompanyInfo = zefixVerificationInfo?.company && typeof zefixVerificationInfo.company === 'object'
+      ? zefixVerificationInfo.company as Record<string, unknown>
+      : null
+    const autoVerified = zefixVerificationInfo?.verified === true && zefixVerificationInfo?.source === 'zefix'
+    const safeOfficialCompany = escapeHtml(String(zefixCompanyInfo?.name || ''))
 
+    const userSubject = autoVerified
+      ? 'Votre entreprise Hubbing a ete verifiee'
+      : 'Votre inscription Hubbing a bien ete recue'
+    const userVerificationHtml = autoVerified
+      ? `<p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 14px">
+            Bonne nouvelle : votre numéro IDE a été vérifié automatiquement via <strong>Zefix</strong>.
+            Votre profil entreprise est donc validé sur Hubbing.
+          </p>
+          <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:14px;padding:16px;margin:20px 0">
+            <p style="font-size:14px;line-height:1.6;color:#166534;margin:0">
+              <strong>Statut :</strong> entreprise vérifiée automatiquement.<br />
+              Vous pouvez accéder à votre compte après confirmation de votre adresse email.
+            </p>
+          </div>`
+      : `<p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 14px">
+            Afin de garantir un reseau B2B serieux et reserve aux entreprises suisses, chaque inscription est verifiee manuellement.
+            Votre profil est donc actuellement <strong>en cours de verification</strong>.
+          </p>
+          <div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:14px;padding:16px;margin:20px 0">
+            <p style="font-size:14px;line-height:1.6;color:#333;margin:0">
+              <strong>Delai indicatif :</strong> 24 a 48h ouvrables.<br />
+              Vous pouvez deja acceder a votre compte apres confirmation de votre adresse email. Nous vous contacterons uniquement si une information doit etre completee.
+            </p>
+          </div>`
+
+    const adminIntro = autoVerified
+      ? 'Une nouvelle entreprise vient de creer un compte sur Hubbing. Son numero IDE a ete verifie automatiquement via Zefix.'
+      : 'Une nouvelle entreprise vient de creer un compte sur Hubbing. Verification manuelle recommandee avant validation definitive.'
+    const adminStatusHtml = autoVerified
+      ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:14px;padding:16px;margin-bottom:18px">
+            <p style="margin:0;font-size:14px;color:#166534;font-weight:700">Statut : verification Zefix automatique reussie</p>
+          </div>`
+      : `<div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:14px;padding:16px;margin-bottom:18px">
+            <p style="margin:0;font-size:14px;color:#E24B4A;font-weight:700">Statut : verification Zefix a effectuer</p>
+          </div>`
     const validationSubject = `Hubbing - validation de ${companyForSubject}`
     const validationBody = `Bonjour ${contactName || ''},
 
@@ -128,13 +172,20 @@ https://app.hubbing.ch`
 
     const validationMailto = `mailto:${email}?subject=${encodeURIComponent(validationSubject)}&body=${encodeURIComponent(validationBody)}`
     const reviewMailto = `mailto:${email}?subject=${encodeURIComponent(reviewSubject)}&body=${encodeURIComponent(reviewBody)}`
+    const adminActionsHtml = autoVerified
+      ? `<a href="https://www.zefix.ch/fr/search/entity/welcome" style="display:inline-block;padding:11px 14px;background:#1a1a1a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Ouvrir Zefix</a>
+         <a href="https://www.uid.admin.ch" style="display:inline-block;padding:11px 14px;background:#f5f5f5;color:#1a1a1a;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Registre IDE</a>`
+      : `<a href="https://www.zefix.ch/fr/search/entity/welcome" style="display:inline-block;padding:11px 14px;background:#1a1a1a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Ouvrir Zefix</a>
+         <a href="https://www.uid.admin.ch" style="display:inline-block;padding:11px 14px;background:#f5f5f5;color:#1a1a1a;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Registre IDE</a>
+         <a href="${escapeHtml(validationMailto)}" style="display:inline-block;padding:11px 14px;background:#16a34a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : IDE valide</a>
+         <a href="${escapeHtml(reviewMailto)}" style="display:inline-block;padding:11px 14px;background:#E24B4A;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : infos a completer</a>`
 
     await Promise.all([
       sendEmail({
         from: 'Hubbing <contact@hubbing.ch>',
         to: [email],
         reply_to: 'contact@hubbing.ch',
-        subject: 'Votre inscription Hubbing a bien ete recue',
+        subject: userSubject,
         html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;background:#ffffff;color:#1a1a1a">
           <img src="https://www.hubbing.ch/logo192.png" width="64" height="64" style="border-radius:16px;display:block" alt="Hubbing" />
           <h2 style="font-size:24px;line-height:1.25;margin:22px 0 12px;color:#1a1a1a">Inscription bien recue</h2>
@@ -142,19 +193,11 @@ https://app.hubbing.ch`
           <p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 14px">
             Merci pour votre inscription sur <strong>Hubbing</strong>. Votre compte entreprise a bien ete cree pour <strong>${safeCompany}</strong>.
           </p>
-          <p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 14px">
-            Afin de garantir un reseau B2B serieux et reserve aux entreprises suisses, chaque inscription est verifiee manuellement.
-            Votre profil est donc actuellement <strong>en cours de verification</strong>.
-          </p>
-          <div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:14px;padding:16px;margin:20px 0">
-            <p style="font-size:14px;line-height:1.6;color:#333;margin:0">
-              <strong>Delai indicatif :</strong> 24 a 48h ouvrables.<br />
-              Vous pouvez deja acceder a votre compte apres confirmation de votre adresse email. Nous vous contacterons uniquement si une information doit etre completee.
-            </p>
-          </div>
+          ${userVerificationHtml}
           <table style="width:100%;border-collapse:collapse;margin:18px 0;font-size:14px">
             <tr><td style="padding:8px 0;color:#888">Entreprise</td><td style="padding:8px 0;color:#1a1a1a;font-weight:600;text-align:right">${safeCompany}</td></tr>
             <tr><td style="padding:8px 0;color:#888">Numero IDE</td><td style="padding:8px 0;color:#1a1a1a;text-align:right">${safeZefix}</td></tr>
+            ${autoVerified && safeOfficialCompany ? `<tr><td style="padding:8px 0;color:#888">Nom Zefix</td><td style="padding:8px 0;color:#1a1a1a;text-align:right">${safeOfficialCompany}</td></tr>` : ''}
             <tr><td style="padding:8px 0;color:#888">Adresse</td><td style="padding:8px 0;color:#1a1a1a;text-align:right">${safeAddress}</td></tr>
           </table>
           <a href="https://app.hubbing.ch" style="display:inline-block;margin-top:8px;padding:13px 20px;background:#E24B4A;color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:700">Acceder a Hubbing</a>
@@ -165,17 +208,16 @@ https://app.hubbing.ch`
         from: 'Hubbing <contact@hubbing.ch>',
         to: ['contact@hubbing.ch'],
         reply_to: email,
-        subject: `Nouvelle inscription a verifier - ${companyForSubject}`,
+        subject: `${autoVerified ? 'Nouvelle inscription verifiee automatiquement' : 'Nouvelle inscription a verifier'} - ${companyForSubject}`,
         html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;background:#ffffff;color:#1a1a1a">
           <h2 style="font-size:22px;margin:0 0 8px;color:#1a1a1a">Nouvelle inscription entreprise</h2>
           <p style="font-size:14px;line-height:1.6;color:#666;margin:0 0 18px">
-            Une nouvelle entreprise vient de creer un compte sur Hubbing. Verification manuelle recommandee avant validation definitive.
+            ${adminIntro}
           </p>
-          <div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:14px;padding:16px;margin-bottom:18px">
-            <p style="margin:0;font-size:14px;color:#E24B4A;font-weight:700">Statut : verification Zefix a effectuer</p>
-          </div>
+          ${adminStatusHtml}
           <table style="width:100%;border-collapse:collapse;font-size:14px">
             <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Entreprise</td><td style="padding:10px;border-bottom:1px solid #eee;font-weight:700">${safeCompany}</td></tr>
+            ${autoVerified && safeOfficialCompany ? `<tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Nom Zefix</td><td style="padding:10px;border-bottom:1px solid #eee">${safeOfficialCompany}</td></tr>` : ''}
             <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Numero IDE</td><td style="padding:10px;border-bottom:1px solid #eee">${safeZefix}</td></tr>
             <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Adresse</td><td style="padding:10px;border-bottom:1px solid #eee">${safeAddress}</td></tr>
             <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Ville / canton</td><td style="padding:10px;border-bottom:1px solid #eee">${safeCity} - ${safeCanton}</td></tr>
@@ -184,10 +226,7 @@ https://app.hubbing.ch`
             <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">User ID</td><td style="padding:10px;border-bottom:1px solid #eee">${safeUserId}</td></tr>
           </table>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
-            <a href="https://www.zefix.ch/fr/search/entity/welcome" style="display:inline-block;padding:11px 14px;background:#1a1a1a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Ouvrir Zefix</a>
-            <a href="https://www.uid.admin.ch" style="display:inline-block;padding:11px 14px;background:#f5f5f5;color:#1a1a1a;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Registre IDE</a>
-            <a href="${escapeHtml(validationMailto)}" style="display:inline-block;padding:11px 14px;background:#16a34a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : IDE valide</a>
-            <a href="${escapeHtml(reviewMailto)}" style="display:inline-block;padding:11px 14px;background:#E24B4A;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : infos a completer</a>
+            ${adminActionsHtml}
           </div>
           <p style="font-size:12px;line-height:1.6;color:#999;margin-top:18px">
             Conseil : copier le numero IDE puis verifier la concordance du nom, de l'adresse et du statut de l'entreprise dans Zefix ou le registre IDE.

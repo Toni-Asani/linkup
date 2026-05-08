@@ -107,7 +107,12 @@ const translations = {
     errorZefix: 'Numéro IDE introuvable. Vérifiez que votre entreprise est enregistrée en Suisse.',
     errorIdeAlreadyUsed: 'Ce numéro IDE est déjà utilisé sur Hubbing. Si cette entreprise vous appartient, connectez-vous ou contactez Hubbing.',
     errorZefixNotFound: 'Entreprise non trouvée dans le registre suisse (Zefix).',
+    errorZefixInactive: "Cette entreprise n'est pas active dans Zefix. Contactez Hubbing si c'est une erreur.",
     errorZefixRetry: 'Impossible de vérifier le numéro IDE. Réessayez.',
+    zefixValidFormat: "Numéro IDE au bon format — vérification Zefix au moment de l'inscription",
+    zefixChecking: 'Vérification Zefix en cours...',
+    zefixVerified: (name) => `Entreprise vérifiée via Zefix${name ? ` : ${name}` : ''}`,
+    zefixManualFallback: 'Vérification Zefix temporairement indisponible — contrôle manuel sous 24 à 48h ouvrables',
     demoMode: 'Mode visiteur',
     demoSwipe: 'Mode visiteur — connectez-vous pour matcher',
     demoMap: 'Mode visiteur — connectez-vous pour voir toutes les entreprises',
@@ -173,7 +178,12 @@ const translations = {
     errorZefix: 'UID-Nummer nicht gefunden. Prüfen Sie, ob Ihr Unternehmen in der Schweiz registriert ist.',
     errorIdeAlreadyUsed: 'Diese UID-Nummer wird bereits auf Hubbing verwendet. Melden Sie sich an oder kontaktieren Sie Hubbing.',
     errorZefixNotFound: 'Unternehmen nicht im Schweizer Register (Zefix) gefunden.',
+    errorZefixInactive: 'Dieses Unternehmen ist in Zefix nicht aktiv. Kontaktieren Sie Hubbing, falls dies ein Fehler ist.',
     errorZefixRetry: 'UID-Nummer konnte nicht verifiziert werden. Versuchen Sie es erneut.',
+    zefixValidFormat: 'UID-Nummer im richtigen Format — Zefix-Prüfung bei der Registrierung',
+    zefixChecking: 'Zefix-Prüfung läuft...',
+    zefixVerified: (name) => `Unternehmen via Zefix verifiziert${name ? `: ${name}` : ''}`,
+    zefixManualFallback: 'Zefix-Prüfung vorübergehend nicht verfügbar — manuelle Prüfung innerhalb von 24 bis 48 Arbeitsstunden',
     demoMode: 'Besucher-Modus',
     demoSwipe: 'Besucher-Modus — anmelden zum Matchen',
     demoMap: 'Besucher-Modus — anmelden für alle Unternehmen',
@@ -239,7 +249,12 @@ const translations = {
     errorZefix: 'Numero IDE non trovato. Verificare che la sua azienda sia registrata in Svizzera.',
     errorIdeAlreadyUsed: 'Questo numero IDE è già utilizzato su Hubbing. Accedi o contatta Hubbing.',
     errorZefixNotFound: 'Azienda non trovata nel registro svizzero (Zefix).',
+    errorZefixInactive: 'Questa azienda non è attiva in Zefix. Contatta Hubbing se si tratta di un errore.',
     errorZefixRetry: 'Impossibile verificare il numero IDE. Riprovare.',
+    zefixValidFormat: "Numero IDE nel formato corretto — verifica Zefix durante l'iscrizione",
+    zefixChecking: 'Verifica Zefix in corso...',
+    zefixVerified: (name) => `Azienda verificata tramite Zefix${name ? `: ${name}` : ''}`,
+    zefixManualFallback: 'Verifica Zefix temporaneamente non disponibile — controllo manuale entro 24-48 ore lavorative',
     demoMode: 'Modalità visitatore',
     demoSwipe: 'Modalità visitatore — accedi per fare match',
     demoMap: 'Modalità visitatore — accedi per vedere tutte le aziende',
@@ -305,7 +320,12 @@ const translations = {
     errorZefix: 'IDE number not found. Check that your company is registered in Switzerland.',
     errorIdeAlreadyUsed: 'This IDE number is already used on Hubbing. Log in or contact Hubbing.',
     errorZefixNotFound: 'Company not found in the Swiss register (Zefix).',
+    errorZefixInactive: 'This company is not active in Zefix. Contact Hubbing if this is an error.',
     errorZefixRetry: 'Unable to verify IDE number. Please try again.',
+    zefixValidFormat: 'IDE number format is valid — Zefix verification will run during registration',
+    zefixChecking: 'Checking Zefix...',
+    zefixVerified: (name) => `Company verified through Zefix${name ? `: ${name}` : ''}`,
+    zefixManualFallback: 'Zefix verification temporarily unavailable — manual review within 24 to 48 business hours',
     demoMode: 'Visitor mode',
     demoSwipe: 'Visitor mode — log in to match',
     demoMap: 'Visitor mode — log in to see all companies',
@@ -905,11 +925,14 @@ function RegisterScreen({ setScreen, t }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
- const [zefixStatus, setZefixStatus] = useState('idle') // idle, checking, valid, invalid
+ const [zefixStatus, setZefixStatus] = useState('idle') // idle, checking, valid, verified, manual, invalid
 const [zefixCompanyName, setZefixCompanyName] = useState('')
+const [zefixVerification, setZefixVerification] = useState(null)
 
 const handleZefixLookup = (ideNumber) => {
   setZefix(ideNumber)
+  setZefixCompanyName('')
+  setZefixVerification(null)
   const clean = ideNumber.replace(/[^0-9]/g, '').trim()
   if (clean.length === 9) {
     setZefixStatus('valid')
@@ -917,6 +940,89 @@ const handleZefixLookup = (ideNumber) => {
     setZefixStatus('invalid')
   } else {
     setZefixStatus('idle')
+  }
+}
+
+const verifyZefixForRegistration = async (clean) => {
+  setZefixStatus('checking')
+  setZefixCompanyName('')
+  setZefixVerification(null)
+
+  try {
+    const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/verify-zefix`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        zefix: clean,
+        company,
+        address,
+        npa,
+        city,
+        canton,
+      })
+    })
+
+    const rawText = await response.text()
+    let payload = null
+    try {
+      payload = rawText ? JSON.parse(rawText) : null
+    } catch (parseError) {
+      payload = null
+    }
+
+    if (response.status === 404 && payload?.reason === 'not_found') {
+      setZefixStatus('invalid')
+      return { blocked: true, message: t.errorZefixNotFound }
+    }
+
+    if (response.status === 422 && payload?.reason === 'inactive_company') {
+      setZefixStatus('invalid')
+      return { blocked: true, message: t.errorZefixInactive }
+    }
+
+    if (response.ok && payload?.verified) {
+      const officialName = payload.company?.name || ''
+      setZefixCompanyName(officialName)
+      setZefixVerification(payload)
+      setZefixStatus('verified')
+      return { blocked: false, payload }
+    }
+
+    if (payload?.fallbackToManual || !response.ok) {
+      setZefixStatus('manual')
+      return {
+        blocked: false,
+        payload: {
+          verified: false,
+          source: 'manual_fallback',
+          reason: payload?.reason || 'verify_zefix_unavailable',
+        }
+      }
+    }
+
+    setZefixStatus('manual')
+    return {
+      blocked: false,
+      payload: {
+        verified: false,
+        source: 'manual_fallback',
+        reason: payload?.reason || 'unknown_zefix_response',
+      }
+    }
+  } catch (error) {
+    console.error('Zefix verification failed:', error)
+    setZefixStatus('manual')
+    return {
+      blocked: false,
+      payload: {
+        verified: false,
+        source: 'manual_fallback',
+        reason: 'verify_zefix_network_error',
+      }
+    }
   }
 }
 
@@ -970,6 +1076,13 @@ if (zefixStatus === 'invalid') {
     } catch (ideCheckError) {
       console.error('IDE availability check failed:', ideCheckError)
       setError(t.errorZefixRetry)
+      setLoading(false)
+      return
+    }
+
+    const zefixCheck = await verifyZefixForRegistration(clean)
+    if (zefixCheck.blocked) {
+      setError(zefixCheck.message || t.errorZefix)
       setLoading(false)
       return
     }
@@ -1031,7 +1144,8 @@ if (zefixStatus === 'invalid') {
           address: `${address}, ${npa} ${city}`,
           city,
           canton,
-          userId
+          userId,
+          zefixVerification: zefixCheck.payload || zefixVerification
         })
       })
       if (!response.ok) {
@@ -1058,6 +1172,14 @@ if (zefixStatus === 'invalid') {
     </div>
   )
 
+  const zefixBorderColor = zefixStatus === 'verified'
+    ? '#22c55e'
+    : zefixStatus === 'manual' || zefixStatus === 'checking' || zefixStatus === 'valid'
+      ? '#F39C12'
+      : zefixStatus === 'invalid'
+        ? '#E24B4A'
+        : '#ddd'
+
   return (
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2.5rem)',gap:'1rem',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch',background:'white'}}>
       <button onClick={() => setScreen('home')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,alignSelf:'flex-start',padding:'0.25rem 0',marginBottom:'0.5rem'}}>
@@ -1070,8 +1192,11 @@ if (zefixStatus === 'invalid') {
       <input value={company} onChange={e => setCompany(e.target.value)} placeholder={t.companyName}
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}
-  style={{padding:'14px',border:`1px solid ${zefixStatus === 'valid' ? '#22c55e' : zefixStatus === 'invalid' ? '#E24B4A' : '#ddd'}`,borderRadius:10,fontSize:16,outline:'none'}} />
-{zefixStatus === 'valid' && <p style={{fontSize:12,color:'#F39C12'}}>Numéro IDE au bon format — vérification manuelle sous 24 à 48h ouvrables</p>}
+  style={{padding:'14px',border:`1px solid ${zefixBorderColor}`,borderRadius:10,fontSize:16,outline:'none'}} />
+{zefixStatus === 'valid' && <p style={{fontSize:12,color:'#F39C12'}}>{t.zefixValidFormat}</p>}
+{zefixStatus === 'checking' && <p style={{fontSize:12,color:'#F39C12'}}>{t.zefixChecking}</p>}
+{zefixStatus === 'verified' && <p style={{fontSize:12,color:'#16a34a'}}>{t.zefixVerified(zefixCompanyName)}</p>}
+{zefixStatus === 'manual' && <p style={{fontSize:12,color:'#F39C12'}}>{t.zefixManualFallback}</p>}
 {zefixStatus === 'invalid' && <p style={{fontSize:12,color:'#E24B4A'}}>Format invalide. Utilisez le format CHE-xxx.xxx.xxx (9 chiffres)</p>}
       <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rue et numéro *"
   style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
