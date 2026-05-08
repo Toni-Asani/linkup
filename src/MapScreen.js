@@ -4,7 +4,7 @@ import L from 'leaflet'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { getCompanyCoordinates } from './geo'
-import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import 'leaflet/dist/leaflet.css'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -242,6 +242,7 @@ const cantons = [
         <div style={{maxHeight:DETAIL_PANEL_MAX_HEIGHT,overflowY:'auto',WebkitOverflowScrolling:'touch',padding:'0.875rem 1rem 1rem'}}>
           {(() => {
             const selectedActiveTags = getActiveTags(selected.needs_tags)
+            const selectedBadgeVariant = getCompanyBadgeVariant(selected)
             const selectedHasNeeds = selected.needs_description || selectedActiveTags.length > 0
             return (
               <>
@@ -252,7 +253,7 @@ const cantons = [
             <div style={{flex:1}}>
               <p style={{fontWeight:700,fontSize:15,margin:0,display:'flex',alignItems:'center',gap:5}}>
                 <span>{selected.name}</span>
-                {isPremiumCompany(selected) && <VerifiedBadge size={17} />}
+                {selectedBadgeVariant && <VerifiedBadge size={17} variant={selectedBadgeVariant} />}
               </p>
               <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{selected.sector} · {selected.city}, {selected.canton}</p>
               {!selected.hasPreciseCoordinates && <p style={{fontSize:11,color:'#bbb',margin:'2px 0 0'}}>{ui.map.approximatePosition}</p>}

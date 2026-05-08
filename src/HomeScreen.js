@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { isNativeApp } from './platform'
-import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire': '#3B6D11', 'Design & Communication': '#533AB7',
@@ -120,7 +120,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
 
   const color = company ? (sectorColors[company.sector] || '#E24B4A') : '#E24B4A'
   const remaining = founderSlots.max - founderSlots.used
-  const companyIsPremium = plan === 'Premium' || isPremiumCompany(company)
+  const companyBadgeVariant = getCompanyBadgeVariant(company, plan)
 
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
@@ -144,6 +144,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
                 const other = showFollowers ? match.company_a : match.company_b
                 if (!other) return null
                 const c = sectorColors[other.sector] || '#E24B4A'
+                const otherBadgeVariant = getCompanyBadgeVariant(other)
                 return (
                   <div key={match.id} onClick={() => { setShowFollowers(false); setShowFollowing(false); setSelectedCompanyId && setSelectedCompanyId(other.id); setActiveTab('map') }} style={{padding:'0.75rem 0',display:'flex',alignItems:'center',gap:12,borderBottom:'1px solid #f5f5f5',cursor:'pointer'}}>
                     <div style={{width:44,height:44,borderRadius:'50%',background:c,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
@@ -152,7 +153,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
                     <div style={{flex:1}}>
                       <p style={{fontWeight:600,fontSize:14,margin:0,display:'flex',alignItems:'center',gap:5}}>
                         <span>{other.name}</span>
-                        {isPremiumCompany(other) && <VerifiedBadge size={14} />}
+                        {otherBadgeVariant && <VerifiedBadge size={14} variant={otherBadgeVariant} />}
                       </p>
                       <p style={{fontSize:12,color:'#999',margin:0}}>{other.sector} · {other.city}</p>
                     </div>
@@ -179,7 +180,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         <p style={{color:'rgba(255,255,255,0.8)',fontSize:14,marginBottom:4}}>{getGreeting()} 👋</p>
         <h2 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.2,display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
           <span>{company?.name || user.email}</span>
-          {companyIsPremium && <VerifiedBadge size={22} />}
+          {companyBadgeVariant && <VerifiedBadge size={22} variant={companyBadgeVariant} />}
         </h2>
         {company?.sector && (
           <p style={{color:'rgba(255,255,255,0.75)',fontSize:13,marginTop:4}}>
@@ -235,6 +236,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
                 const other = match.company_b
                 if (!other) return null
                 const c = sectorColors[other.sector] || '#E24B4A'
+                const otherBadgeVariant = getCompanyBadgeVariant(other)
                 return (
                   <div key={match.id} onClick={() => { setSelectedCompanyId && setSelectedCompanyId(other.id); setActiveTab('map') }}
                     style={{padding:'0.75rem 1rem',display:'flex',alignItems:'center',gap:12,cursor:'pointer',borderBottom:'1px solid #f9f9f9'}}>
@@ -246,7 +248,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
                     <div style={{flex:1}}>
                       <p style={{fontWeight:600,fontSize:14,margin:0,display:'flex',alignItems:'center',gap:5}}>
                         <span>{other.name}</span>
-                        {isPremiumCompany(other) && <VerifiedBadge size={14} />}
+                        {otherBadgeVariant && <VerifiedBadge size={14} variant={otherBadgeVariant} />}
                       </p>
                       <p style={{fontSize:12,color:'#999',margin:0}}>{other.sector} · {other.city}</p>
                     </div>

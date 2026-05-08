@@ -1,10 +1,41 @@
-export function isPremiumCompany(company) {
+const activeSubscriptionStatuses = new Set(['active', 'trialing'])
+const badgeColors = {
+  starter: '#B87333',
+  basic: '#A7A9AC',
+  premium: '#f39200',
+}
+
+function normalizePlan(plan) {
+  const normalized = String(plan || '').toLowerCase()
+  if (normalized === 'premium' || normalized === 'basic' || normalized === 'starter') return normalized
+  return 'starter'
+}
+
+export function getCompanyPlan(company, fallbackPlan = 'starter') {
   const subscription = Array.isArray(company?.subscriptions)
     ? company.subscriptions[0]
     : company?.subscriptions
   const plan = subscription?.plan?.toLowerCase()
   const status = subscription?.status?.toLowerCase()
-  return plan === 'premium' && (!status || status === 'active' || status === 'trialing')
+  if (plan && (!status || activeSubscriptionStatuses.has(status))) return normalizePlan(plan)
+  return normalizePlan(fallbackPlan)
+}
+
+export function isDemoCompany(company) {
+  return company?.is_demo === true || company?.is_demo === 'true'
+}
+
+export function isVerifiedCompany(company) {
+  return Boolean(company) && !isDemoCompany(company) && company?.is_suspended !== true
+}
+
+export function getCompanyBadgeVariant(company, fallbackPlan = 'starter') {
+  if (!isVerifiedCompany(company)) return null
+  return getCompanyPlan(company, fallbackPlan)
+}
+
+export function isPremiumCompany(company) {
+  return isVerifiedCompany(company) && getCompanyPlan(company) === 'premium'
 }
 
 export async function attachCompanySubscriptions(supabase, companies) {
@@ -38,7 +69,9 @@ export function isVerifiedBadgeFeature(feature) {
   return /badge|verified|verifiziert|verificato|verifie|verifie|vérifié/.test(text)
 }
 
-export function VerifiedBadge({ size = 18, style = {} }) {
+export function VerifiedBadge({ size = 18, variant = 'premium', style = {} }) {
+  const fill = badgeColors[variant] || badgeColors.premium
+
   return (
     <svg
       width={size}
@@ -48,7 +81,7 @@ export function VerifiedBadge({ size = 18, style = {} }) {
       style={{ display: 'inline-block', flexShrink: 0, verticalAlign: '-0.18em', ...style }}
     >
       <path
-        fill="#f39200"
+        fill={fill}
         d="M31.94,2.17c.63-.1,1.01,0,1.56.26,2.01.96,4.89,3.85,6.94,5.22,1.48.99,2.02,1.36,3.68.35,2.32-1.42,5.12-4.45,7.39-5.57,1.22-.6,2.61-.21,3.31.96,1.45,2.42,2.25,6.11,3.66,8.63.45.81,1.19,1.47,2.19,1.47,3.01,0,6.64-1.12,9.73-1.2,1.25.09,2.35,1.21,2.36,2.47.03,2.88-1.18,6.55-1.22,9.46-.01,1,.64,1.86,1.46,2.32,2.6,1.44,6.03,2.33,8.72,3.71,1.06.75,1.53,2.08.87,3.27-1.6,2.54-3.98,4.9-5.54,7.42-.82,1.32-.82,1.85,0,3.17,1.57,2.53,3.93,4.88,5.55,7.42.63,1.18.17,2.64-.96,3.32-2.42,1.45-6.09,2.24-8.63,3.66-.89.49-1.47,1.24-1.46,2.32.03,2.88,1.25,6.63,1.22,9.46-.02,1.38-1.16,2.39-2.5,2.5-2.98-.14-6.56-1.19-9.46-1.22-1.08-.01-1.82.57-2.32,1.46-1.41,2.54-2.21,6.23-3.66,8.63-.72,1.19-2.07,1.57-3.31.96-2.24-1.1-5.11-4.13-7.39-5.57-1.21-.76-2.01-.76-3.22,0-2.26,1.42-5.16,4.5-7.39,5.57-1.24.59-2.37.25-3.21-.8-1.46-2.68-2.27-6.21-3.76-8.8-.51-.89-1.22-1.47-2.32-1.46-2.92.03-6.47,1.09-9.46,1.22-1.33-.12-2.36-1.02-2.45-2.39.06-3.02,1.12-6.49,1.17-9.44.02-1.16-.49-1.92-1.46-2.45-2.62-1.45-6.03-2.3-8.72-3.71-1.07-.77-1.49-2.05-.88-3.27,1.15-2.29,4.1-5.07,5.57-7.39.63-1,.86-1.69.27-2.81-1.35-2.54-4.35-5.22-5.84-7.8-.62-1.24-.2-2.6.99-3.29,2.5-1.46,6.01-2.22,8.54-3.62.99-.55,1.46-1.23,1.54-2.39l-1.21-9.33c.05-1.48,1.02-2.49,2.5-2.61,2.99.13,6.52,1.18,9.45,1.21,1.09.01,1.9-.62,2.38-1.53,1.34-2.52,2.18-6.17,3.62-8.54.38-.62.98-1.13,1.72-1.25Z"
       />
       <path

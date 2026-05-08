@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
-import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -170,7 +170,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const initials = company.name?.substring(0, 2).toUpperCase()
   const isBasic = plan === 'Basic' || plan === 'Premium'
   const isPremium = plan === 'Premium'
-  const companyIsPremium = isPremiumCompany(company)
+  const companyBadgeVariant = getCompanyBadgeVariant(company)
   const isStarter = !isBasic
   const goToPricing = () => {
     setCompanyProfileReturn && setCompanyProfileReturn(null)
@@ -205,7 +205,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         </div>
         <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
           <span>{company.name}</span>
-          {companyIsPremium && <VerifiedBadge size={22} />}
+          {companyBadgeVariant && <VerifiedBadge size={22} variant={companyBadgeVariant} />}
         </h2>
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
         {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}
@@ -283,7 +283,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         </div>
         <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
           <span>{company.name}</span>
-          {companyIsPremium && <VerifiedBadge size={22} />}
+          {companyBadgeVariant && <VerifiedBadge size={22} variant={companyBadgeVariant} />}
         </h2>
         {company.is_suspended && (
           <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:8,padding:'6px 12px',marginTop:8,display:'inline-block'}}>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Check, Eye, RotateCcw, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
-import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -564,6 +564,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const company = filteredCompanies[current]
   const nextCompany = filteredCompanies[current + 1]
   const color = sectorColors[company.sector] || '#E24B4A'
+  const badgeVariant = getCompanyBadgeVariant(company)
   const activeTags = getActiveTags(company.needs_tags)
   const hasNeeds = company.needs_description || activeTags.length > 0
 
@@ -676,7 +677,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
           <div style={{padding:'0.75rem 1rem',overflowY:'auto',height:'calc(100% - 100px)'}}>
             <h3 style={{fontSize:17,fontWeight:700,marginBottom:4,display:'flex',alignItems:'center',gap:6}}>
               <span>{company.name}</span>
-              {isPremiumCompany(company) && <VerifiedBadge size={18} />}
+              {badgeVariant && <VerifiedBadge size={18} variant={badgeVariant} />}
             </h3>
             <div style={{display:'flex',gap:6,marginBottom:'0.5rem',flexWrap:'wrap'}}>
               <span style={{background:color+'15',color:color,padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>{company.sector}</span>

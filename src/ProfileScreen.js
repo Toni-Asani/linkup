@@ -4,7 +4,7 @@ import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile } from './moderation'
 import { geocodeSwissAddress } from './geo'
 import { isNativeApp, isNativeIOS } from './platform'
-import { VerifiedBadge, attachCompanySubscriptions, isPremiumCompany } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -307,7 +307,7 @@ notif_email: form.notif_email ?? true,
 
   const color = sectorColors[company.sector] || '#E24B4A'
   const initials = company.name?.substring(0, 2).toUpperCase()
-  const companyIsPremium = isPremiumCompany(company) || currentPlan === 'Premium'
+  const companyBadgeVariant = getCompanyBadgeVariant(company, currentPlan)
 
   const getTagStatus = (expires) => {
     if (!expires) return 'active'
@@ -557,7 +557,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         {uploadingLogo && <p style={{color:'rgba(255,255,255,0.8)',fontSize:12,marginTop:4}}>{ui.profile.downloading}</p>}
         <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem',display:'flex',alignItems:'center',justifyContent:'center',gap:7,flexWrap:'wrap'}}>
           <span>{company.name}</span>
-          {companyIsPremium && <VerifiedBadge size={22} />}
+          {companyBadgeVariant && <VerifiedBadge size={22} variant={companyBadgeVariant} />}
         </h2>
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
         {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}      </div>

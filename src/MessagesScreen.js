@@ -3,6 +3,7 @@ import { Eye, Lock, Search, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
+import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 
 const STARTER_DAILY_MESSAGE_LIMIT = 5
 const MESSAGE_CHAR_LIMITS = {
@@ -301,7 +302,15 @@ const loadMyCompanyAndMatches = async () => {
     const other = match.company_a?.id === myComp.id ? match.company_b : match.company_a
     return other?.id && other.id !== myComp.id
   })
-  const matchesWithActivity = await loadLatestMessagesForMatches(validMatches, myComp.id)
+  const companiesInMatches = validMatches.flatMap(match => [match.company_a, match.company_b]).filter(Boolean)
+  const companiesWithSubscriptions = await attachCompanySubscriptions(supabase, companiesInMatches)
+  const companyById = Object.fromEntries((companiesWithSubscriptions || []).map(company => [company.id, company]))
+  const enrichedMatches = validMatches.map(match => ({
+    ...match,
+    company_a: companyById[match.company_a?.id] || match.company_a,
+    company_b: companyById[match.company_b?.id] || match.company_b,
+  }))
+  const matchesWithActivity = await loadLatestMessagesForMatches(enrichedMatches, myComp.id)
   setMatches(matchesWithActivity)
   await loadUnreadNotifications()
   setLoading(false)
@@ -618,6 +627,7 @@ const handleFileUpload = async (e) => {
   if (selectedMatch) {
     const other = getOtherCompany(selectedMatch)
     if (!other) return null
+    const otherBadgeVariant = getCompanyBadgeVariant(other)
     const visibleMessages = messages.filter(msg => {
       if (msg.deleted_for_all) return false
       if (msg.deleted_for && msg.deleted_for.includes(myCompany?.id)) return false
@@ -680,7 +690,10 @@ const handleFileUpload = async (e) => {
           </button>
           <CompanyAvatar company={other} size={40} fontSize={14} />
           <div style={{flex:1,minWidth:0,cursor:isBasicOrPremium ? 'pointer' : 'default'}} onClick={() => openCompanyProfile(other?.id)}>
-  <p style={{fontWeight:700,fontSize:15,margin:0}}>{other?.name}</p>
+  <p style={{fontWeight:700,fontSize:15,margin:0,display:'flex',alignItems:'center',gap:5}}>
+    <span style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{other?.name}</span>
+    {otherBadgeVariant && <VerifiedBadge size={15} variant={otherBadgeVariant} />}
+  </p>
   <p style={{fontSize:12,color:'#999',margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{other?.sector} · {other?.city}</p>
 </div>
           <button onClick={() => openCompanyProfile(other?.id)}
@@ -905,6 +918,7 @@ const handleFileUpload = async (e) => {
             const other = getOtherCompany(match)
             if (!other) return null
             const unread = unreadByMatch[match.id] || 0
+            const otherBadgeVariant = getCompanyBadgeVariant(other)
             return (
               <div key={match.id} 
                 onClick={e => handleConversationClick(match, e)}
@@ -922,7 +936,10 @@ const handleFileUpload = async (e) => {
                 <CompanyAvatar company={other} />
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <p style={{fontWeight:700,fontSize:15,margin:0}}>{other.name}</p>
+                    <p style={{fontWeight:700,fontSize:15,margin:0,display:'flex',alignItems:'center',gap:5,minWidth:0,flex:1}}>
+                      <span style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{other.name}</span>
+                      {otherBadgeVariant && <VerifiedBadge size={15} variant={otherBadgeVariant} />}
+                    </p>
                     <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
                       {unread > 0 && (
                         <span style={{minWidth:18,height:18,borderRadius:9,background:'#E24B4A',color:'white',fontSize:10,fontWeight:800,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}}>
