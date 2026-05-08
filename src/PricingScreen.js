@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { APPLE_PRODUCT_IDS, HubbingPurchases } from './applePurchases'
 import { isNativeIOS } from './platform'
-import { VerifiedBadge, isVerifiedBadgeFeature } from './VerifiedBadge'
+import { VerifiedBadge } from './VerifiedBadge'
 
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
@@ -40,11 +40,9 @@ const getPlans = (ui) => [
     appleProductId: APPLE_PRODUCT_IDS.premium,
     features: ui.pricing.premiumFeatures,
     limits: ui.pricing.premiumLimits,
-    founderFeature: ui.pricing.premiumFounderFeature,
     cta: ui.pricing.choosePremium,
     disabled: false,
-    highlighted: true,
-    founder: true
+    highlighted: true
   }
 ]
 
@@ -55,13 +53,11 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   const [currentPlan, setCurrentPlan] = useState('starter')
   const [loading, setLoading] = useState(null)
   const [restoring, setRestoring] = useState(false)
-  const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const [testModeEnabled, setTestModeEnabled] = useState(false)
   const [testPlanChanging, setTestPlanChanging] = useState(null)
 
   useEffect(() => {
     loadCurrentPlan()
-    loadFounderSlots()
     loadTestModeAccess()
   }, [])
 
@@ -76,12 +72,6 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
       .eq('user_id', user.id)
       .single()
     if (data) setCurrentPlan(data.plan)
-  }
-
-  const loadFounderSlots = async () => {
-    const { data } = await supabase
-      .from('founder_slots').select('*').eq('id', 1).single()
-    if (data) setFounderSlots({ used: data.used, max: data.max_slots })
   }
 
   const loadTestModeAccess = async () => {
@@ -104,14 +94,13 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   }
 
   const saveSubscription = async (plan, transaction = {}) => {
-    const isFounder = !nativeIOS && plan.id === 'premium' && remaining > 0
-    const fallbackDays = isFounder ? 60 : 30
+    const fallbackDays = 30
     const currentPeriodEndsAt = transaction.expirationDate || new Date(Date.now() + fallbackDays * 24 * 60 * 60 * 1000).toISOString()
     const { error } = await supabase.from('subscriptions').upsert({
       user_id: user.id,
       plan: plan.id,
       status: 'active',
-      is_founder: isFounder,
+      is_founder: false,
       current_period_ends_at: currentPeriodEndsAt
     }, { onConflict: 'user_id' })
     if (error) throw error
@@ -175,7 +164,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
             priceId: plan.priceId,
             userId: user.id,
             planName: plan.id,
-            founder: plan.founder && remaining > 0,
+            founder: false,
           }),
         }
       )
@@ -208,7 +197,6 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
     }
   }
 
-  const remaining = founderSlots.max - founderSlots.used
   const getPriceLabel = (plan) => {
     if (plan.price === 0) return ui.common.free
     return `CHF ${Number(plan.price)}.-`
@@ -221,18 +209,6 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
         <h2 style={{fontSize:22,fontWeight:700,marginBottom:8}}>{ui.pricing.title}</h2>
         <p style={{fontSize:14,color:'#666'}}>{ui.pricing.subtitle}</p>
       </div>
-
-      {!nativeIOS && (
-        <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.875rem',marginBottom:'1.25rem',textAlign:'center'}}>
-          <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,margin:0}}>
-            {ui.pricing.limitedOffer(remaining)}
-          </p>
-          <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,margin:'8px 0 4px'}}>
-            <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
-          </div>
-          <p style={{fontSize:12,color:'#666',margin:0}}>{ui.pricing.founderDesc}</p>
-        </div>
-      )}
 
       {testModeEnabled && (
         <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,padding:'0.875rem',marginBottom:'1.25rem'}}>
@@ -274,9 +250,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
         {plans.map(plan => {
           const isCurrent = currentPlan === plan.id
           const isHighlighted = plan.highlighted
-          const features = !nativeIOS && plan.founder && plan.founderFeature && remaining > 0
-            ? [...plan.features, plan.founderFeature]
-            : plan.features
+          const features = plan.features
 
           return (
             <div key={plan.id} style={{
@@ -289,7 +263,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
               {isHighlighted && (
                 <div style={{background:plan.color,padding:'6px',textAlign:'center'}}>
                   <span style={{color:'white',fontSize:12,fontWeight:600}}>
-                    {nativeIOS ? ui.pricing.recommendedPlain : ui.pricing.recommended}
+                    {ui.pricing.recommendedPlain}
                   </span>
                 </div>
               )}
@@ -297,7 +271,10 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
               <div style={{padding:'1.25rem'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'0.75rem'}}>
                   <div>
-                    <h3 style={{fontSize:18,fontWeight:700,color:plan.color,margin:0}}>{plan.name}</h3>
+                    <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:isCurrent ? 5 : 0}}>
+                      <h3 style={{fontSize:18,fontWeight:700,color:plan.color,margin:0}}>{plan.name}</h3>
+                      <VerifiedBadge size={19} variant={plan.id} />
+                    </div>
                     {isCurrent && (
                       <span style={{fontSize:11,color:'white',background:'#22c55e',padding:'2px 8px',borderRadius:20,fontWeight:600}}>
                         Plan actuel
@@ -313,11 +290,6 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
                           {getPriceLabel(plan)}
                           <span style={{fontSize:13,fontWeight:400,color:'#999'}}>{ui.common.month}</span>
                         </p>
-                        {!nativeIOS && plan.founder && remaining > 0 && (
-                          <p style={{fontSize:11,color:'#E24B4A',margin:'2px 0 0',fontWeight:600}}>
-                            {ui.pricing.twoMonthsFree}
-                          </p>
-                        )}
                       </>
                     )}
                   </div>
@@ -330,9 +302,6 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
                         <span style={{fontSize:10,color:plan.color}}>✓</span>
                       </div>
                       <span style={{fontSize:13,color:'#444'}}>{f}</span>
-                      {plan.id === 'premium' && isVerifiedBadgeFeature(f) && (
-                        <VerifiedBadge size={18} />
-                      )}
                     </div>
                   ))}
                   {(plan.limits || []).map((f, i) => (

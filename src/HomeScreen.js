@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
-import { isNativeApp } from './platform'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
+import { HubbingIcon } from './icons'
 
 const sectorColors = {
   'Fiduciaire': '#3B6D11', 'Design & Communication': '#533AB7',
@@ -19,7 +19,6 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
   const [followerCompanies, setFollowerCompanies] = useState([])
   const [showFollowers, setShowFollowers] = useState(false)
   const [showFollowing, setShowFollowing] = useState(false)
-  const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { loadData() }, [])
@@ -105,9 +104,6 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
       })
     }
 
-    const { data: slots } = await supabase
-      .from('founder_slots').select('*').eq('id', 1).single()
-    if (slots) setFounderSlots({ used: slots.used, max: slots.max_slots })
     setLoading(false)
   }
 
@@ -119,7 +115,6 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
   }
 
   const color = company ? (sectorColors[company.sector] || '#E24B4A') : '#E24B4A'
-  const remaining = founderSlots.max - founderSlots.used
   const companyBadgeVariant = getCompanyBadgeVariant(company, plan)
 
   if (loading) return (
@@ -177,7 +172,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
           <div style={{position:'absolute',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.35)',borderRadius:0}} />
         )}
         <div style={{position:'relative',zIndex:1}}>
-        <p style={{color:'rgba(255,255,255,0.8)',fontSize:14,marginBottom:4}}>{getGreeting()} 👋</p>
+        <p style={{color:'rgba(255,255,255,0.8)',fontSize:14,marginBottom:4}}>{getGreeting()}</p>
         <h2 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.2,display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
           <span>{company?.name || user.email}</span>
           {companyBadgeVariant && <VerifiedBadge size={22} variant={companyBadgeVariant} />}
@@ -189,7 +184,10 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         )}
         <div style={{marginTop:12,background:'rgba(255,255,255,0.15)',borderRadius:8,padding:'6px 12px',display:'inline-block'}}>
           <span style={{color:'white',fontSize:12,fontWeight:600}}>
-            🏢 {ui.home.companiesOnHubbing(stats.totalCompanies)}
+            <span style={{display:'inline-flex',alignItems:'center',gap:6}}>
+              <HubbingIcon name="building" size={14} color="white" />
+              {ui.home.companiesOnHubbing(stats.totalCompanies)}
+            </span>
           </span>
         </div>
         </div>
@@ -205,12 +203,6 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.followers}</p>
           <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.followersLabel}</p>
         </div>
-        {!isNativeApp() && (
-          <div style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)'}}>
-            <p style={{fontSize:24,fontWeight:700,color:'#3B6D11',margin:0}}>{remaining}</p>
-            <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.founderPlaces}</p>
-          </div>
-        )}
       </div>
 
       <div style={{padding:'1.25rem 1rem 0.75rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
@@ -260,53 +252,16 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
           )}
         </div>
 
-        {!isNativeApp() && (
-          <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-              <p style={{fontSize:14,color:'#E24B4A',fontWeight:700,margin:0}}>{ui.home.founderOffer}</p>
-              <span style={{fontSize:12,color:'#E24B4A',fontWeight:600}}>{ui.home.remaining(remaining)}</span>
-            </div>
-            <div style={{background:'#fee2e2',borderRadius:8,overflow:'hidden',height:6,marginBottom:8}}>
-              <div style={{height:'100%',background:'#E24B4A',width:`${(founderSlots.used/founderSlots.max)*100}%`,borderRadius:8}} />
-            </div>
-            <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
-              {ui.home.founderDesc(remaining)}
-            </p>
-            <button onClick={() => setActiveTab('pricing')}
-              style={{marginTop:'0.75rem',width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-              {ui.home.activateFounder}
-            </button>
-          </div>
-        )}
-
         {/* Compléter profil si incomplet */}
         {(!company?.description || !company?.sector) && (
           <div onClick={() => setActiveTab('profile')}
             style={{background:'#f9f9f9',border:'1px solid #eee',borderRadius:12,padding:'1rem',cursor:'pointer',display:'flex',alignItems:'center',gap:12}}>
-            <span style={{fontSize:28}}>✏️</span>
+            <HubbingIcon name="pencil" size={28} color="#E24B4A" />
             <div style={{flex:1}}>
               <p style={{fontWeight:700,fontSize:14,margin:0}}>{ui.home.completeProfile}</p>
               <p style={{fontSize:12,color:'#999',marginTop:2}}>{ui.home.completeProfileDesc}</p>
             </div>
             <span style={{color:'#ccc',fontSize:18}}>›</span>
-          </div>
-        )}
-
-        {!isNativeApp() && (
-          <div style={{background:'#1a1a1a',borderRadius:12,padding:'1rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-            <div>
-              <p style={{color:'white',fontWeight:700,fontSize:14,margin:0}}>{ui.home.mobileApp}</p>
-              <p style={{color:'rgba(255,255,255,0.6)',fontSize:12,marginTop:3}}>{ui.home.soonAvailable}</p>
-              <div style={{display:'flex',gap:8,marginTop:8}}>
-                <div style={{background:'rgba(255,255,255,0.1)',borderRadius:8,padding:'5px 10px',display:'flex',alignItems:'center',gap:5}}>
-                  <span style={{fontSize:16}}></span>
-                  <span style={{color:'white',fontSize:11,fontWeight:600}}>App Store</span>
-                </div>
-              </div>
-            </div>
-            <div style={{background:'rgba(255,255,255,0.05)',borderRadius:10,padding:'8px',textAlign:'center',flexShrink:0}}>
-              <span style={{fontSize:32}}>📲</span>
-            </div>
           </div>
         )}
 
@@ -317,7 +272,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
             <p style={{color:'white',fontWeight:700,fontSize:15,margin:0}}>{ui.home.discoverTitle}</p>
             <p style={{color:'rgba(255,255,255,0.75)',fontSize:12,marginTop:3}}>{ui.home.discoverDesc}</p>
           </div>
-          <span style={{fontSize:28}}>💼</span>
+          <HubbingIcon name="briefcase" size={28} color="white" />
         </div>
 
       </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
+import { HubbingIcon } from './icons'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -208,12 +209,19 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           {companyBadgeVariant && <VerifiedBadge size={22} variant={companyBadgeVariant} />}
         </h2>
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
-        {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}
+        {company.city && (
+          <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+            <HubbingIcon name="mapPin" size={13} color="rgba(255,255,255,0.75)" />
+            {company.city}{company.canton ? `, ${company.canton}` : ''}
+          </p>
+        )}
       </div>
 
       <div style={{padding:'1.5rem 1rem',marginTop:'-1rem'}}>
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:16,padding:'1.25rem',textAlign:'center',boxShadow:'0 10px 30px rgba(226,75,74,0.08)'}}>
-          <div style={{fontSize:34,marginBottom:'0.5rem'}}>🔒</div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:'0.5rem'}}>
+            <HubbingIcon name="lock" size={34} color="#E24B4A" />
+          </div>
           <h3 style={{fontSize:18,fontWeight:800,color:'#1f2937',margin:'0 0 0.5rem'}}>{ui.companyProfile.profileBasicOnlyTitle}</h3>
           <p style={{fontSize:14,color:'#666',lineHeight:1.55,margin:'0 0 1rem'}}>{ui.companyProfile.profileBasicOnlyDesc}</p>
           <button onClick={goToPricing}
@@ -245,7 +253,9 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
       {showUpgradeModal && (
         <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'1rem'}}>
           <div style={{background:'white',borderRadius:16,padding:'2rem',width:'100%',maxWidth:340,textAlign:'center'}}>
-            <div style={{fontSize:40,marginBottom:'0.75rem'}}>🔒</div>
+            <div style={{display:'flex',justifyContent:'center',marginBottom:'0.75rem'}}>
+              <HubbingIcon name="lock" size={40} color="#E24B4A" />
+            </div>
             <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>{ui.companyProfile.featureBasic}</h3>
             <p style={{fontSize:14,color:'#666',lineHeight:1.6,marginBottom:'1.25rem'}}>
               {ui.companyProfile.upgradeDesc}
@@ -291,7 +301,12 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           </div>
         )}
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
-        {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}
+        {company.city && (
+          <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+            <HubbingIcon name="mapPin" size={13} color="rgba(255,255,255,0.75)" />
+            {company.city}{company.canton ? `, ${company.canton}` : ''}
+          </p>
+        )}
         {avgRating && (
           <div style={{marginTop:8,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
             <span style={{color:'#F39C12',fontSize:16}}>{'★'.repeat(Math.round(avgRating))}{'☆'.repeat(5-Math.round(avgRating))}</span>
@@ -355,9 +370,9 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
                       style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
                   </button>
                 ) : (
-                  <div style={{width:52,height:52,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <span style={{fontSize:22}}>👤</span>
-                  </div>
+	                  <div style={{width:52,height:52,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+	                    <HubbingIcon name="profile" size={22} color="#777" />
+	                  </div>
                 )}
                 <div style={{flex:1}}>
                   <p style={{fontSize:15,fontWeight:700,margin:0}}>{company.contact_name}</p>
@@ -469,7 +484,7 @@ function InfoRow({ label, value, color }) {
 function LockedRow({ text, button, onClick, compact = false }) {
   return (
     <div style={{marginTop:compact ? 6 : 0,background:'#f0f0f0',borderRadius:8,padding:compact ? '7px 10px' : '10px 12px',display:'flex',alignItems:'center',gap:8}}>
-      <span style={{fontSize:14}}>🔒</span>
+      <HubbingIcon name="lock" size={14} color="#777" />
       <p style={{fontSize:12,color:'#666',margin:0,flex:1,lineHeight:1.35}}>{text}</p>
       <button onClick={onClick}
         style={{background:'#E24B4A',color:'white',border:'none',borderRadius:8,padding:compact ? '4px 8px' : '6px 10px',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>

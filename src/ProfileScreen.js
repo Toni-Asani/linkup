@@ -3,8 +3,9 @@ import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile } from './moderation'
 import { geocodeSwissAddress } from './geo'
-import { isNativeApp, isNativeIOS } from './platform'
+import { isNativeIOS } from './platform'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
+import { HubbingIcon } from './icons'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -400,11 +401,11 @@ notif_email: form.notif_email ?? true,
   {form.contact_photo_url ? (
     <img src={form.contact_photo_url} alt="contact"
       style={{width:56,height:56,borderRadius:'50%',objectFit:'cover',border:'2px solid #ddd'}} />
-  ) : (
-    <div style={{width:56,height:56,borderRadius:'50%',background:'#f0f0f0',display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <span style={{fontSize:24}}>👤</span>
-    </div>
-  )}
+	  ) : (
+	    <div style={{width:56,height:56,borderRadius:'50%',background:'#f0f0f0',display:'flex',alignItems:'center',justifyContent:'center'}}>
+	      <HubbingIcon name="profile" size={24} color="#777" />
+	    </div>
+	  )}
   <label style={{padding:'10px 16px',background:'#f0f0f0',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
     {uploadingContact ? ui.common.upload : ui.profile.choosePhoto}
     <input type="file" accept="image/*" style={{display:'none'}} onChange={handleContactPhotoUpload} />
@@ -428,8 +429,8 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
                   </span>
                 )}
               </div>
-              <button onClick={() => removeTag(tag)}
-                style={{background:'none',border:'none',cursor:'pointer',color:'#E24B4A',fontSize:16}}>✕</button>
+	              <button onClick={() => removeTag(tag)}
+	                style={{background:'none',border:'none',cursor:'pointer',color:'#E24B4A',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}><HubbingIcon name="x" size={16} color="#E24B4A" /></button>
             </div>
           ))}
         </div>
@@ -549,9 +550,9 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
               <span style={{color:'white',fontWeight:700,fontSize:28}}>{initials}</span>
             </div>
           )}
-          <div style={{position:'absolute',bottom:0,right:0,width:26,height:26,borderRadius:'50%',background:'white',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
-            <span style={{fontSize:14}}>📷</span>
-          </div>
+	          <div style={{position:'absolute',bottom:0,right:0,width:26,height:26,borderRadius:'50%',background:'white',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
+	            <HubbingIcon name="camera" size={14} color="#4B5563" />
+	          </div>
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{display:'none'}} />
         {uploadingLogo && <p style={{color:'rgba(255,255,255,0.8)',fontSize:12,marginTop:4}}>{ui.profile.downloading}</p>}
@@ -560,7 +561,13 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
           {companyBadgeVariant && <VerifiedBadge size={22} variant={companyBadgeVariant} />}
         </h2>
         {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
-        {company.city && <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2}}>📍 {company.city}{company.canton ? `, ${company.canton}` : ''}</p>}      </div>
+        {company.city && (
+          <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+            <HubbingIcon name="mapPin" size={13} color="rgba(255,255,255,0.75)" />
+            {company.city}{company.canton ? `, ${company.canton}` : ''}
+          </p>
+        )}
+      </div>
   </div>
 
       {/* Stats */}
@@ -585,7 +592,9 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         {/* Nos besoins */}
         {(company.needs_description || activeTags.length > 0) && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
-            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>💼 {ui.profile.needs}</p>
+	            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
+	              <HubbingIcon name="briefcase" size={14} color="#E67E22" /> {ui.profile.needs}
+	            </p>
             {company.needs_description && (
               <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0}}>
                 {company.needs_description}
@@ -613,9 +622,9 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         <img src={company.contact_photo_url} alt="contact"
           style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:'2px solid #eee'}} />
       ) : (
-        <div style={{width:52,height:52,borderRadius:'50%',background:'#f0f0f0',display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <span style={{fontSize:22}}>👤</span>
-        </div>
+	        <div style={{width:52,height:52,borderRadius:'50%',background:'#f0f0f0',display:'flex',alignItems:'center',justifyContent:'center'}}>
+	          <HubbingIcon name="profile" size={22} color="#777" />
+	        </div>
       )}
       <div>
         <p style={{fontSize:15,fontWeight:700,margin:0}}>{company.contact_name}</p>
@@ -645,17 +654,6 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
           {company.website && <InfoRow label={ui.profile.website.replace(' (https://...)', '')} value={company.website} color="#185FA5" />}
           <InfoRow label={ui.profile.email} value={user.email} />
         </InfoCard>
-
-        {!isNativeApp() && (
-          <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',textAlign:'center'}}>
-            <p style={{fontSize:13,color:'#E24B4A',fontWeight:600}}>{ui.profile.founderOffer}</p>
-            <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>{ui.profile.founderDesc}</p>
-            <button onClick={() => setActiveTab && setActiveTab('pricing')}
-              style={{marginTop:'0.75rem',padding:'10px 20px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-              {ui.common.viewPlans}
-            </button>
-          </div>
-        )}
 
         <button onClick={() => setEditing(true)}
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>

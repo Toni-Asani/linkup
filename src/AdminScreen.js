@@ -25,7 +25,7 @@ export default function AdminScreen({ user, setScreen }) {
   const loadData = async () => {
     const { data: companiesData } = await supabase
       .from('companies')
-      .select('*, subscriptions(plan, status, is_founder)')
+      .select('*, subscriptions(plan, status)')
       .order('created_at', { ascending: false })
 
     setCompanies(companiesData || [])
@@ -126,20 +126,9 @@ export default function AdminScreen({ user, setScreen }) {
         {/* Stats */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
           <StatCard label="Total inscrits" value={stats.total} color="#1a1a1a" />
-          <StatCard label="Premium ⭐" value={stats.premium} color="#E24B4A" />
+          <StatCard label="Premium" value={stats.premium} color="#E24B4A" />
           <StatCard label="Basic" value={stats.basic} color="#185FA5" />
           <StatCard label="Suspendus" value={stats.suspended} color="#854F0B" />
-        </div>
-
-        {/* Barre fondateurs */}
-        <div style={{background:'white',borderRadius:12,padding:'1rem'}}>
-          <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-            <p style={{fontSize:13,fontWeight:600,margin:0}}>Places Fondateurs</p>
-            <p style={{fontSize:13,color:'#E24B4A',fontWeight:600,margin:0}}>{stats.premium}/100</p>
-          </div>
-          <div style={{background:'#f0f0f0',borderRadius:8,height:8,overflow:'hidden'}}>
-            <div style={{height:'100%',background:'#E24B4A',width:`${(stats.premium/100)*100}%`,borderRadius:8}} />
-          </div>
         </div>
 
         {/* Recherche */}
@@ -178,11 +167,6 @@ export default function AdminScreen({ user, setScreen }) {
                     <span style={{fontSize:11,color:'white',background:getPlanColor(company),padding:'2px 8px',borderRadius:20,fontWeight:600}}>
                       {getPlan(company)}
                     </span>
-                    {company.subscriptions?.[0]?.is_founder && (
-                      <span style={{fontSize:11,color:'#854F0B',background:'#FEF3C7',padding:'2px 8px',borderRadius:20,fontWeight:600}}>
-                        Fondateur ⭐
-                      </span>
-                    )}
                     {company.is_suspended && (
                       <span style={{fontSize:11,color:'#E24B4A',background:'#FFF5F5',padding:'2px 8px',borderRadius:20,fontWeight:600}}>
                         Suspendu
@@ -211,7 +195,7 @@ export default function AdminScreen({ user, setScreen }) {
                 <button onClick={() => handleDelete(company)}
                   disabled={actionLoading === company.id}
                   style={{flex:1,padding:'8px',borderRadius:8,border:'1px solid #E24B4A',background:'white',color:'#E24B4A',fontSize:12,fontWeight:600,cursor:'pointer'}}>
-                  {actionLoading === company.id ? '...' : '🗑 Supprimer'}
+                  {actionLoading === company.id ? '...' : 'Supprimer'}
                 </button>
               </div>
             </div>

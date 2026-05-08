@@ -91,14 +91,8 @@ const launchEmailHtml = emailShell(`
   <p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 20px">
     Vous pouvez creer votre compte, decouvrir les entreprises presentes sur la carte, swiper des profils B2B et commencer a construire votre reseau professionnel.
   </p>
-  <div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:14px;padding:18px;margin:22px 0">
-    <p style="color:#E24B4A;font-weight:800;font-size:14px;margin:0 0 6px;">Offre Fondateurs</p>
-    <p style="font-size:14px;line-height:1.6;color:#333;margin:0">
-      Les 100 premiers abonnes Premium beneficient de <strong>2 mois Premium offerts</strong>.
-    </p>
-  </div>
   <div style="text-align:center;margin:26px 0 8px">
-    <a href="${appUrl}?screen=register&offer=founder" style="display:inline-block;background:#E24B4A;color:white;text-decoration:none;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;">
+    <a href="${appUrl}?screen=register" style="display:inline-block;background:#E24B4A;color:white;text-decoration:none;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;">
       Creer mon compte Hubbing
     </a>
   </div>
@@ -112,14 +106,8 @@ const signupEmailHtml = emailShell(`
   <p style="font-size:15px;line-height:1.7;color:#444;margin:0 0 18px">
     Merci pour votre interet. Hubbing est maintenant disponible pour les entreprises suisses.
   </p>
-  <div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:14px;padding:18px;margin:22px 0">
-    <p style="color:#E24B4A;font-weight:800;font-size:14px;margin:0 0 6px;">Offre Fondateurs</p>
-    <p style="font-size:14px;line-height:1.6;color:#333;margin:0">
-      Les 100 premiers abonnes Premium beneficient de <strong>2 mois Premium offerts</strong>.
-    </p>
-  </div>
   <div style="text-align:center;margin:26px 0 8px">
-    <a href="${appUrl}?screen=register&offer=founder" style="display:inline-block;background:#E24B4A;color:white;text-decoration:none;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;">
+    <a href="${appUrl}?screen=register" style="display:inline-block;background:#E24B4A;color:white;text-decoration:none;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;">
       Creer mon compte
     </a>
   </div>

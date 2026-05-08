@@ -158,9 +158,6 @@ https://app.hubbing.ch`
             <tr><td style="padding:8px 0;color:#888">Adresse</td><td style="padding:8px 0;color:#1a1a1a;text-align:right">${safeAddress}</td></tr>
           </table>
           <a href="https://app.hubbing.ch" style="display:inline-block;margin-top:8px;padding:13px 20px;background:#E24B4A;color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:700">Acceder a Hubbing</a>
-          <p style="font-size:13px;line-height:1.6;color:#777;margin:22px 0 0">
-            Les 100 premiers abonnes Premium beneficient de l'offre Fondateurs : <strong>2 mois Premium offerts</strong>.
-          </p>
           ${hubbingSignatureHtml}
         </div>`,
       }),

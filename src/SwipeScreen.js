@@ -3,6 +3,7 @@ import { Check, Eye, RotateCcw, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
+import { HubbingIcon } from './icons'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -546,7 +547,9 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
 
   if (allSeen || current >= filteredCompanies.length) return (
     <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
-      <div style={{fontSize:48}}>{activeFilters > 0 ? '🔍' : '🎉'}</div>
+      <div style={{width:56,height:56,borderRadius:'50%',background:'#FFF5F5',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <HubbingIcon name={activeFilters > 0 ? 'search' : 'sparkles'} size={28} color="#E24B4A" />
+      </div>
       <h3 style={{fontSize:20,fontWeight:700}}>{activeFilters > 0 ? ui.swipe.noResults : ui.swipe.allSeen}</h3>
       <p style={{color:'#999',fontSize:14}}>{activeFilters > 0 ? ui.swipe.noResultsDesc : ui.swipe.allSeenDesc}</p>
       {swipeHistory.length > 0 && (
@@ -574,10 +577,15 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
       {showMatchModal && (
         <div style={{position:'fixed',top:'15%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center',width:'80%',maxWidth:300}}>
           {user ? (
-            <><div style={{fontSize:36}}>{matchNotice === 'existing' ? '✓' : '🎉'}</div><p style={{fontWeight:700,fontSize:16,marginTop:8}}>{matchNotice === 'existing' ? ui.swipe.matchAlreadyExists : ui.swipe.matchSent}</p></>
+            <>
+              <div style={{display:'flex',justifyContent:'center'}}>
+                {matchNotice === 'existing' ? <Check size={36} color="#22c55e" strokeWidth={2.8} /> : <HubbingIcon name="sparkles" size={34} color="#E24B4A" />}
+              </div>
+              <p style={{fontWeight:700,fontSize:16,marginTop:8}}>{matchNotice === 'existing' ? ui.swipe.matchAlreadyExists : ui.swipe.matchSent}</p>
+            </>
           ) : (
             <>
-              <div style={{fontSize:36}}>🔒</div>
+              <div style={{display:'flex',justifyContent:'center'}}><HubbingIcon name="lock" size={34} color="#E24B4A" /></div>
               <p style={{fontWeight:700,fontSize:16,marginTop:8}}>{ui.swipe.createAccountTitle}</p>
               <p style={{fontSize:13,color:'#666',marginTop:4,marginBottom:12}}>{ui.swipe.signupToSave}</p>
               <button onClick={() => setScreen && setScreen('register')} style={{width:'100%',padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:8}}>{ui.swipe.createAccount}</button>
@@ -593,7 +601,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
           <div style={{width:'100%',maxWidth:430,maxHeight:'100%',background:'white',borderRadius:'20px 20px 0 0',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 -12px 40px rgba(0,0,0,0.18)'}} onClick={e => e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1.25rem 1.5rem 0.75rem',flexShrink:0}}>
               <h3 style={{fontSize:18,fontWeight:700,margin:0}}>{ui.swipe.filters}</h3>
-              <button onClick={() => setShowFilters(false)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#999',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+              <button onClick={() => setShowFilters(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#999',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}}><X size={22} strokeWidth={2.4} /></button>
             </div>
             <div style={{flex:1,minHeight:0,overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch',padding:'0.5rem 1.5rem 1rem',display:'flex',flexDirection:'column',gap:'1.25rem'}}>
               <div>
@@ -681,7 +689,9 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
             </h3>
             <div style={{display:'flex',gap:6,marginBottom:'0.5rem',flexWrap:'wrap'}}>
               <span style={{background:color+'15',color:color,padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>{company.sector}</span>
-              <span style={{background:'#f5f5f5',color:'#666',padding:'2px 8px',borderRadius:20,fontSize:11}}>📍 {company.city}, {company.canton}</span>
+              <span style={{background:'#f5f5f5',color:'#666',padding:'2px 8px',borderRadius:20,fontSize:11,display:'inline-flex',alignItems:'center',gap:3}}>
+                <HubbingIcon name="mapPin" size={12} color="#777" /> {company.city}, {company.canton}
+              </span>
               <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>★ {ratings[company.id] || ui.swipe.newLabel}</span>
             </div>
 
@@ -701,9 +711,9 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
                 {company.contact_photo_url ? (
                   <img src={company.contact_photo_url} alt="contact" style={{width:32,height:32,borderRadius:'50%',objectFit:'cover',flexShrink:0}} />
                 ) : (
-                  <div style={{width:32,height:32,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <span style={{fontSize:14}}>👤</span>
-                  </div>
+	                  <div style={{width:32,height:32,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+	                    <HubbingIcon name="profile" size={16} color="#777" />
+	                  </div>
                 )}
                 <div style={{flex:1,minWidth:0}}>
                   <p style={{fontSize:12,fontWeight:600,margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{company.contact_name}</p>

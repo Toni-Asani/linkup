@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
+import { HubbingIcon } from './icons'
 
 const STARTER_DAILY_MESSAGE_LIMIT = 5
 const MESSAGE_CHAR_LIMITS = {
@@ -433,7 +434,7 @@ const handleFileUpload = async (e) => {
     const { data: insertedMessage, error: messageError } = await supabase.from('messages').insert({
       match_id: selectedMatch.id,
       sender_id: myCompany.id,
-      content: `📎 ${file.name}`,
+      content: file.name,
       attachment_url: urlData.publicUrl,
       attachment_name: file.name,
       attachment_type: file.type
@@ -713,7 +714,7 @@ const handleFileUpload = async (e) => {
         {conversationSubject && (
           <div style={{padding:'0.625rem 1rem',background:'#f9f9f9',borderBottom:'1px solid #eeeeee'}}>
             <div style={{maxWidth:520,margin:'0 auto',background:'#f1f3f5',border:'1px solid #e5e7eb',borderRadius:12,padding:'8px 12px',display:'flex',alignItems:'center',justifyContent:'center',gap:6,textAlign:'center'}}>
-              <span style={{fontSize:13}}>🔒</span>
+	              <HubbingIcon name="lock" size={14} color="#555" />
               <p style={{margin:0,fontSize:12,fontWeight:700,color:'#555',lineHeight:1.35}}>
                 {ui.messages.needSubjectLabel(conversationSubject)}
               </p>
@@ -723,10 +724,12 @@ const handleFileUpload = async (e) => {
 
         {/* Messages */}
         <div style={{flex:1,overflowY:'auto',padding:'1rem',display:'flex',flexDirection:'column',gap:8,background:'#f9f9f9'}}>
-          {visibleMessages.length === 0 && (
-            <div style={{textAlign:'center',padding:'2rem',color:'#999'}}>
-              <p style={{fontSize:32,marginBottom:8}}>👋</p>
-              <p style={{fontSize:14}}>{ui.messages.startConversation(other?.name)}</p>
+	          {visibleMessages.length === 0 && (
+	            <div style={{textAlign:'center',padding:'2rem',color:'#999'}}>
+	              <div style={{display:'flex',justifyContent:'center',marginBottom:8}}>
+	                <HubbingIcon name="message" size={32} color="#9CA3AF" />
+	              </div>
+	              <p style={{fontSize:14}}>{ui.messages.startConversation(other?.name)}</p>
               <p style={{fontSize:12,marginTop:4}}>{ui.messages.introduce}</p>
             </div>
           )}
@@ -758,9 +761,9 @@ const handleFileUpload = async (e) => {
     }
   }
 }}
-  style={{background:'none',border:'none',cursor:'pointer',color:'#ccc',fontSize:14,padding:'0 4px',flexShrink:0}}>
-  🗑️
-</button>
+	  style={{background:'none',border:'none',cursor:'pointer',color:'#ccc',fontSize:14,padding:'0 4px',flexShrink:0}}>
+	  <HubbingIcon name="trash" size={15} color="#c7c7c7" />
+	</button>
   <div style={{
     maxWidth:'75%',padding:'10px 14px',
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
@@ -770,10 +773,10 @@ const handleFileUpload = async (e) => {
                   fontSize:14,lineHeight:1.5
                 }}>
                   {msg.attachment_url ? (
-  <a href={msg.attachment_url} target="_blank" rel="noreferrer"
-    style={{color: 'inherit', display:'flex', alignItems:'center', gap:6, textDecoration:'none'}}>
-    <span style={{fontSize:18}}>📎</span>
-    <span style={{textDecoration:'underline', fontSize:13}}>{msg.attachment_name || msg.content}</span>
+	  <a href={msg.attachment_url} target="_blank" rel="noreferrer"
+	    style={{color: 'inherit', display:'flex', alignItems:'center', gap:6, textDecoration:'none'}}>
+	    <HubbingIcon name="paperclip" size={17} color="currentColor" />
+	    <span style={{textDecoration:'underline', fontSize:13}}>{msg.attachment_name || msg.content}</span>
   </a>
 ) : (
   <p style={{margin:0}}>{msg.content}</p>
@@ -807,8 +810,10 @@ const handleFileUpload = async (e) => {
     )}
     <div style={{display:'flex',gap:8,alignItems:'center'}}>
     {plan === 'Premium' && (
-  <label style={{cursor:'pointer',flexShrink:0}}>
-    <span style={{fontSize:22}}>{uploadingFile ? '⏳' : '📎'}</span>
+	  <label style={{cursor:'pointer',flexShrink:0}}>
+	    <span style={{width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center'}}>
+	      <HubbingIcon name={uploadingFile ? 'loader' : 'paperclip'} size={22} color="#4B5563" />
+	    </span>
     <input ref={fileAttachRef} type="file" style={{display:'none'}}
       accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
       onChange={handleFileUpload} />
@@ -829,10 +834,10 @@ const handleFileUpload = async (e) => {
       rows={1}
       style={{flex:1,minHeight:40,maxHeight:86,padding:'10px 14px',border:'1px solid #eee',borderRadius:20,fontSize:16,lineHeight:1.25,outline:'none',fontFamily:'Plus Jakarta Sans',background: starterLimitReached ? '#f5f5f5' : 'white',resize:'none'}}
     />
-    <button onClick={sendMessage} disabled={!newMessage.trim() || starterLimitReached || sendingMessage}
-      style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() && !starterLimitReached && !sendingMessage ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() && !starterLimitReached && !sendingMessage ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-      {sendingMessage ? '…' : '↑'}
-    </button>
+	    <button onClick={sendMessage} disabled={!newMessage.trim() || starterLimitReached || sendingMessage}
+	      style={{width:40,height:40,borderRadius:'50%',background: newMessage.trim() && !starterLimitReached && !sendingMessage ? '#E24B4A' : '#eee',border:'none',cursor: newMessage.trim() && !starterLimitReached && !sendingMessage ? 'pointer' : 'default',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+	      {sendingMessage ? '…' : <HubbingIcon name="send" size={18} color="white" />}
+	    </button>
     </div>
   </div>
 ) : (
@@ -901,15 +906,15 @@ const handleFileUpload = async (e) => {
           <p style={{color:'#999'}}>{ui.common.loading}</p>
         </div>
       ) : matches.length === 0 ? (
-        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
-          <div style={{fontSize:48}}>💬</div>
-          <h3 style={{fontSize:18,fontWeight:700}}>{ui.messages.noConnections}</h3>
+	        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
+	          <HubbingIcon name="message" size={48} color="#9CA3AF" />
+	          <h3 style={{fontSize:18,fontWeight:700}}>{ui.messages.noConnections}</h3>
           <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>{ui.messages.noConnectionsDesc}</p>
         </div>
       ) : visibleMatches.length === 0 ? (
-        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'0.75rem'}}>
-          <div style={{fontSize:42}}>🔍</div>
-          <h3 style={{fontSize:17,fontWeight:700}}>{ui.messages.noSearchResults}</h3>
+	        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'0.75rem'}}>
+	          <HubbingIcon name="search" size={42} color="#9CA3AF" />
+	          <h3 style={{fontSize:17,fontWeight:700}}>{ui.messages.noSearchResults}</h3>
           <p style={{color:'#999',fontSize:13,lineHeight:1.6}}>{ui.messages.searchHint}</p>
         </div>
       ) : (

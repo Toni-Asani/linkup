@@ -5,6 +5,7 @@ import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { getCompanyCoordinates } from './geo'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
+import { HubbingIcon } from './icons'
 import 'leaflet/dist/leaflet.css'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -138,7 +139,7 @@ const cantons = [
   const createIcon = (color, isSelected = false) => L.divIcon({
     className: '',
     html: `<div style="position:relative;width:${isSelected ? 36 : 28}px;height:${isSelected ? 42 : 28}px;">
-      ${isSelected ? '<div style="position:absolute;left:50%;top:-10px;transform:translateX(-50%);font-size:24px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">📍</div>' : ''}
+      ${isSelected ? `<div style="position:absolute;left:50%;top:-7px;transform:translateX(-50%);width:15px;height:15px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.35);"></div>` : ''}
       <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:${isSelected ? 34 : 28}px;height:${isSelected ? 34 : 28}px;background:${color};border-radius:50%;border:${isSelected ? 4 : 3}px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.35);"></div>
     </div>`,
     iconSize: [isSelected ? 36 : 28, isSelected ? 42 : 28],
@@ -170,11 +171,13 @@ const cantons = [
       {ui.map.login}
     </button>
   </div>
-)}
+	)}
 
       <div style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
         <div style={{position:'relative'}}>
-          <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14}}>🔍</span>
+          <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',display:'flex',alignItems:'center'}}>
+            <HubbingIcon name="search" size={16} color="#94A3B8" />
+          </span>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -183,8 +186,8 @@ const cantons = [
           />
           {search && (
             <button onClick={() => setSearch('')}
-              style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:16}}>
-              ✕
+              style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <HubbingIcon name="x" size={16} color="#999" />
             </button>
           )}
         </div>
@@ -260,7 +263,7 @@ const cantons = [
               {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.35}}>{selected.description}</p>}
             </div>
             <button onClick={() => setSelected(null)}
-              style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:20,flexShrink:0}}>✕</button>
+              style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:20,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}><HubbingIcon name="x" size={20} color="#999" /></button>
           </div>
 
           {selectedHasNeeds && (
@@ -300,7 +303,9 @@ const cantons = [
       )}
 
       <div style={{padding:'6px',textAlign:'center',background:'#f9f9f9',borderTop:'1px solid #f0f0f0',flexShrink:0}}>
-  <span style={{fontSize:12,color:'#999'}}>🏢 {ui.map.registeredCount(companies.length)}</span>
+  <span style={{fontSize:12,color:'#999',display:'inline-flex',alignItems:'center',gap:4}}>
+    <HubbingIcon name="building" size={14} color="#999" /> {ui.map.registeredCount(companies.length)}
+  </span>
 </div>
     </div>
   )

@@ -14,7 +14,7 @@ import { geocodeSwissAddress } from './geo'
 import { isNativeApp } from './platform'
 import { notifyTelegramActivity } from './telegramAlerts'
 import { HubbingIcon } from './icons'
-import { VerifiedBadge, isVerifiedBadgeFeature } from './VerifiedBadge'
+import { VerifiedBadge } from './VerifiedBadge'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
@@ -61,19 +61,14 @@ const styles = `
 const translations = {
   fr: {
     appTagline: 'Le réseau B2B pour les entreprises suisses',
-    founderOffer: '🎉 Offre Fondateurs',
-    founderOfferDesc: '2 mois offerts pour les 100 premiers abonnés Premium',
-    founderRemaining: (count) => `${count} place${count > 1 ? 's' : ''} disponible${count > 1 ? 's' : ''}`,
-    founderPremiumNote: 'Premium · 2 mois offerts',
-    founderCta: "Activer l'offre Fondateurs →",
     createAccount: 'Créer un compte',
     login: 'Se connecter',
     visitorMode: 'Continuer en mode visiteur',
     planPreviewCta: 'Voir les tarifs',
     planPreviews: [
-      { name: 'Starter', price: 'Gratuit', detail: 'Découvrir' },
-      { name: 'Basic', price: 'CHF 19.-/mois', detail: 'Messages illimités' },
-      { name: 'Premium', price: 'CHF 39.-/mois', detail: 'Coordonnées complètes' },
+      { id: 'starter', name: 'Starter', price: 'Gratuit', detail: 'Découvrir' },
+      { id: 'basic', name: 'Basic', price: 'CHF 19.-/mois', detail: 'Messages illimités' },
+      { id: 'premium', name: 'Premium', price: 'CHF 39.-/mois', detail: 'Coordonnées complètes' },
     ],
     legal: 'CGU · Confidentialité · Mentions légales',
     registerTitle: 'Créer un compte',
@@ -113,8 +108,8 @@ const translations = {
     errorZefixNotFound: 'Entreprise non trouvée dans le registre suisse (Zefix).',
     errorZefixRetry: 'Impossible de vérifier le numéro IDE. Réessayez.',
     demoMode: 'Mode visiteur',
-    demoSwipe: '👀 Mode visiteur — connectez-vous pour matcher',
-    demoMap: '👀 Mode visiteur — connectez-vous pour voir toutes les entreprises',
+    demoSwipe: 'Mode visiteur — connectez-vous pour matcher',
+    demoMap: 'Mode visiteur — connectez-vous pour voir toutes les entreprises',
     companies: 'entreprises enregistrées en Suisse',
     mapTitle: 'Carte des entreprises',
     seeMap: 'Voir la carte complète',
@@ -128,23 +123,18 @@ const translations = {
     createFree: 'Créer un compte gratuit',
     continueDemo: 'Continuer en mode démo',
     logout: 'Déconnexion',
-    changeLanguage: '🌐 Langue',
+    changeLanguage: 'Langue',
   },
   de: {
     appTagline: 'Das B2B-Netzwerk für Schweizer Unternehmen',
-    founderOffer: '🎉 Gründerangebot',
-    founderOfferDesc: '2 Monate gratis für die ersten 100 Premium-Abonnenten',
-    founderRemaining: (count) => `${count} Platz${count > 1 ? 'e' : ''} verfügbar`,
-    founderPremiumNote: 'Premium · 2 Monate gratis',
-    founderCta: 'Gründerangebot aktivieren →',
     createAccount: 'Konto erstellen',
     login: 'Anmelden',
     visitorMode: 'Als Besucher fortfahren',
     planPreviewCta: 'Preise ansehen',
     planPreviews: [
-      { name: 'Starter', price: 'Gratis', detail: 'Entdecken' },
-      { name: 'Basic', price: 'CHF 19.-/Monat', detail: 'Unbegrenzte Nachrichten' },
-      { name: 'Premium', price: 'CHF 39.-/Monat', detail: 'Vollständige Kontakte' },
+      { id: 'starter', name: 'Starter', price: 'Gratis', detail: 'Entdecken' },
+      { id: 'basic', name: 'Basic', price: 'CHF 19.-/Monat', detail: 'Unbegrenzte Nachrichten' },
+      { id: 'premium', name: 'Premium', price: 'CHF 39.-/Monat', detail: 'Vollständige Kontakte' },
     ],
     legal: 'AGB · Datenschutz · Impressum',
     registerTitle: 'Konto erstellen',
@@ -184,8 +174,8 @@ const translations = {
     errorZefixNotFound: 'Unternehmen nicht im Schweizer Register (Zefix) gefunden.',
     errorZefixRetry: 'UID-Nummer konnte nicht verifiziert werden. Versuchen Sie es erneut.',
     demoMode: 'Besucher-Modus',
-    demoSwipe: '👀 Besucher-Modus — anmelden zum Matchen',
-    demoMap: '👀 Besucher-Modus — anmelden für alle Unternehmen',
+    demoSwipe: 'Besucher-Modus — anmelden zum Matchen',
+    demoMap: 'Besucher-Modus — anmelden für alle Unternehmen',
     companies: 'registrierte Unternehmen in der Schweiz',
     mapTitle: 'Unternehmenskarte',
     seeMap: 'Vollständige Karte anzeigen',
@@ -199,23 +189,18 @@ const translations = {
     createFree: 'Kostenloses Konto erstellen',
     continueDemo: 'Im Demo-Modus fortfahren',
     logout: 'Abmelden',
-    changeLanguage: '🌐 Sprache',
+    changeLanguage: 'Sprache',
   },
   it: {
     appTagline: 'La rete B2B per le aziende svizzere',
-    founderOffer: '🎉 Offerta Fondatori',
-    founderOfferDesc: '2 mesi gratuiti per i primi 100 abbonati Premium',
-    founderRemaining: (count) => `${count} post${count > 1 ? 'i' : 'o'} disponibile${count > 1 ? 'i' : ''}`,
-    founderPremiumNote: 'Premium · 2 mesi gratuiti',
-    founderCta: 'Attiva l’offerta Fondatori →',
     createAccount: 'Crea un account',
     login: 'Accedi',
     visitorMode: 'Continua in modalità visitatore',
     planPreviewCta: 'Vedi tariffe',
     planPreviews: [
-      { name: 'Starter', price: 'Gratis', detail: 'Scoprire' },
-      { name: 'Basic', price: 'CHF 19.-/mese', detail: 'Messaggi illimitati' },
-      { name: 'Premium', price: 'CHF 39.-/mese', detail: 'Contatti completi' },
+      { id: 'starter', name: 'Starter', price: 'Gratis', detail: 'Scoprire' },
+      { id: 'basic', name: 'Basic', price: 'CHF 19.-/mese', detail: 'Messaggi illimitati' },
+      { id: 'premium', name: 'Premium', price: 'CHF 39.-/mese', detail: 'Contatti completi' },
     ],
     legal: 'CGU · Privacy · Note legali',
     registerTitle: 'Crea un account',
@@ -255,8 +240,8 @@ const translations = {
     errorZefixNotFound: 'Azienda non trovata nel registro svizzero (Zefix).',
     errorZefixRetry: 'Impossibile verificare il numero IDE. Riprovare.',
     demoMode: 'Modalità visitatore',
-    demoSwipe: '👀 Modalità visitatore — accedi per fare match',
-    demoMap: '👀 Modalità visitatore — accedi per vedere tutte le aziende',
+    demoSwipe: 'Modalità visitatore — accedi per fare match',
+    demoMap: 'Modalità visitatore — accedi per vedere tutte le aziende',
     companies: 'aziende registrate in Svizzera',
     mapTitle: 'Mappa delle aziende',
     seeMap: 'Vedi la mappa completa',
@@ -270,23 +255,18 @@ const translations = {
     createFree: 'Crea un account gratuito',
     continueDemo: 'Continua in modalità demo',
     logout: 'Disconnetti',
-    changeLanguage: '🌐 Lingua',
+    changeLanguage: 'Lingua',
   },
   en: {
     appTagline: 'The B2B network for Swiss companies',
-    founderOffer: '🎉 Founder Offer',
-    founderOfferDesc: '2 months free for the first 100 Premium subscribers',
-    founderRemaining: (count) => `${count} place${count > 1 ? 's' : ''} available`,
-    founderPremiumNote: 'Premium · 2 months free',
-    founderCta: 'Activate Founder offer →',
     createAccount: 'Create an account',
     login: 'Log in',
     visitorMode: 'Continue as visitor',
     planPreviewCta: 'View pricing',
     planPreviews: [
-      { name: 'Starter', price: 'Free', detail: 'Discover' },
-      { name: 'Basic', price: 'CHF 19.-/month', detail: 'Unlimited messages' },
-      { name: 'Premium', price: 'CHF 39.-/month', detail: 'Full contact details' },
+      { id: 'starter', name: 'Starter', price: 'Free', detail: 'Discover' },
+      { id: 'basic', name: 'Basic', price: 'CHF 19.-/month', detail: 'Unlimited messages' },
+      { id: 'premium', name: 'Premium', price: 'CHF 39.-/month', detail: 'Full contact details' },
     ],
     legal: 'T&C · Privacy · Legal notice',
     registerTitle: 'Create an account',
@@ -326,8 +306,8 @@ const translations = {
     errorZefixNotFound: 'Company not found in the Swiss register (Zefix).',
     errorZefixRetry: 'Unable to verify IDE number. Please try again.',
     demoMode: 'Visitor mode',
-    demoSwipe: '👀 Visitor mode — log in to match',
-    demoMap: '👀 Visitor mode — log in to see all companies',
+    demoSwipe: 'Visitor mode — log in to match',
+    demoMap: 'Visitor mode — log in to see all companies',
     companies: 'companies registered in Switzerland',
     mapTitle: 'Company map',
     seeMap: 'See full map',
@@ -341,7 +321,7 @@ const translations = {
     createFree: 'Create a free account',
     continueDemo: 'Continue in demo mode',
     logout: 'Log out',
-    changeLanguage: '🌐 Language',
+    changeLanguage: 'Language',
   }
 }
 
@@ -377,13 +357,12 @@ export default function App() {
     const paymentStatus = params.get('payment')
     const paymentPlan = params.get('plan')
     if (paymentStatus === 'success' && paymentPlan && session?.user) {
-      const isFounder = paymentPlan === 'premium'
       await supabase.from('subscriptions').upsert({
         user_id: session.user.id,
         plan: paymentPlan,
         status: 'active',
-        is_founder: isFounder,
-        current_period_ends_at: new Date(Date.now() + (isFounder ? 60 : 30) * 24 * 60 * 60 * 1000).toISOString()
+        is_founder: false,
+        current_period_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       }, { onConflict: 'user_id' })
       alert(`✅ Abonnement ${paymentPlan} activé avec succès !`)
       window.history.replaceState({}, '', window.location.pathname)
@@ -449,9 +428,10 @@ function PlanBadge({ user }) {
       })
   }, [user])
   const colors = { Starter: '#666', Basic: '#185FA5', Premium: '#E24B4A' }
+  const variant = plan.toLowerCase()
   return (
     <span style={{color: colors[plan] || '#666', fontSize:12, fontWeight:600,display:'inline-flex',alignItems:'center',gap:4}}>
-      {plan === 'Premium' ? <VerifiedBadge size={14} /> : plan === 'Basic' ? '✦' : ''} {plan} →
+      <VerifiedBadge size={14} variant={variant} /> {plan} →
     </span>
   )
 }
@@ -523,12 +503,9 @@ function WaitlistScreen() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [timeLeft, setTimeLeft] = useState({})
-  const [founderSlots, setFounderSlots] = useState({ used: 0, max: 100 })
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null)
   const [showInstallHelp, setShowInstallHelp] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
-  const founderRemaining = Math.max(0, founderSlots.max - founderSlots.used)
-  const founderProgress = founderSlots.max > 0 ? Math.min(100, (founderSlots.used / founderSlots.max) * 100) : 0
 
   useEffect(() => {
     const target = new Date('2026-05-01T00:00:00')
@@ -548,19 +525,6 @@ function WaitlistScreen() {
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    let active = true
-    supabase
-      .from('founder_slots')
-      .select('used, max_slots')
-      .eq('id', 1)
-      .single()
-      .then(({ data }) => {
-        if (active && data) setFounderSlots({ used: data.used || 0, max: data.max_slots || 100 })
-      })
-    return () => { active = false }
   }, [])
 
   useEffect(() => {
@@ -642,7 +606,9 @@ const handleWaitlist = async () => {
 
   const Feature = ({ icon, title, desc }) => (
     <div style={{background:'#f9f9f9',borderRadius:16,padding:'1.25rem',textAlign:'left',width:'100%',maxWidth:340}}>
-      <div style={{fontSize:28,marginBottom:8}}>{icon}</div>
+      <div style={{marginBottom:8}}>
+        <HubbingIcon name={icon} size={28} />
+      </div>
       <p style={{fontSize:14,fontWeight:700,color:'#1a1a1a',margin:'0 0 4px'}}>{title}</p>
       <p style={{fontSize:13,color:'#666',margin:0,lineHeight:1.5}}>{desc}</p>
     </div>
@@ -719,7 +685,7 @@ const handleWaitlist = async () => {
         {/* Screenshot 1 - Swipe */}
         <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:96,minHeight:160,flexShrink:0,border:'1px solid #f0f0f0',display:'flex',flexDirection:'column'}}>
           <div style={{background:'#E24B4A',borderRadius:12,padding:'0.75rem',marginBottom:8,textAlign:'center'}}>
-            <span style={{fontSize:28}}>🏢</span>
+            <HubbingIcon name="building" size={28} color="white" />
           </div>
           <p style={{fontSize:9,fontWeight:700,margin:'0 0 2px',color:'#1a1a1a'}}>Fiduciaire Rochat</p>
           <p style={{fontSize:8,color:'#999',margin:'0 0 6px'}}>Lausanne, VD</p>
@@ -727,13 +693,13 @@ const handleWaitlist = async () => {
             <div style={{width:24,height:24,borderRadius:'50%',border:'2px solid #E24B4A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10}}>✗</div>
             <div style={{width:28,height:28,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'white'}}>✓</div>
           </div>
-          <p style={{fontSize:8,color:'#E24B4A',fontWeight:600,marginTop:6,textAlign:'center'}}>💼 SWIPE</p>
+          <p style={{fontSize:8,color:'#E24B4A',fontWeight:600,marginTop:6,textAlign:'center'}}>SWIPE</p>
         </div>
 
         {/* Screenshot 2 - Match */}
         <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:96,minHeight:160,flexShrink:0,border:'1px solid #f0f0f0',display:'flex',flexDirection:'column'}}>
           <div style={{background:'#22c55e',borderRadius:12,padding:'0.5rem',marginBottom:6,textAlign:'center'}}>
-            <p style={{color:'white',fontWeight:800,fontSize:11,margin:0}}>🎉 MATCH !</p>
+            <p style={{color:'white',fontWeight:800,fontSize:11,margin:0}}>MATCH !</p>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:6}}>
             <div style={{width:20,height:20,borderRadius:'50%',background:'#185FA5',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'white',fontWeight:700}}>TE</div>
@@ -741,9 +707,9 @@ const handleWaitlist = async () => {
           </div>
           <p style={{fontSize:8,color:'#666',margin:'0 0 6px',lineHeight:1.4}}>TechSoft Zürich AG vous a matché !</p>
           <div style={{background:'#E24B4A',borderRadius:8,padding:'4px',textAlign:'center'}}>
-            <p style={{color:'white',fontSize:8,fontWeight:600,margin:0}}>💬 Contacter</p>
+            <p style={{color:'white',fontSize:8,fontWeight:600,margin:0}}>Contacter</p>
           </div>
-          <p style={{fontSize:8,color:'#185FA5',fontWeight:600,marginTop:6,textAlign:'center'}}>💬 MESSAGES</p>
+          <p style={{fontSize:8,color:'#185FA5',fontWeight:600,marginTop:6,textAlign:'center'}}>MESSAGES</p>
         </div>
 
         {/* Screenshot 3 - Carte */}
@@ -759,28 +725,17 @@ const handleWaitlist = async () => {
           <p style={{fontSize:9,fontWeight:700,margin:'0 0 2px',color:'#1a1a1a'}}>9 entreprises</p>
           <p style={{fontSize:8,color:'#999',margin:'0 0 4px'}}>près de vous</p>
           <div style={{background:'#f5f5f5',borderRadius:6,padding:'3px',textAlign:'center'}}>
-            <p style={{fontSize:7,color:'#666',margin:0}}>🔍 VD · Informatique</p>
+            <p style={{fontSize:7,color:'#666',margin:0}}>VD · Informatique</p>
           </div>
-          <p style={{fontSize:8,color:'#22c55e',fontWeight:600,marginTop:6,textAlign:'center'}}>🗺️ CARTE</p>
+          <p style={{fontSize:8,color:'#22c55e',fontWeight:600,marginTop:6,textAlign:'center'}}>CARTE</p>
         </div>
       </div>
 
       {/* Features */}
       <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.7s both'}}>
-        <Feature icon="💼" title="Swipe B2B" desc="Découvrez des entreprises locales et matchez avec celles qui correspondent à vos besoins en un seul geste." />
-        <Feature icon="🗺️" title="Carte interactive" desc="Visualisez toutes les entreprises autour de vous, filtrez par secteur et canton." />
-        <Feature icon="💬" title="Messagerie pro" desc="Échangez directement avec vos connexions B2B et partagez des documents en toute sécurité." />
-      </div>
-
-      {/* Offre fondateur */}
-      <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'1rem',width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.8s both'}}>
-        <p style={{fontSize:13,color:'#E24B4A',fontWeight:700}}>🎉 Offre Fondateurs — {founderRemaining} places restantes</p>
-        <div style={{height:6,background:'#fee2e2',borderRadius:999,overflow:'hidden',margin:'0.65rem 0'}}>
-          <div style={{height:'100%',width:`${founderProgress}%`,background:'#E24B4A',borderRadius:999}} />
-        </div>
-        <p style={{fontSize:12,color:'#666',marginTop:4,lineHeight:1.5}}>
-          Les 100 premiers abonnés Premium recevront <strong>2 mois d'abonnement Premium offerts</strong>. Ne manquez pas cette opportunité unique !
-        </p>
+        <Feature icon="briefcase" title="Swipe B2B" desc="Découvrez des entreprises locales et matchez avec celles qui correspondent à vos besoins en un seul geste." />
+        <Feature icon="map" title="Carte interactive" desc="Visualisez toutes les entreprises autour de vous, filtrez par secteur et canton." />
+        <Feature icon="message" title="Messagerie pro" desc="Échangez directement avec vos connexions B2B et partagez des documents en toute sécurité." />
       </div>
 
       <p style={{fontSize:13,color:'#bbb',animation:'fadeUp 0.6s ease 1s both'}}>
@@ -792,13 +747,8 @@ const handleWaitlist = async () => {
       <div style={{position:'fixed',left:'50%',bottom:0,transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'white',borderTop:'1px solid #f0f0f0',boxShadow:'0 -8px 30px rgba(0,0,0,0.08)',padding:'0.85rem 1rem calc(env(safe-area-inset-bottom) + 0.85rem)',zIndex:20}}>
         <div style={{display:'flex',flexDirection:'column',gap:'0.6rem'}}>
           <button
-            onClick={() => { window.location.href = 'https://app.hubbing.ch?screen=register&offer=founder' }}
-            style={{width:'100%',padding:'13px 14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(226,75,74,0.18)'}}>
-            Offre Fondateurs · {founderRemaining} place{founderRemaining > 1 ? 's' : ''} disponible{founderRemaining > 1 ? 's' : ''} →
-          </button>
-          <button
             onClick={() => { window.location.href = 'https://app.hubbing.ch' }}
-            style={{width:'100%',padding:'12px 14px',background:'white',color:'#1a1a1a',border:'1px solid #e5e5e5',borderRadius:12,fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+            style={{width:'100%',padding:'13px 14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(226,75,74,0.18)'}}>
             Ouvrir l'application
           </button>
         </div>
@@ -823,7 +773,8 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.25rem) 1.5rem calc(env(safe-area-inset-bottom) + 1.5rem)',gap:'1rem',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
       <div style={{position:'absolute',top:'calc(env(safe-area-inset-top) + 1rem)',right:'1rem'}}>
         <button onClick={() => setShowLangMenu(!showLangMenu)}
-          style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'6px 14px',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',fontWeight:500}}>
+          style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'6px 14px',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',fontWeight:500,display:'inline-flex',alignItems:'center',gap:6}}>
+          <HubbingIcon name="globe" size={15} color="#3B82F6" />
           {t.changeLanguage}
         </button>
         {showLangMenu && (
@@ -859,7 +810,10 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
           return (
             <button key={plan.name} onClick={openVisitorPricing}
               style={{minWidth:0,minHeight:104,padding:'0.75rem 0.55rem',background:'white',border:`1px solid ${color}33`,borderRadius:12,boxShadow:'0 8px 20px rgba(15,23,42,0.06)',cursor:'pointer',fontFamily:'Plus Jakarta Sans',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'space-between',textAlign:'left'}}>
-              <span style={{fontSize:13,fontWeight:800,color,whiteSpace:'nowrap'}}>{plan.name}</span>
+              <span style={{fontSize:13,fontWeight:800,color,whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:4}}>
+                {plan.name}
+                <VerifiedBadge size={14} variant={plan.id} />
+              </span>
               <span style={{fontSize:12,fontWeight:800,color:'#111827',lineHeight:1.25}}>{plan.price}</span>
               <span style={{fontSize:10,color:'#64748B',lineHeight:1.25,overflowWrap:'anywhere'}}>{plan.detail}</span>
             </button>
@@ -1092,7 +1046,7 @@ if (zefixStatus === 'invalid') {
 
   if (success) return (
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1rem',textAlign:'center',background:'white'}}>
-      <div style={{fontSize:48}}>🎉</div>
+      <HubbingIcon name="sparkles" size={48} color="#E24B4A" />
       <h2 style={{fontSize:22,fontWeight:700}}>{t.successTitle}</h2>
       <p style={{color:'#666',fontSize:15}}>{t.successMsg}</p>
       <button onClick={() => setScreen('login')}
@@ -1115,8 +1069,8 @@ if (zefixStatus === 'invalid') {
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}
   style={{padding:'14px',border:`1px solid ${zefixStatus === 'valid' ? '#22c55e' : zefixStatus === 'invalid' ? '#E24B4A' : '#ddd'}`,borderRadius:10,fontSize:16,outline:'none'}} />
-{zefixStatus === 'valid' && <p style={{fontSize:12,color:'#F39C12'}}>⏳ Numéro IDE au bon format — vérification manuelle sous 24 à 48h ouvrables</p>}
-{zefixStatus === 'invalid' && <p style={{fontSize:12,color:'#E24B4A'}}>❌ Format invalide. Utilisez le format CHE-xxx.xxx.xxx (9 chiffres)</p>}
+{zefixStatus === 'valid' && <p style={{fontSize:12,color:'#F39C12'}}>Numéro IDE au bon format — vérification manuelle sous 24 à 48h ouvrables</p>}
+{zefixStatus === 'invalid' && <p style={{fontSize:12,color:'#E24B4A'}}>Format invalide. Utilisez le format CHE-xxx.xxx.xxx (9 chiffres)</p>}
       <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rue et numéro *"
   style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 <div style={{display:'flex',gap:8}}>
@@ -1188,7 +1142,9 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
   const Modal = () => (
     <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,padding:'1rem'}}>
       <div style={{background:'white',borderRadius:16,padding:'2rem',width:'100%',maxWidth:340,textAlign:'center'}}>
-        <div style={{fontSize:40,marginBottom:'0.75rem'}}>🔒</div>
+        <div style={{marginBottom:'0.75rem',display:'flex',justifyContent:'center'}}>
+          <HubbingIcon name="lock" size={40} color="#E24B4A" />
+        </div>
         <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>{t.lockTitle}</h3>
         <p style={{fontSize:14,color:'#666',lineHeight:1.6,marginBottom:'1.25rem'}}>{t.lockDesc}</p>
         <button onClick={() => setScreen('register')}
@@ -1273,7 +1229,7 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
        {activeTab === 'map' && <Suspense fallback={<div>{ui.common.loading}</div>}><MapScreen user={null} setScreen={setScreen} lang={lang} /></Suspense>}
         {activeTab === 'messages' && (
           <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
-            <div style={{fontSize:48}}>💬</div>
+            <HubbingIcon name="message" size={48} color="#E24B4A" />
             <h3 style={{fontSize:18,fontWeight:700}}>{t.messagesTitle}</h3>
             <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>{t.messagesDesc}</p>
             <button onClick={() => setShowModal(true)}
@@ -1289,20 +1245,22 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
               <p style={{fontSize:13,color:'#666'}}>{t.pricingDesc}</p>
             </div>
             {[
-              {name:'Starter',price:ui.common.free,color:'#666',features:ui.pricing.starterFeatures.slice(0, 4),limits:ui.pricing.starterLimits.slice(0, 2)},
-              {name:'Basic',price:`CHF 19.-${ui.common.month}`,color:'#185FA5',features:ui.pricing.basicFeatures.slice(0, 4),limits:ui.pricing.basicLimits.slice(0, 2)},
-              {name:'Premium',price:`CHF 39.-${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 6),limits:ui.pricing.premiumLimits,highlight:true},
+              {id:'starter',name:'Starter',price:ui.common.free,color:'#666',features:ui.pricing.starterFeatures.slice(0, 4),limits:ui.pricing.starterLimits.slice(0, 2)},
+              {id:'basic',name:'Basic',price:`CHF 19.-${ui.common.month}`,color:'#185FA5',features:ui.pricing.basicFeatures.slice(0, 4),limits:ui.pricing.basicLimits.slice(0, 2)},
+              {id:'premium',name:'Premium',price:`CHF 39.-${ui.common.month}`,color:'#E24B4A',features:ui.pricing.premiumFeatures.slice(0, 6),limits:ui.pricing.premiumLimits,highlight:true},
             ].map(plan => (
               <div key={plan.name} onClick={() => setShowModal(true)}
                 style={{border: plan.highlight ? `2px solid ${plan.color}` : '1px solid #eee',borderRadius:12,padding:'1rem',marginBottom:'0.75rem',cursor:'pointer',background:'white'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                  <h3 style={{fontSize:16,fontWeight:700,color:plan.color,margin:0}}>{plan.name}</h3>
+                  <h3 style={{fontSize:16,fontWeight:700,color:plan.color,margin:0,display:'flex',alignItems:'center',gap:6}}>
+                    {plan.name}
+                    <VerifiedBadge size={17} variant={plan.id} />
+                  </h3>
                   <span style={{fontSize:14,fontWeight:600,color:'#1a1a1a'}}>{plan.price}</span>
                 </div>
                 {plan.features.map((f,i) => (
                   <p key={i} style={{fontSize:12,color:'#666',margin:'3px 0',display:'flex',alignItems:'center',gap:5}}>
                     <span>✓ {f}</span>
-                    {plan.name === 'Premium' && isVerifiedBadgeFeature(f) && <VerifiedBadge size={16} />}
                   </p>
                 ))}
                 {(plan.limits || []).map((f,i) => (

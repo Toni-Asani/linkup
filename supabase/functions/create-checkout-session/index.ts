@@ -16,8 +16,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { priceId, userId, planName, founder } = await req.json()
-    const hasFounderTrial = planName === 'premium' && founder === true
+    const { priceId, userId, planName } = await req.json()
 
     const sessionConfig: any = {
       payment_method_types: ['card'],
@@ -25,13 +24,11 @@ Deno.serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `https://app.hubbing.ch/?payment=success&plan=${planName}`,
       cancel_url: `https://app.hubbing.ch/?payment=cancel`,
-      metadata: { userId, planName, founder: String(hasFounderTrial) },
+      metadata: { userId, planName },
       subscription_data: {
-        metadata: { userId, planName, founder: String(hasFounderTrial) },
-        ...(hasFounderTrial ? { trial_period_days: 60 } : {}),
+        metadata: { userId, planName },
       },
     }
-    if (hasFounderTrial) sessionConfig.payment_method_collection = 'always'
 
     const session = await stripe.checkout.sessions.create(sessionConfig)
 

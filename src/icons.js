@@ -1,8 +1,25 @@
 import {
+  BriefcaseBusiness,
+  Building2,
+  Check,
   CreditCard,
+  Camera,
+  Globe2,
   House,
+  LockKeyhole,
+  LoaderCircle,
   Map,
+  MapPin,
+  MessageCircle,
+  Paperclip,
+  Pencil,
+  Search,
+  SendHorizontal,
+  Smartphone,
+  Sparkles,
+  Trash2,
   UserRound,
+  X,
 } from 'lucide-react'
 
 function SwipeGestureIcon({ size = 23, color = '#4B5563', strokeWidth = 2 }) {
@@ -58,9 +75,26 @@ const icons = {
   messages: MessageDotsIcon,
   pricing: CreditCard,
   profile: UserRound,
+  briefcase: BriefcaseBusiness,
+  building: Building2,
+  camera: Camera,
+  check: Check,
+  globe: Globe2,
+  loader: LoaderCircle,
+  lock: LockKeyhole,
+  mapPin: MapPin,
+  message: MessageCircle,
+  paperclip: Paperclip,
+  pencil: Pencil,
+  search: Search,
+  send: SendHorizontal,
+  smartphone: Smartphone,
+  sparkles: Sparkles,
+  trash: Trash2,
+  x: X,
 }
 
-export function HubbingIcon({ name, active = false, size = 23 }) {
+export function HubbingIcon({ name, active = false, size = 23, color }) {
   const Icon = icons[name]
   if (!Icon) return null
 
@@ -68,7 +102,7 @@ export function HubbingIcon({ name, active = false, size = 23 }) {
     <Icon
       size={size}
       strokeWidth={2}
-      color={active ? '#E24B4A' : '#4B5563'}
+      color={color || (active ? '#E24B4A' : '#4B5563')}
       absoluteStrokeWidth
     />
   )
