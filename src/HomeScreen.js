@@ -116,6 +116,38 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
 
   const color = company ? (sectorColors[company.sector] || '#E24B4A') : '#E24B4A'
   const companyBadgeVariant = getCompanyBadgeVariant(company, plan)
+  const normalizedPlan = String(plan || 'Starter').toLowerCase()
+  const needsTags = (() => {
+    try { return company?.needs_tags ? JSON.parse(company.needs_tags) : [] } catch { return [] }
+  })()
+  const onboardingSteps = [
+    {
+      key: 'profile',
+      label: ui.home.onboardingProfile,
+      done: Boolean(company?.sector && company?.description && company?.city),
+      action: () => setActiveTab('profile'),
+    },
+    {
+      key: 'visuals',
+      label: ui.home.onboardingVisuals,
+      done: Boolean(company?.logo_url || company?.contact_photo_url || company?.background_url),
+      action: () => setActiveTab('profile'),
+    },
+    {
+      key: 'needs',
+      label: ui.home.onboardingNeeds,
+      done: Boolean(company?.needs_description || needsTags.length > 0),
+      action: () => setActiveTab('profile'),
+    },
+    {
+      key: 'plan',
+      label: ui.home.onboardingPlan,
+      done: normalizedPlan !== 'starter',
+      action: () => setActiveTab('pricing'),
+    },
+  ]
+  const onboardingDone = onboardingSteps.filter(step => step.done).length
+  const showOnboarding = onboardingDone < onboardingSteps.length
 
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
@@ -204,6 +236,36 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
           <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.followersLabel}</p>
         </div>
       </div>
+
+      {showOnboarding && (
+        <div style={{padding:'1rem 1rem 0'}}>
+          <div style={{background:'white',border:'1px solid #F1D1D1',borderRadius:12,padding:'1rem',boxShadow:'0 4px 16px rgba(226,75,74,0.06)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'flex-start',marginBottom:10}}>
+              <div>
+                <p style={{fontWeight:800,fontSize:14,margin:0,color:'#1f2937'}}>{ui.home.onboardingTitle}</p>
+                <p style={{fontSize:12,color:'#888',margin:'3px 0 0',lineHeight:1.35}}>{ui.home.onboardingDesc}</p>
+              </div>
+              <span style={{fontSize:11,fontWeight:800,color:'#E24B4A',background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:999,padding:'5px 8px',whiteSpace:'nowrap'}}>
+                {ui.home.onboardingProgress(onboardingDone, onboardingSteps.length)}
+              </span>
+            </div>
+            <div style={{height:5,background:'#F5F5F5',borderRadius:999,overflow:'hidden',marginBottom:10}}>
+              <div style={{width:`${(onboardingDone / onboardingSteps.length) * 100}%`,height:'100%',background:'#E24B4A',borderRadius:999}} />
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              {onboardingSteps.map(step => (
+                <button key={step.key} onClick={step.action}
+                  style={{border:'1px solid #eee',background:step.done ? '#F0FDF4' : '#FAFAFA',borderRadius:10,padding:'9px 8px',display:'flex',alignItems:'center',gap:7,cursor:'pointer',textAlign:'left'}}>
+                  <span style={{width:18,height:18,borderRadius:'50%',background:step.done ? '#22c55e' : 'white',border:`1px solid ${step.done ? '#22c55e' : '#ddd'}`,color:step.done ? 'white' : '#aaa',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,flexShrink:0}}>
+                    {step.done ? '✓' : '•'}
+                  </span>
+                  <span style={{fontSize:11,fontWeight:700,color:step.done ? '#166534' : '#4b5563',lineHeight:1.25}}>{step.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{padding:'1.25rem 1rem 0.75rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
 

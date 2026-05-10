@@ -26,7 +26,12 @@ export function isDemoCompany(company) {
 }
 
 export function isVerifiedCompany(company) {
-  return Boolean(company) && !isDemoCompany(company) && company?.is_suspended !== true
+  if (!company || isDemoCompany(company) || company?.is_suspended === true) return false
+
+  const status = company.zefix_verification_status
+  if (!status) return true
+
+  return ['verified', 'manual_approved'].includes(String(status).toLowerCase())
 }
 
 export function getCompanyBadgeVariant(company, fallbackPlan = 'starter') {

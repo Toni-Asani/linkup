@@ -309,6 +309,13 @@ notif_email: form.notif_email ?? true,
   const color = sectorColors[company.sector] || '#E24B4A'
   const initials = company.name?.substring(0, 2).toUpperCase()
   const companyBadgeVariant = getCompanyBadgeVariant(company, currentPlan)
+  const verificationStatus = String(company.zefix_verification_status || 'manual_approved').toLowerCase()
+  const verificationLabel = {
+    verified: ui.profile.verificationVerified,
+    manual_approved: ui.profile.verificationManualApproved,
+    manual_pending: ui.profile.verificationPending,
+    rejected: ui.profile.verificationRejected,
+  }[verificationStatus] || ui.profile.verificationManualApproved
 
   const getTagStatus = (expires) => {
     if (!expires) return 'active'
@@ -649,6 +656,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
         {/* Infos entreprise */}
         <InfoCard title={ui.profile.companyInfo}>
           {company.zefix_uid && <InfoRow label={ui.profile.zefix} value={company.zefix_uid} />}
+          {company.zefix_uid && <InfoRow label={ui.profile.verificationStatus} value={verificationLabel} color={verificationStatus === 'rejected' ? '#E24B4A' : verificationStatus === 'manual_pending' ? '#F39C12' : '#22c55e'} />}
           {company.address && <InfoRow label={ui.profile.address.replace(' *', '')} value={company.address} />}
           {company.city && <InfoRow label={ui.profile.city} value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
           {company.website && <InfoRow label={ui.profile.website.replace(' (https://...)', '')} value={company.website} color="#185FA5" />}

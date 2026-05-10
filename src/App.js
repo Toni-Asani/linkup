@@ -1125,6 +1125,9 @@ if (zefixStatus === 'invalid') {
     }
     
     const userId = data?.user?.id || data?.session?.user?.id
+    const verificationPayload = zefixCheck.payload || zefixVerification
+    const isZefixVerified = verificationPayload?.verified === true && verificationPayload?.source === 'zefix'
+
     if (userId) {
       let coords = null
       try {
@@ -1143,6 +1146,11 @@ if (zefixStatus === 'invalid') {
      canton: canton,
      lat: coords?.lat ?? null,
      lng: coords?.lng ?? null,
+      zefix_verification_status: isZefixVerified ? 'verified' : 'manual_pending',
+      zefix_verified_at: isZefixVerified ? new Date().toISOString() : null,
+      zefix_verified_name: isZefixVerified ? (verificationPayload?.company?.name || company) : null,
+      zefix_verified_source: verificationPayload?.source || null,
+      zefix_verified_payload: verificationPayload || null,
       })
       if (insertError) {
         console.error('Insert error:', insertError)
@@ -1169,7 +1177,7 @@ if (zefixStatus === 'invalid') {
           city,
           canton,
           userId,
-          zefixVerification: zefixCheck.payload || zefixVerification
+          zefixVerification: verificationPayload
         })
       })
       if (!response.ok) {

@@ -7,6 +7,7 @@ import { VerifiedBadge } from './VerifiedBadge'
 
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
+const SUPABASE_FUNCTIONS_URL = (process.env.REACT_APP_SUPABASE_URL || 'https://rxjrcbdeyouafhtizneh.supabase.co').replace(/\/$/, '')
 
 const getPlans = (ui) => [
   {
@@ -53,6 +54,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   const [currentPlan, setCurrentPlan] = useState('starter')
   const [loading, setLoading] = useState(null)
   const [restoring, setRestoring] = useState(false)
+  const [managing, setManaging] = useState(false)
   const [testModeEnabled, setTestModeEnabled] = useState(false)
   const [testPlanChanging, setTestPlanChanging] = useState(null)
 
@@ -152,17 +154,20 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
         return
       }
 
+      const { data: { session } } = await supabase.auth.getSession()
+      const accessToken = session?.access_token
+      if (!accessToken) throw new Error('missing_session')
+
       const response = await fetch(
-        `https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/create-checkout-session`,
+        `${SUPABASE_FUNCTIONS_URL}/functions/v1/create-checkout-session`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             priceId: plan.priceId,
-            userId: user.id,
             planName: plan.id,
             founder: false,
           }),
@@ -178,6 +183,39 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
       alert(ui.pricing.purchaseError(e.message))
     } finally {
       setLoading(null)
+    }
+  }
+
+  const handleManageSubscription = async () => {
+    setManaging(true)
+    try {
+      if (nativeIOS) {
+        window.open('https://apps.apple.com/account/subscriptions', '_blank', 'noopener,noreferrer')
+        return
+      }
+
+      const { data: { session } } = await supabase.auth.getSession()
+      const accessToken = session?.access_token
+      if (!accessToken) throw new Error('missing_session')
+
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/functions/v1/create-customer-portal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          returnUrl: window.location.href,
+        }),
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok || !payload.url) throw new Error(payload.error || ui.pricing.noStripeSubscription)
+      window.location.href = payload.url
+    } catch (e) {
+      console.warn('Unable to open subscription management:', e)
+      alert(ui.pricing.manageError)
+    } finally {
+      setManaging(false)
     }
   }
 
@@ -330,6 +368,21 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
           )
         })}
       </div>
+
+      {currentPlan !== 'starter' && (
+        <div style={{marginTop:'1rem',padding:'1rem',background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12}}>
+          <p style={{fontSize:13,fontWeight:800,color:'#334155',margin:'0 0 4px'}}>
+            {ui.pricing.manageTitle}
+          </p>
+          <p style={{fontSize:12,color:'#64748B',lineHeight:1.45,margin:'0 0 0.75rem'}}>
+            {ui.pricing.manageDesc}
+          </p>
+          <button onClick={handleManageSubscription} disabled={managing}
+            style={{width:'100%',padding:'11px',borderRadius:10,border:'1px solid #CBD5E1',background:'white',color:'#334155',fontSize:13,fontWeight:800,cursor:managing ? 'default' : 'pointer'}}>
+            {managing ? ui.common.loading : ui.pricing.manageSubscription}
+          </button>
+        </div>
+      )}
 
       <p style={{fontSize:11,color:'#999',textAlign:'center',marginTop:'1rem',lineHeight:1.5}}>
         {nativeIOS ? ui.pricing.appleFooter : ui.pricing.footer}
