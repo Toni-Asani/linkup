@@ -64,23 +64,14 @@ function MapSelectionFocus({ selected }) {
 
 function MapLocationFocus({ location, focusKey }) {
   const map = useMap()
+  const lastFocusKeyRef = useRef(0)
 
   useEffect(() => {
     if (!location || !focusKey) return
+    if (lastFocusKeyRef.current === focusKey) return
+    lastFocusKeyRef.current = focusKey
     map.setView([location.lat, location.lng], Math.max(map.getZoom(), 13), { animate: true })
   }, [focusKey, location, map])
-
-  return null
-}
-
-function MapRadiusFocus({ location, radius, focusKey }) {
-  const map = useMap()
-
-  useEffect(() => {
-    if (!location || !focusKey || radius >= 300) return
-    const bounds = L.circle([location.lat, location.lng], { radius: radius * 1000 }).getBounds()
-    map.fitBounds(bounds, { padding: [34, 34], maxZoom: 12, animate: true })
-  }, [focusKey, location, map, radius])
 
   return null
 }
@@ -99,7 +90,6 @@ export default function MapScreen({ user, setScreen, plan = 'Starter', setSelect
   const [userLocation, setUserLocation] = useState(null)
   const [locationStatus, setLocationStatus] = useState('idle')
   const [locationFocusKey, setLocationFocusKey] = useState(0)
-  const [radiusFocusKey, setRadiusFocusKey] = useState(0)
   const locationWatchRef = useRef(null)
 
   useEffect(() => { loadCompanies() }, [])
@@ -263,9 +253,6 @@ const cantons = [
 
   const applyRadiusFilter = () => {
     setShowRadiusFilter(false)
-    if (radiusReference && filterRadius < 300) {
-      setRadiusFocusKey(key => key + 1)
-    }
   }
 
   return (
@@ -294,9 +281,9 @@ const cantons = [
               </button>
             </div>
             <div style={{padding:'0.5rem 1.5rem 1rem'}}>
-              <input type="range" min={10} max={300} step={10} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
+              <input type="range" min={5} max={300} step={5} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
               <div style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:11,color:'#999',marginTop:4}}>
-                <span>10 km</span>
+                <span>5 km</span>
                 <span style={{textAlign:'right'}}>{ui.map.allSwitzerland}</span>
               </div>
               {filterRadius < 300 && !radiusReference && (
@@ -380,7 +367,6 @@ const cantons = [
           />
           <MapSelectionFocus selected={selected} />
           <MapLocationFocus location={userLocation} focusKey={locationFocusKey} />
-          <MapRadiusFocus location={radiusReference} radius={filterRadius} focusKey={radiusFocusKey} />
           {radiusIsActive && (
             <Circle
               center={[radiusReference.lat, radiusReference.lng]}
