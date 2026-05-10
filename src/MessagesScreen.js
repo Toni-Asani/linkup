@@ -1,5 +1,5 @@
 import { Fragment, useState, useEffect, useRef } from 'react'
-import { Eye, Lock, Search, X } from 'lucide-react'
+import { Eye, Search, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
@@ -556,10 +556,6 @@ const handleFileUpload = async (e) => {
 
   const openCompanyProfile = (companyId) => {
     if (!companyId) return
-    if (!isBasicOrPremium) {
-      setActiveTab && setActiveTab('pricing')
-      return
-    }
     setCompanyProfileReturn && setCompanyProfileReturn({ tab: 'messages', companyId })
     setSelectedCompanyId && setSelectedCompanyId(companyId)
   }
@@ -690,7 +686,7 @@ const handleFileUpload = async (e) => {
             ←
           </button>
           <CompanyAvatar company={other} size={40} fontSize={14} />
-          <div style={{flex:1,minWidth:0,cursor:isBasicOrPremium ? 'pointer' : 'default'}} onClick={() => openCompanyProfile(other?.id)}>
+          <div style={{flex:1,minWidth:0,cursor:'pointer'}} onClick={() => openCompanyProfile(other?.id)}>
   <p style={{fontWeight:700,fontSize:15,margin:0,display:'flex',alignItems:'center',gap:5}}>
     <span style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{other?.name}</span>
     {otherBadgeVariant && <VerifiedBadge size={15} variant={otherBadgeVariant} />}
@@ -698,9 +694,9 @@ const handleFileUpload = async (e) => {
   <p style={{fontSize:12,color:'#999',margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{other?.sector} · {other?.city}</p>
 </div>
           <button onClick={() => openCompanyProfile(other?.id)}
-            style={{height:34,display:'inline-flex',alignItems:'center',gap:5,background:isBasicOrPremium ? '#FFF5F5' : '#F8FAFC',border:`1px solid ${isBasicOrPremium ? '#FECACA' : '#E2E8F0'}`,borderRadius:18,padding:'0 10px',cursor:'pointer',fontSize:12,fontWeight:700,color:isBasicOrPremium ? '#E24B4A' : '#64748B',flexShrink:0,fontFamily:'Plus Jakarta Sans'}}>
-            {isBasicOrPremium ? <Eye size={14} strokeWidth={2.4} /> : <Lock size={13} strokeWidth={2.4} />}
-            {isBasicOrPremium ? ui.messages.viewProfileShort : ui.messages.profileBasicOnly}
+            style={{height:34,display:'inline-flex',alignItems:'center',gap:5,background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:18,padding:'0 10px',cursor:'pointer',fontSize:12,fontWeight:700,color:'#E24B4A',flexShrink:0,fontFamily:'Plus Jakarta Sans'}}>
+            <Eye size={14} strokeWidth={2.4} />
+            {ui.messages.viewProfileShort}
           </button>
           {/* Bouton avis */}
           {canLeaveReview && (

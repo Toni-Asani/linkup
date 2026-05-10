@@ -188,51 +188,6 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const hasNeeds = company.needs_description || activeTags.length > 0
   const fallbackNeedSubject = activeTags[0]?.label || company.needs_description || company.name
 
-  if (isStarter) return (
-    <div style={{flex:1,overflowY:'auto',background:'white'}}>
-      <div style={{background:color,padding:'1rem 1.5rem 3rem',position:'relative',textAlign:'center'}}>
-        <button onClick={onBack}
-          style={{position:'absolute',top:16,left:16,background:'rgba(255,255,255,0.2)',border:'none',borderRadius:20,padding:'6px 12px',color:'white',fontSize:13,cursor:'pointer',fontWeight:600}}>
-          {ui.common.back}
-        </button>
-        <div style={{width:80,height:80,margin:'2rem auto 0',borderRadius:'50%',overflow:'hidden',border:'3px solid white'}}>
-          {company.logo_url ? (
-            <img src={company.logo_url} alt="logo" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
-          ) : (
-            <div style={{width:'100%',height:'100%',background:'rgba(255,255,255,0.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <span style={{color:'white',fontWeight:700,fontSize:28}}>{initials}</span>
-            </div>
-          )}
-        </div>
-        <h2 style={{color:'white',fontSize:20,fontWeight:700,marginTop:'0.75rem',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-          <span>{company.name}</span>
-          {companyBadgeVariant && <VerifiedBadge size={22} variant={companyBadgeVariant} />}
-        </h2>
-        {company.sector && <p style={{color:'rgba(255,255,255,0.8)',fontSize:13,marginTop:2}}>{company.sector}</p>}
-        {company.city && (
-          <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginTop:2,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
-            <HubbingIcon name="mapPin" size={13} color="rgba(255,255,255,0.75)" />
-            {company.city}{company.canton ? `, ${company.canton}` : ''}
-          </p>
-        )}
-      </div>
-
-      <div style={{padding:'1.5rem 1rem',marginTop:'-1rem'}}>
-        <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:16,padding:'1.25rem',textAlign:'center',boxShadow:'0 10px 30px rgba(226,75,74,0.08)'}}>
-          <div style={{display:'flex',justifyContent:'center',marginBottom:'0.5rem'}}>
-            <HubbingIcon name="lock" size={34} color="#E24B4A" />
-          </div>
-          <h3 style={{fontSize:18,fontWeight:800,color:'#1f2937',margin:'0 0 0.5rem'}}>{ui.companyProfile.profileBasicOnlyTitle}</h3>
-          <p style={{fontSize:14,color:'#666',lineHeight:1.55,margin:'0 0 1rem'}}>{ui.companyProfile.profileBasicOnlyDesc}</p>
-          <button onClick={goToPricing}
-            style={{width:'100%',padding:'13px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
-            {ui.companyProfile.profileBasicOnlyCta}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <div style={{flex:1,overflowY:'auto'}}>
 
@@ -360,36 +315,33 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         {company.contact_name && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>{ui.companyProfile.decisionMaker}</p>
-            {isPremium ? (
-              <div style={{display:'flex',alignItems:'center',gap:12}}>
-                {company.contact_photo_url ? (
-                  <button onClick={() => setZoomImage({ src: company.contact_photo_url, alt: company.contact_name || 'Contact' })}
-                    aria-label="Agrandir la photo"
-                    style={{width:52,height:52,borderRadius:'50%',border:'2px solid #eee',padding:0,overflow:'hidden',background:'transparent',cursor:'zoom-in',flexShrink:0}}>
-                    <img src={company.contact_photo_url} alt="contact"
-                      style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
-                  </button>
-                ) : (
-	                  <div style={{width:52,height:52,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-	                    <HubbingIcon name="profile" size={22} color="#777" />
-	                  </div>
-                )}
-                <div style={{flex:1}}>
-                  <p style={{fontSize:15,fontWeight:700,margin:0}}>{company.contact_name}</p>
-                  {company.contact_title && <p style={{fontSize:13,color:'#666',margin:0}}>{company.contact_title}</p>}
-                  {company.contact_phone && <p style={{fontSize:13,color:'#444',margin:'4px 0 0'}}>{company.contact_phone}</p>}
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              {company.contact_photo_url ? (
+                <button onClick={() => setZoomImage({ src: company.contact_photo_url, alt: company.contact_name || 'Contact' })}
+                  aria-label="Agrandir la photo"
+                  style={{width:52,height:52,borderRadius:'50%',border:'2px solid #eee',padding:0,overflow:'hidden',background:'transparent',cursor:'zoom-in',flexShrink:0}}>
+                  <img src={company.contact_photo_url} alt="contact"
+                    style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
+                </button>
+              ) : (
+                <div style={{width:52,height:52,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <HubbingIcon name="profile" size={22} color="#777" />
                 </div>
-                {company.contact_linkedin && (
-                  <a href={company.contact_linkedin} target="_blank" rel="noreferrer"
-                    style={{background:'#0A66C2',color:'white',borderRadius:8,padding:'6px 10px',fontSize:12,fontWeight:600,textDecoration:'none',flexShrink:0}}>
-                    in
-                  </a>
-                )}
+              )}
+              <div style={{flex:1,minWidth:0}}>
+                <p style={{fontSize:15,fontWeight:700,margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{company.contact_name}</p>
+                {(isBasic || isPremium) && company.contact_title && <p style={{fontSize:13,color:'#666',margin:0}}>{company.contact_title}</p>}
+                {isPremium && company.contact_phone && <p style={{fontSize:13,color:'#444',margin:'4px 0 0'}}>{company.contact_phone}</p>}
               </div>
-            ) : isBasic ? (
-              <LockedRow text={ui.companyProfile.fullContactPremium} button={ui.common.upgrade} onClick={goToPricing} />
-            ) : (
-              <LockedRow text={ui.companyProfile.fullContactPremium} button={ui.common.upgrade} onClick={goToPricing} />
+              {isPremium && company.contact_linkedin && (
+                <a href={company.contact_linkedin} target="_blank" rel="noreferrer"
+                  style={{background:'#0A66C2',color:'white',borderRadius:8,padding:'6px 10px',fontSize:12,fontWeight:600,textDecoration:'none',flexShrink:0}}>
+                  in
+                </a>
+              )}
+            </div>
+            {!isPremium && (
+              <LockedRow text={ui.companyProfile.fullContactPremium} button={ui.common.upgrade} onClick={goToPricing} compact />
             )}
           </div>
         )}
@@ -397,6 +349,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         {/* Infos */}
         <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
           <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:8}}>{ui.companyProfile.information}</p>
+          {company.zefix_uid && <InfoRow label={ui.companyProfile.ide} value={company.zefix_uid} />}
           {company.city && <InfoRow label={ui.companyProfile.city} value={`${company.city}${company.canton ? `, ${company.canton}` : ''}`} />}
           {company.address && (
             isBasic ? (

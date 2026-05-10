@@ -74,7 +74,7 @@ const getActiveTags = (needs_tags) => {
 export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActiveTab, setSelectedCompanyId, setCompanyProfileReturn, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
   const ui = getUiText(lang)
   const isPremium = plan === 'Premium'
-  const canViewCompanyProfiles = plan === 'Basic' || plan === 'Premium'
+  const canViewCompanyProfiles = Boolean(user)
   const [companies, setCompanies] = useState([])
   const [filteredCompanies, setFilteredCompanies] = useState([])
   const [current, setCurrent] = useState(0)
@@ -451,10 +451,6 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
     if (!user) {
       setMatchNotice('visitor')
       setShowMatchModal(true)
-      return
-    }
-    if (!canViewCompanyProfiles) {
-      setActiveTab && setActiveTab('pricing')
       return
     }
     setCompanyProfileReturn && setCompanyProfileReturn({ tab: 'swipe' })

@@ -73,6 +73,18 @@ function MapLocationFocus({ location, focusKey }) {
   return null
 }
 
+function MapRadiusFocus({ location, radius, focusKey }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!location || !focusKey || radius >= 300) return
+    const bounds = L.circle([location.lat, location.lng], { radius: radius * 1000 }).getBounds()
+    map.fitBounds(bounds, { padding: [34, 34], maxZoom: 12, animate: true })
+  }, [focusKey, location, map, radius])
+
+  return null
+}
+
 export default function MapScreen({ user, setScreen, plan = 'Starter', setSelectedCompanyId, setCompanyProfileReturn, setActiveTab, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [companies, setCompanies] = useState([])
@@ -81,13 +93,14 @@ export default function MapScreen({ user, setScreen, plan = 'Starter', setSelect
   const [search, setSearch] = useState('')
   const [filterCanton, setFilterCanton] = useState('')
   const [filterRadius, setFilterRadius] = useState(300)
+  const [showRadiusFilter, setShowRadiusFilter] = useState(false)
   const [mapStyle, setMapStyle] = useState('standard')
   const [myCompanyCoords, setMyCompanyCoords] = useState(null)
   const [userLocation, setUserLocation] = useState(null)
   const [locationStatus, setLocationStatus] = useState('idle')
   const [locationFocusKey, setLocationFocusKey] = useState(0)
+  const [radiusFocusKey, setRadiusFocusKey] = useState(0)
   const locationWatchRef = useRef(null)
-  const canViewCompanyProfiles = plan === 'Basic' || plan === 'Premium'
 
   useEffect(() => { loadCompanies() }, [])
   useEffect(() => { loadMyCompanyCoords() }, [user?.id])
@@ -243,13 +256,16 @@ const cantons = [
   const isSatellite = mapStyle === 'satellite'
   const openSelectedProfile = () => {
     if (!selected) return
-    if (!canViewCompanyProfiles) {
-      setActiveTab && setActiveTab('pricing')
-      return
-    }
     setCompanyProfileReturn && setCompanyProfileReturn({ tab: 'map' })
     setSelectedCompanyId && setSelectedCompanyId(selected.id)
     setActiveTab && setActiveTab('map')
+  }
+
+  const applyRadiusFilter = () => {
+    setShowRadiusFilter(false)
+    if (radiusReference && filterRadius < 300) {
+      setRadiusFocusKey(key => key + 1)
+    }
   }
 
   return (
@@ -267,6 +283,39 @@ const cantons = [
     </button>
   </div>
 	)}
+
+      {showRadiusFilter && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.45)',zIndex:40000,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 0.75rem) 0 calc(76px + env(safe-area-inset-bottom))'}} onClick={() => setShowRadiusFilter(false)}>
+          <div style={{width:'100%',maxWidth:430,background:'white',borderRadius:'20px 20px 0 0',boxShadow:'0 -12px 40px rgba(0,0,0,0.18)',overflow:'hidden'}} onClick={e => e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1.25rem 1.5rem 0.75rem'}}>
+              <h3 style={{fontSize:18,fontWeight:700,margin:0}}>{ui.map.radius(filterRadius)}</h3>
+              <button onClick={() => setShowRadiusFilter(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#999',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <HubbingIcon name="x" size={22} color="#999" />
+              </button>
+            </div>
+            <div style={{padding:'0.5rem 1.5rem 1rem'}}>
+              <input type="range" min={10} max={300} step={10} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
+              <div style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:11,color:'#999',marginTop:4}}>
+                <span>10 km</span>
+                <span style={{textAlign:'right'}}>{ui.map.allSwitzerland}</span>
+              </div>
+              {filterRadius < 300 && !radiusReference && (
+                <div style={{marginTop:12,background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'10px 12px'}}>
+                  <p style={{fontSize:12,color:'#B45309',margin:'0 0 8px',lineHeight:1.4}}>{ui.map.radiusNeedsLocation}</p>
+                  <button onClick={startLiveLocation}
+                    style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+                    {locationStatus === 'loading' ? ui.map.locating : ui.map.useMyLocation}
+                  </button>
+                </div>
+              )}
+            </div>
+            <div style={{display:'flex',gap:10,padding:'0.75rem 1.5rem 1.25rem',borderTop:'1px solid #f2f2f2',background:'white'}}>
+              <button onClick={() => { setFilterRadius(300); setShowRadiusFilter(false) }} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
+              <button onClick={applyRadiusFilter} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filtered.length)}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
         <div style={{position:'relative'}}>
@@ -291,42 +340,26 @@ const cantons = [
 <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
   <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)}
     style={{width:'100%',padding:'10px 12px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans',color:'#111'}}>
-    <option value="">{ui.map.allCantons}</option>
-    {cantons.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
-  </select>
-</div>
-      <div style={{padding:'0.625rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:6}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#444',margin:0,lineHeight:1.35}}>{ui.map.radius(filterRadius)}</p>
-          {filterRadius < 300 && !radiusReference && (
-            <button
-              onClick={startLiveLocation}
-              style={{background:'#FFF5F5',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:999,padding:'5px 9px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'Plus Jakarta Sans',whiteSpace:'nowrap'}}>
-              {ui.map.useMyLocation}
-            </button>
-          )}
-        </div>
-        <input type="range" min={10} max={300} step={10} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
-        <div style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:11,color:'#999',marginTop:3}}>
-          <span>10 km</span>
-          <span style={{textAlign:'right'}}>{ui.map.allSwitzerland}</span>
-        </div>
-        {filterRadius < 300 && !radiusReference && (
-          <p style={{fontSize:11,color:'#F39C12',margin:'6px 0 0',lineHeight:1.4}}>{ui.map.radiusNeedsLocation}</p>
-        )}
+	    <option value="">{ui.map.allCantons}</option>
+	    {cantons.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
+	  </select>
+	</div>
+      <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0,display:'grid',gridTemplateColumns:'minmax(0, 3fr) minmax(74px, 1fr)',gap:8}}>
+        <select value={filter} onChange={e => setFilter(e.target.value)}
+          style={{width:'100%',minWidth:0,padding:'10px 12px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans',color:'#111'}}>
+          <option value="">{ui.map.allSectors(companies.length)}</option>
+          {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s]})</option>)}
+        </select>
+        <button onClick={() => setShowRadiusFilter(true)}
+          style={{width:'100%',minWidth:0,padding:'10px 8px',background:filterRadius < 300 ? '#FFF5F5' : '#f9f9f9',color:filterRadius < 300 ? '#E24B4A' : '#444',border:`1px solid ${filterRadius < 300 ? '#FECACA' : '#eee'}`,borderRadius:10,fontSize:13,lineHeight:1.2,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+          {ui.map.radiusButton(filterRadius)}
+        </button>
       </div>
-      <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
-  <select value={filter} onChange={e => setFilter(e.target.value)}
-    style={{width:'100%',padding:'10px 12px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans',color:'#111'}}>
-    <option value="">{ui.map.allSectors(companies.length)}</option>
-    {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s]})</option>)}
-  </select>
-</div>
 
       <div style={{flex:1,minHeight:selected ? 170 : 350,position:'relative'}}>
         <button
           onClick={startLiveLocation}
-          style={{position:'absolute',top:10,left:10,zIndex:500,display:'inline-flex',alignItems:'center',gap:6,background:locationStatus === 'active' ? '#E24B4A' : 'white',color:locationStatus === 'active' ? 'white' : '#333',border:'1px solid rgba(0,0,0,0.12)',borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:700,boxShadow:'0 4px 14px rgba(0,0,0,0.16)',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+          style={{position:'absolute',top:10,left:58,zIndex:500,display:'inline-flex',alignItems:'center',gap:6,background:locationStatus === 'active' ? '#E24B4A' : 'white',color:locationStatus === 'active' ? 'white' : '#333',border:'1px solid rgba(0,0,0,0.12)',borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:700,boxShadow:'0 4px 14px rgba(0,0,0,0.16)',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
           <HubbingIcon name="mapPin" size={14} color={locationStatus === 'active' ? 'white' : '#E24B4A'} />
           {locationStatus === 'loading' ? ui.map.locating : ui.map.myLocation}
         </button>
@@ -347,11 +380,12 @@ const cantons = [
           />
           <MapSelectionFocus selected={selected} />
           <MapLocationFocus location={userLocation} focusKey={locationFocusKey} />
+          <MapRadiusFocus location={radiusReference} radius={filterRadius} focusKey={radiusFocusKey} />
           {radiusIsActive && (
             <Circle
               center={[radiusReference.lat, radiusReference.lng]}
               radius={filterRadius * 1000}
-              pathOptions={{ color: '#E24B4A', fillColor: '#E24B4A', fillOpacity: 0.06, weight: 1.5 }}
+              pathOptions={{ color: '#E24B4A', fillColor: '#E24B4A', fillOpacity: 0.12, weight: 2 }}
             />
           )}
           {userLocation && (
@@ -428,8 +462,8 @@ const cantons = [
           <div style={{marginTop:'0.75rem',display:'flex',gap:8}}>
             {user ? (
               <button onClick={openSelectedProfile}
-                style={{flex:1,padding:'12px',background:canViewCompanyProfiles ? '#E24B4A' : '#F8FAFC',color:canViewCompanyProfiles ? 'white' : '#64748B',border:canViewCompanyProfiles ? 'none' : '1px solid #E2E8F0',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-                {canViewCompanyProfiles ? ui.map.viewProfile : ui.map.profileBasicOnly}
+                style={{flex:1,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                {ui.map.viewProfile}
               </button>
             ) : (
               <button onClick={() => setScreen && setScreen('register')}
