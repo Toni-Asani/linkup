@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import { useEffect, useRef, useState } from 'react'
+import { Circle, CircleMarker, MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
@@ -35,6 +35,16 @@ const getActiveTags = (needs_tags) => {
 
 const DETAIL_PANEL_MAX_HEIGHT = 220
 
+const haversine = (lat1, lng1, lat2, lng2) => {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 function MapSelectionFocus({ selected }) {
   const map = useMap()
 
@@ -52,6 +62,17 @@ function MapSelectionFocus({ selected }) {
   return null
 }
 
+function MapLocationFocus({ location, focusKey }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!location || !focusKey) return
+    map.setView([location.lat, location.lng], Math.max(map.getZoom(), 13), { animate: true })
+  }, [focusKey, location, map])
+
+  return null
+}
+
 export default function MapScreen({ user, setScreen, plan = 'Starter', setSelectedCompanyId, setCompanyProfileReturn, setActiveTab, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [companies, setCompanies] = useState([])
@@ -59,10 +80,22 @@ export default function MapScreen({ user, setScreen, plan = 'Starter', setSelect
   const [filter, setFilter] = useState('')
   const [search, setSearch] = useState('')
   const [filterCanton, setFilterCanton] = useState('')
+  const [filterRadius, setFilterRadius] = useState(300)
   const [mapStyle, setMapStyle] = useState('standard')
+  const [myCompanyCoords, setMyCompanyCoords] = useState(null)
+  const [userLocation, setUserLocation] = useState(null)
+  const [locationStatus, setLocationStatus] = useState('idle')
+  const [locationFocusKey, setLocationFocusKey] = useState(0)
+  const locationWatchRef = useRef(null)
   const canViewCompanyProfiles = plan === 'Basic' || plan === 'Premium'
 
   useEffect(() => { loadCompanies() }, [])
+  useEffect(() => { loadMyCompanyCoords() }, [user?.id])
+  useEffect(() => () => {
+    if (locationWatchRef.current !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(locationWatchRef.current)
+    }
+  }, [])
 
   const loadCompanies = async () => {
     const { data, error } = await supabase
@@ -91,15 +124,77 @@ export default function MapScreen({ user, setScreen, plan = 'Starter', setSelect
     setCompanies(mappedCompanies)
   }
 
+  const loadMyCompanyCoords = async () => {
+    if (!user?.id) {
+      setMyCompanyCoords(null)
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('companies')
+      .select('lat, lng, city, canton')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (error || !data) {
+      setMyCompanyCoords(null)
+      return
+    }
+
+    const coords = getCompanyCoordinates(data)
+    setMyCompanyCoords(coords ? { lat: coords.lat, lng: coords.lng } : null)
+  }
+
+  const startLiveLocation = () => {
+    if (locationStatus === 'active' && userLocation) {
+      setLocationFocusKey(key => key + 1)
+      return
+    }
+    if (!navigator.geolocation) {
+      setLocationStatus('unavailable')
+      return
+    }
+
+    setLocationStatus('loading')
+    if (locationWatchRef.current !== null) {
+      navigator.geolocation.clearWatch(locationWatchRef.current)
+      locationWatchRef.current = null
+    }
+
+    let firstFix = true
+    locationWatchRef.current = navigator.geolocation.watchPosition(
+      position => {
+        const nextLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        }
+        setUserLocation(nextLocation)
+        setLocationStatus('active')
+        if (firstFix) {
+          setLocationFocusKey(key => key + 1)
+          firstFix = false
+        }
+      },
+      error => {
+        setLocationStatus(error.code === 1 ? 'denied' : 'unavailable')
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 12000 }
+    )
+  }
+
+  const radiusReference = userLocation || myCompanyCoords
+  const radiusIsActive = filterRadius < 300 && radiusReference
   const filtered = companies.filter(c => {
     const matchSector = !filter || c.sector === filter
     const matchCanton = !filterCanton || c.canton === filterCanton
+    const matchRadius = !radiusIsActive || haversine(radiusReference.lat, radiusReference.lng, c.mapLat, c.mapLng) <= filterRadius
     const matchSearch = !search ||
       c.name?.toLowerCase().includes(search.toLowerCase()) ||
       c.sector?.toLowerCase().includes(search.toLowerCase()) ||
       c.city?.toLowerCase().includes(search.toLowerCase()) ||
       c.canton?.toLowerCase().includes(search.toLowerCase())
-    return matchSector && matchCanton && matchSearch
+    return matchSector && matchCanton && matchRadius && matchSearch
   })
 
   const sectorCounts = companies.reduce((counts, company) => {
@@ -200,6 +295,26 @@ const cantons = [
     {cantons.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
   </select>
 </div>
+      <div style={{padding:'0.625rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:6}}>
+          <p style={{fontSize:13,fontWeight:700,color:'#444',margin:0,lineHeight:1.35}}>{ui.map.radius(filterRadius)}</p>
+          {filterRadius < 300 && !radiusReference && (
+            <button
+              onClick={startLiveLocation}
+              style={{background:'#FFF5F5',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:999,padding:'5px 9px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'Plus Jakarta Sans',whiteSpace:'nowrap'}}>
+              {ui.map.useMyLocation}
+            </button>
+          )}
+        </div>
+        <input type="range" min={10} max={300} step={10} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
+        <div style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:11,color:'#999',marginTop:3}}>
+          <span>10 km</span>
+          <span style={{textAlign:'right'}}>{ui.map.allSwitzerland}</span>
+        </div>
+        {filterRadius < 300 && !radiusReference && (
+          <p style={{fontSize:11,color:'#F39C12',margin:'6px 0 0',lineHeight:1.4}}>{ui.map.radiusNeedsLocation}</p>
+        )}
+      </div>
       <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
   <select value={filter} onChange={e => setFilter(e.target.value)}
     style={{width:'100%',padding:'10px 12px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans',color:'#111'}}>
@@ -209,6 +324,12 @@ const cantons = [
 </div>
 
       <div style={{flex:1,minHeight:selected ? 170 : 350,position:'relative'}}>
+        <button
+          onClick={startLiveLocation}
+          style={{position:'absolute',top:10,left:10,zIndex:500,display:'inline-flex',alignItems:'center',gap:6,background:locationStatus === 'active' ? '#E24B4A' : 'white',color:locationStatus === 'active' ? 'white' : '#333',border:'1px solid rgba(0,0,0,0.12)',borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:700,boxShadow:'0 4px 14px rgba(0,0,0,0.16)',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+          <HubbingIcon name="mapPin" size={14} color={locationStatus === 'active' ? 'white' : '#E24B4A'} />
+          {locationStatus === 'loading' ? ui.map.locating : ui.map.myLocation}
+        </button>
         <button
           onClick={() => setMapStyle(isSatellite ? 'standard' : 'satellite')}
           style={{position:'absolute',top:10,right:10,zIndex:500,background:'white',color:'#333',border:'1px solid rgba(0,0,0,0.12)',borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:700,boxShadow:'0 4px 14px rgba(0,0,0,0.16)',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
@@ -225,6 +346,28 @@ const cantons = [
             attribution={isSatellite ? 'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community' : '&copy; OpenStreetMap'}
           />
           <MapSelectionFocus selected={selected} />
+          <MapLocationFocus location={userLocation} focusKey={locationFocusKey} />
+          {radiusIsActive && (
+            <Circle
+              center={[radiusReference.lat, radiusReference.lng]}
+              radius={filterRadius * 1000}
+              pathOptions={{ color: '#E24B4A', fillColor: '#E24B4A', fillOpacity: 0.06, weight: 1.5 }}
+            />
+          )}
+          {userLocation && (
+            <>
+              <Circle
+                center={[userLocation.lat, userLocation.lng]}
+                radius={Math.min(Math.max(userLocation.accuracy || 30, 25), 1200)}
+                pathOptions={{ color: '#2563EB', fillColor: '#2563EB', fillOpacity: 0.08, weight: 1 }}
+              />
+              <CircleMarker
+                center={[userLocation.lat, userLocation.lng]}
+                radius={8}
+                pathOptions={{ color: 'white', fillColor: '#2563EB', fillOpacity: 1, weight: 3 }}
+              />
+            </>
+          )}
           {filtered.map(company => {
             const isSelectedCompany = selected?.id === company.id
             return (
@@ -304,8 +447,13 @@ const cantons = [
 
       <div style={{padding:'6px',textAlign:'center',background:'#f9f9f9',borderTop:'1px solid #f0f0f0',flexShrink:0}}>
   <span style={{fontSize:12,color:'#999',display:'inline-flex',alignItems:'center',gap:4}}>
-    <HubbingIcon name="building" size={14} color="#999" /> {ui.map.registeredCount(companies.length)}
+    <HubbingIcon name="building" size={14} color="#999" /> {ui.map.filteredCount(filtered.length, companies.length)}
   </span>
+  {(locationStatus === 'denied' || locationStatus === 'unavailable') && (
+    <p style={{fontSize:11,color:'#F39C12',margin:'3px 0 0'}}>
+      {locationStatus === 'denied' ? ui.map.locationDenied : ui.map.locationUnavailable}
+    </p>
+  )}
 </div>
     </div>
   )
