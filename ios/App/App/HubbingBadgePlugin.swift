@@ -9,7 +9,8 @@ public class HubbingBadgePlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "HubbingBadge"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "setBadgeCount", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "clearBadge", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "clearBadge", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "showNotification", returnType: CAPPluginReturnPromise)
     ]
 
     @objc func setBadgeCount(_ call: CAPPluginCall) {
@@ -42,6 +43,38 @@ public class HubbingBadgePlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func clearBadge(_ call: CAPPluginCall) {
         setSystemBadgeCount(0) { error in
             self.complete(call, error: error, data: ["granted": true, "count": 0])
+        }
+    }
+
+    @objc func showNotification(_ call: CAPPluginCall) {
+        let title = call.getString("title") ?? "Hubbing"
+        let body = call.getString("body") ?? ""
+        let identifier = call.getString("id") ?? UUID().uuidString
+        let badgeCount = call.getInt("count")
+
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if let error = error {
+                self.complete(call, error: error)
+                return
+            }
+
+            guard granted else {
+                self.complete(call, data: ["granted": false])
+                return
+            }
+
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+            if let badgeCount = badgeCount {
+                content.badge = NSNumber(value: max(0, badgeCount))
+            }
+
+            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
+            UNUserNotificationCenter.current().add(request) { notificationError in
+                self.complete(call, error: notificationError, data: ["granted": true])
+            }
         }
     }
 

@@ -24,3 +24,18 @@ export async function clearAppBadge() {
     console.warn('Unable to clear iOS app badge:', error)
   }
 }
+
+export async function showNativeNotification({ title, body, count, id } = {}) {
+  if (!canUseNativeBadge()) return
+
+  try {
+    await HubbingBadge.showNotification({
+      title: title || 'Hubbing',
+      body: body || '',
+      count: Math.max(0, Number(count) || 0),
+      id: id || `hubbing-${Date.now()}`,
+    })
+  } catch (error) {
+    console.warn('Unable to show iOS notification:', error)
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { supabase } from './supabaseClient'
 import SwipeScreen from './SwipeScreen'
 import ProfileScreen from './ProfileScreen'
@@ -15,11 +15,31 @@ import { isNativeApp } from './platform'
 import { notifyTelegramActivity } from './telegramAlerts'
 import { HubbingIcon } from './icons'
 import { VerifiedBadge } from './VerifiedBadge'
-import { clearAppBadge, syncUnreadAppBadge } from './appBadge'
+import { clearAppBadge, showNativeNotification, syncUnreadAppBadge } from './appBadge'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
+const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
+const SESSION_LOCK_TTL_MINUTES = 35
+
+const getStoredSessionToken = (userId) => {
+  const key = `hubbing_session_token_${userId}`
+  const existing = window.localStorage.getItem(key)
+  if (existing) return existing
+  const token = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  window.localStorage.setItem(key, token)
+  return token
+}
+
+const getDeviceLabel = () => {
+  const ua = window.navigator?.userAgent || ''
+  const surface = isNativeApp() ? 'App iOS' : 'Web'
+  if (/iPad/i.test(ua)) return `${surface} iPad`
+  if (/iPhone/i.test(ua)) return `${surface} iPhone`
+  if (/Macintosh|Mac OS/i.test(ua)) return `${surface} Mac`
+  return surface
+}
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
@@ -84,6 +104,8 @@ const translations = {
     access: 'ACCÈS',
     email: 'Email professionnel *',
     password: 'Mot de passe (min. 6 caractères) *',
+    showPassword: 'Afficher',
+    hidePassword: 'Masquer',
     acceptCGU: "J'accepte les",
     cgu: "Conditions Générales d'Utilisation",
     and: 'et la',
@@ -115,6 +137,12 @@ const translations = {
     zefixChecking: 'Vérification Zefix en cours...',
     zefixVerified: (name) => `Entreprise vérifiée via Zefix${name ? ` : ${name}` : ''}`,
     zefixManualFallback: 'Vérification Zefix temporairement indisponible — contrôle manuel sous 24 à 48h ouvrables',
+    sessionAlreadyOpen: 'Votre compte est déjà ouvert sur un autre appareil. Déconnectez-vous de cet appareil ou réessayez dans 30 minutes.',
+    sessionExpired: 'Vous avez été déconnecté après 30 minutes d’inactivité.',
+    notificationNewMessageTitle: 'Nouveau message Hubbing',
+    notificationNewMessageBody: 'Vous avez reçu un nouveau message.',
+    notificationNewSignupTitle: 'Nouvelle inscription Hubbing',
+    notificationNewSignupBody: (name) => `${name || 'Une entreprise'} vient de s’inscrire sur Hubbing.`,
     demoMode: 'Mode visiteur',
     demoSwipe: 'Mode visiteur — connectez-vous pour matcher',
     demoMap: 'Mode visiteur — connectez-vous pour voir toutes les entreprises',
@@ -157,6 +185,8 @@ const translations = {
     access: 'ZUGANG',
     email: 'Geschäftliche E-Mail *',
     password: 'Passwort (mind. 6 Zeichen) *',
+    showPassword: 'Anzeigen',
+    hidePassword: 'Verbergen',
     acceptCGU: 'Ich akzeptiere die',
     cgu: 'Allgemeinen Geschäftsbedingungen',
     and: 'und die',
@@ -188,6 +218,12 @@ const translations = {
     zefixChecking: 'Zefix-Prüfung läuft...',
     zefixVerified: (name) => `Unternehmen via Zefix verifiziert${name ? `: ${name}` : ''}`,
     zefixManualFallback: 'Zefix-Prüfung vorübergehend nicht verfügbar — manuelle Prüfung innerhalb von 24 bis 48 Arbeitsstunden',
+    sessionAlreadyOpen: 'Ihr Konto ist bereits auf einem anderen Gerät geöffnet. Melden Sie sich dort ab oder versuchen Sie es in 30 Minuten erneut.',
+    sessionExpired: 'Sie wurden nach 30 Minuten Inaktivität abgemeldet.',
+    notificationNewMessageTitle: 'Neue Hubbing-Nachricht',
+    notificationNewMessageBody: 'Sie haben eine neue Nachricht erhalten.',
+    notificationNewSignupTitle: 'Neue Hubbing-Registrierung',
+    notificationNewSignupBody: (name) => `${name || 'Ein Unternehmen'} hat sich gerade bei Hubbing registriert.`,
     demoMode: 'Besucher-Modus',
     demoSwipe: 'Besucher-Modus — anmelden zum Matchen',
     demoMap: 'Besucher-Modus — anmelden für alle Unternehmen',
@@ -230,6 +266,8 @@ const translations = {
     access: 'ACCESSO',
     email: 'Email professionale *',
     password: 'Password (min. 6 caratteri) *',
+    showPassword: 'Mostra',
+    hidePassword: 'Nascondi',
     acceptCGU: 'Accetto i',
     cgu: 'Termini e Condizioni',
     and: 'e la',
@@ -261,6 +299,12 @@ const translations = {
     zefixChecking: 'Verifica Zefix in corso...',
     zefixVerified: (name) => `Azienda verificata tramite Zefix${name ? `: ${name}` : ''}`,
     zefixManualFallback: 'Verifica Zefix temporaneamente non disponibile — controllo manuale entro 24-48 ore lavorative',
+    sessionAlreadyOpen: 'Il tuo account è già aperto su un altro dispositivo. Disconnettiti da quel dispositivo o riprova tra 30 minuti.',
+    sessionExpired: 'Sei stato disconnesso dopo 30 minuti di inattività.',
+    notificationNewMessageTitle: 'Nuovo messaggio Hubbing',
+    notificationNewMessageBody: 'Hai ricevuto un nuovo messaggio.',
+    notificationNewSignupTitle: 'Nuova iscrizione Hubbing',
+    notificationNewSignupBody: (name) => `${name || "Un'azienda"} si è appena iscritta a Hubbing.`,
     demoMode: 'Modalità visitatore',
     demoSwipe: 'Modalità visitatore — accedi per fare match',
     demoMap: 'Modalità visitatore — accedi per vedere tutte le aziende',
@@ -303,6 +347,8 @@ const translations = {
     access: 'ACCESS',
     email: 'Professional email *',
     password: 'Password (min. 6 characters) *',
+    showPassword: 'Show',
+    hidePassword: 'Hide',
     acceptCGU: 'I accept the',
     cgu: 'Terms and Conditions',
     and: 'and the',
@@ -334,6 +380,12 @@ const translations = {
     zefixChecking: 'Checking Zefix...',
     zefixVerified: (name) => `Company verified through Zefix${name ? `: ${name}` : ''}`,
     zefixManualFallback: 'Zefix verification temporarily unavailable — manual review within 24 to 48 business hours',
+    sessionAlreadyOpen: 'Your account is already open on another device. Sign out there or try again in 30 minutes.',
+    sessionExpired: 'You were signed out after 30 minutes of inactivity.',
+    notificationNewMessageTitle: 'New Hubbing message',
+    notificationNewMessageBody: 'You received a new message.',
+    notificationNewSignupTitle: 'New Hubbing registration',
+    notificationNewSignupBody: (name) => `${name || 'A company'} just registered on Hubbing.`,
     demoMode: 'Visitor mode',
     demoSwipe: 'Visitor mode — log in to match',
     demoMap: 'Visitor mode — log in to see all companies',
@@ -921,6 +973,7 @@ function LoginScreen({ setScreen, t }) {
 function RegisterScreen({ setScreen, t }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [company, setCompany] = useState('')
   const [zefix, setZefix] = useState('')
   const [contactName, setContactName] = useState('')
@@ -1261,8 +1314,15 @@ if (zefixStatus === 'invalid') {
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{t.access}</p>
       <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email"
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
-      <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type="password"
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+      <div style={{position:'relative'}}>
+        <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type={showPassword ? 'text' : 'password'}
+          style={{width:'100%',padding:'14px 96px 14px 14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+        <button type="button" onClick={() => setShowPassword(value => !value)}
+          aria-label={showPassword ? t.hidePassword : t.showPassword}
+          style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',border:'none',background:'#f5f5f5',borderRadius:8,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#666',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+          {showPassword ? t.hidePassword : t.showPassword}
+        </button>
+      </div>
 
       <div style={{display:'flex',alignItems:'flex-start',gap:10,marginTop:'0.25rem'}}>
         <input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}
@@ -1487,22 +1547,183 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [companyProfileReturn, setCompanyProfileReturn] = useState(null)
   const [userPlan, setUserPlan] = useState('Starter')
   const [unreadCount, setUnreadCount] = useState(0)
+  const [adminRegistrationCount, setAdminRegistrationCount] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [sessionReady, setSessionReady] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [directMessageCompanyId, setDirectMessageCompanyId] = useState(null)
   const [directMessageDraft, setDirectMessageDraft] = useState(null)
+  const unreadCountRef = useRef(0)
+  const adminRegistrationCountRef = useRef(0)
+  const sessionTokenRef = useRef(null)
+  const signingOutRef = useRef(false)
+  const inactivityTimerRef = useRef(null)
   const ui = getUiText(lang)
+  const adminRegistrationStorageKey = `hubbing_admin_registration_badge_${user.id}`
+
+const setAdminRegistrationBadge = (count) => {
+  const safeCount = Math.max(0, Number(count) || 0)
+  adminRegistrationCountRef.current = safeCount
+  setAdminRegistrationCount(safeCount)
+  if (safeCount > 0) {
+    window.localStorage.setItem(adminRegistrationStorageKey, String(safeCount))
+  } else {
+    window.localStorage.removeItem(adminRegistrationStorageKey)
+  }
+}
+
+const releaseSessionLock = async () => {
+  const token = sessionTokenRef.current
+  if (!token) return
+  try {
+    await supabase.rpc('hubbing_release_session_lock', { p_token: token })
+  } catch (error) {
+    console.warn('Unable to release session lock:', error)
+  }
+}
+
+const forceSignOut = async (message) => {
+  if (signingOutRef.current) return
+  signingOutRef.current = true
+  if (message) window.alert(message)
+  await releaseSessionLock()
+  await clearAppBadge()
+  await supabase.auth.signOut()
+}
 
 useEffect(() => {
+  unreadCountRef.current = unreadCount
+}, [unreadCount])
+
+useEffect(() => {
+  adminRegistrationCountRef.current = adminRegistrationCount
+}, [adminRegistrationCount])
+
+useEffect(() => {
+  let cancelled = false
+  const acquireSessionLock = async () => {
+    const token = getStoredSessionToken(user.id)
+    sessionTokenRef.current = token
+    const { data, error } = await supabase.rpc('hubbing_acquire_session_lock', {
+      p_token: token,
+      p_device_label: getDeviceLabel(),
+      p_ttl_minutes: SESSION_LOCK_TTL_MINUTES,
+    })
+    if (cancelled) return
+    if (error) {
+      console.warn('Session lock unavailable:', error)
+      setSessionReady(true)
+      return
+    }
+    if (data?.acquired === false) {
+      await forceSignOut(t.sessionAlreadyOpen)
+      return
+    }
+    setSessionReady(true)
+  }
+
+  acquireSessionLock()
+  return () => {
+    cancelled = true
+  }
+}, [user.id])
+
+useEffect(() => {
+  if (!sessionReady) return undefined
+
+  const refreshSessionLock = async () => {
+    const token = sessionTokenRef.current
+    if (!token || signingOutRef.current) return
+    const { data, error } = await supabase.rpc('hubbing_refresh_session_lock', {
+      p_token: token,
+      p_ttl_minutes: SESSION_LOCK_TTL_MINUTES,
+    })
+    if (error) {
+      console.warn('Unable to refresh session lock:', error)
+      return
+    }
+    if (data?.active === false) {
+      await forceSignOut(t.sessionAlreadyOpen)
+    }
+  }
+
+  refreshSessionLock()
+  const interval = window.setInterval(refreshSessionLock, 60 * 1000)
+  const handleVisibilityChange = () => {
+    if (!document.hidden) refreshSessionLock()
+  }
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+
+  return () => {
+    window.clearInterval(interval)
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }
+}, [sessionReady, t.sessionAlreadyOpen])
+
+useEffect(() => {
+  if (!sessionReady) return undefined
+
+  const expireForInactivity = async () => {
+    await forceSignOut(t.sessionExpired)
+  }
+  const resetInactivityTimer = () => {
+    window.clearTimeout(inactivityTimerRef.current)
+    inactivityTimerRef.current = window.setTimeout(expireForInactivity, SESSION_IDLE_LIMIT_MS)
+  }
+  const events = ['click', 'keydown', 'touchstart', 'scroll', 'pointerdown']
+  events.forEach(eventName => window.addEventListener(eventName, resetInactivityTimer, { passive: true }))
+  resetInactivityTimer()
+
+  return () => {
+    window.clearTimeout(inactivityTimerRef.current)
+    events.forEach(eventName => window.removeEventListener(eventName, resetInactivityTimer))
+  }
+}, [sessionReady, t.sessionExpired])
+
+useEffect(() => {
+  let cancelled = false
+  const checkAdminAccess = async () => {
+    const { data } = await supabase
+      .from('admins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (cancelled) return
+    const allowed = Boolean(data)
+    setIsAdmin(allowed)
+    if (allowed) {
+      const storedCount = Number(window.localStorage.getItem(adminRegistrationStorageKey) || 0)
+      setAdminRegistrationBadge(storedCount)
+    }
+  }
+  checkAdminAccess()
+  return () => {
+    cancelled = true
+  }
+}, [user.id])
+
+useEffect(() => {
+  if (!sessionReady) return undefined
   loadUnreadCount()
   const sub = supabase
     .channel('notifications-' + user.id)
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'notifications',
       filter: `user_id=eq.${user.id}`
-    }, () => { loadUnreadCount() })
+    }, async (payload) => {
+      const nextUnreadCount = await loadUnreadCount()
+      if (payload.new?.type === 'new_message') {
+        await showNativeNotification({
+          title: t.notificationNewMessageTitle,
+          body: t.notificationNewMessageBody,
+          count: nextUnreadCount + adminRegistrationCountRef.current,
+          id: `message-${payload.new?.id || Date.now()}`,
+        })
+      }
+    })
     .subscribe()
   return () => supabase.removeChannel(sub)
-}, [user])
+}, [sessionReady, user.id, t.notificationNewMessageTitle, t.notificationNewMessageBody])
 
 const loadUnreadCount = async () => {
   const { count } = await supabase
@@ -1511,12 +1732,41 @@ const loadUnreadCount = async () => {
     .eq('user_id', user.id)
     .eq('type', 'new_message')
     .eq('read', false)
-  setUnreadCount(count || 0)
+  const nextCount = count || 0
+  unreadCountRef.current = nextCount
+  setUnreadCount(nextCount)
+  return nextCount
 }
 
   useEffect(() => {
-    syncUnreadAppBadge(unreadCount)
-  }, [unreadCount])
+    syncUnreadAppBadge(unreadCount + adminRegistrationCount)
+  }, [unreadCount, adminRegistrationCount])
+
+useEffect(() => {
+  if (!sessionReady || !isAdmin) return undefined
+  const sub = supabase
+    .channel('admin-company-inserts-' + user.id)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'companies',
+    }, async (payload) => {
+      const nextCount = adminRegistrationCountRef.current + 1
+      setAdminRegistrationBadge(nextCount)
+      await showNativeNotification({
+        title: t.notificationNewSignupTitle,
+        body: t.notificationNewSignupBody(payload.new?.name),
+        count: unreadCountRef.current + nextCount,
+        id: `registration-${payload.new?.id || Date.now()}`,
+      })
+    })
+    .subscribe()
+  return () => supabase.removeChannel(sub)
+}, [sessionReady, isAdmin, user.id, t.notificationNewSignupTitle, t.notificationNewSignupBody])
+
+useEffect(() => {
+  if (isAdmin && activeTab === 'profile' && adminRegistrationCount > 0) {
+    setAdminRegistrationBadge(0)
+  }
+}, [isAdmin, activeTab, adminRegistrationCount])
 
   useEffect(() => {
   supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
@@ -1525,6 +1775,8 @@ const loadUnreadCount = async () => {
     })
   }, [user])
   const handleLogout = async () => {
+    signingOutRef.current = true
+    await releaseSessionLock()
     await clearAppBadge()
     await supabase.auth.signOut()
   }
@@ -1556,6 +1808,14 @@ const handleCompanyProfileBack = () => {
     fontWeight: activeTab === tab ? 700 : 500,
     fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   })
+
+  if (!sessionReady) {
+    return (
+      <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'white',fontFamily:'Plus Jakarta Sans',color:'#666'}}>
+        {ui.common.loading}
+      </div>
+    )
+  }
 
   return (
     <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh'}}>{ui.common.loading}</div>}>
@@ -1682,6 +1942,11 @@ const handleCompanyProfileBack = () => {
         {tab.id === 'messages' && unreadCount > 0 && (
           <div style={{position:'absolute',top:-3,right:'calc(50% - 20px)',background:'#E24B4A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>
             {unreadCount > 9 ? '9+' : unreadCount}
+          </div>
+        )}
+        {tab.id === 'profile' && isAdmin && adminRegistrationCount > 0 && (
+          <div style={{position:'absolute',top:-3,right:'calc(50% - 20px)',background:'#E24B4A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>
+            {adminRegistrationCount > 9 ? '9+' : adminRegistrationCount}
           </div>
         )}
       </div>
