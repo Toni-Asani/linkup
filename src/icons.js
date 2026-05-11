@@ -1,4 +1,5 @@
 import {
+  Apple,
   BriefcaseBusiness,
   Building2,
   Check,
@@ -69,6 +70,7 @@ function MessageDotsIcon({ size = 23, color = '#4B5563', strokeWidth = 2 }) {
 }
 
 const icons = {
+  apple: Apple,
   home: House,
   swipe: SwipeGestureIcon,
   map: Map,

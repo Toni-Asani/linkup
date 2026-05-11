@@ -19,6 +19,7 @@ import { clearAppBadge, showNativeNotification, syncUnreadAppBadge } from './app
 import { registerPushNotifications } from './pushNotifications'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
+const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
@@ -712,6 +713,34 @@ const handleWaitlist = async () => {
     </div>
   )
 
+  const PlanPhone = ({ name, price, variant, color, features, recommended }) => (
+    <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:104,minHeight:172,flexShrink:0,border:`1px solid ${color}33`,display:'flex',flexDirection:'column',gap:7,textAlign:'left'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:4}}>
+        <span style={{fontSize:11,fontWeight:800,color,display:'inline-flex',alignItems:'center',gap:3}}>
+          {name}
+          <VerifiedBadge size={13} variant={variant} />
+        </span>
+        {recommended && (
+          <span style={{fontSize:6,fontWeight:800,color:'white',background:'#E24B4A',borderRadius:999,padding:'3px 5px'}}>
+            TOP
+          </span>
+        )}
+      </div>
+      <p style={{fontSize:13,fontWeight:900,color:'#111827',margin:0,lineHeight:1.1}}>{price}</p>
+      <div style={{display:'flex',flexDirection:'column',gap:5,flex:1}}>
+        {features.map((feature) => (
+          <p key={feature} style={{fontSize:8.5,color:'#64748B',lineHeight:1.25,margin:0,display:'flex',gap:3}}>
+            <span style={{color,fontWeight:900}}>✓</span>
+            <span>{feature}</span>
+          </p>
+        ))}
+      </div>
+      <div style={{background:color,borderRadius:8,padding:'6px 5px',textAlign:'center',marginTop:'auto'}}>
+        <span style={{fontSize:8,fontWeight:800,color:'white'}}>Voir le plan</span>
+      </div>
+    </div>
+  )
+
   return (
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 10rem)',gap:'1.5rem',textAlign:'center',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
 
@@ -741,6 +770,14 @@ const handleWaitlist = async () => {
           style={{width:'100%',padding:'13px 16px',background:isStandalone ? '#f0fdf4' : '#1a1a1a',color:isStandalone ? '#15803d' : 'white',border:isStandalone ? '1px solid #bbf7d0' : 'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:isStandalone ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:isStandalone ? 'none' : '0 8px 24px rgba(0,0,0,0.12)'}}>
           {isStandalone ? 'Application installée' : "Installer l'application sur mon téléphone"}
         </button>
+        <a
+          href={APP_STORE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{width:'100%',marginTop:10,padding:'13px 16px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(226,75,74,0.18)',display:'flex',alignItems:'center',justifyContent:'center',gap:8,textDecoration:'none'}}>
+          <HubbingIcon name="apple" size={18} color="white" />
+          Télécharger l'app sur App Store
+        </a>
         {showInstallHelp && !isStandalone && (
           <div style={{marginTop:10,background:'#f9f9f9',border:'1px solid #eee',borderRadius:12,padding:'0.85rem',textAlign:'left'}}>
             <p style={{fontSize:12,color:'#1a1a1a',fontWeight:700,margin:'0 0 6px'}}>Installation sur téléphone</p>
@@ -814,8 +851,40 @@ const handleWaitlist = async () => {
         </div>
       </div>
 
+      {/* Plans */}
+      <div style={{width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.6s both'}}>
+        <div style={{textAlign:'center',marginBottom:12}}>
+          <p style={{fontSize:12,color:'#E24B4A',fontWeight:800,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:0.4}}>Abonnements</p>
+          <h3 style={{fontSize:22,fontWeight:900,color:'#111827',letterSpacing:'-0.3px',lineHeight:1.2,margin:0}}>Choisissez le plan adapté</h3>
+        </div>
+        <div style={{display:'flex',gap:10,justifyContent:'center',alignItems:'stretch',overflow:'visible',width:'100%',minHeight:178}}>
+          <PlanPhone
+            name="Starter"
+            price="Gratuit"
+            variant="starter"
+            color="#A16207"
+            features={['Profil entreprise', '5 swipes par jour', '5 messages/jour']}
+          />
+          <PlanPhone
+            name="Basic"
+            price="CHF 19.-"
+            variant="basic"
+            color="#185FA5"
+            features={['Swipes illimités', 'Messages illimités', 'Adresse visible']}
+          />
+          <PlanPhone
+            name="Premium"
+            price="CHF 39.-"
+            variant="premium"
+            color="#E24B4A"
+            recommended
+            features={['Tout Basic inclus', 'Coordonnées complètes', 'Pièces jointes']}
+          />
+        </div>
+      </div>
+
       {/* Features */}
-      <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.7s both'}}>
+      <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.75s both'}}>
         <Feature icon="briefcase" title="Swipe B2B" desc="Découvrez des entreprises locales et matchez avec celles qui correspondent à vos besoins en un seul geste." />
         <Feature icon="map" title="Carte interactive" desc="Visualisez toutes les entreprises autour de vous, filtrez par secteur et canton." />
         <Feature icon="message" title="Messagerie pro" desc="Échangez directement avec vos connexions B2B et partagez des documents en toute sécurité." />
