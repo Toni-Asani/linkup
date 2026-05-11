@@ -16,6 +16,7 @@ import { notifyTelegramActivity } from './telegramAlerts'
 import { HubbingIcon } from './icons'
 import { VerifiedBadge } from './VerifiedBadge'
 import { clearAppBadge, showNativeNotification, syncUnreadAppBadge } from './appBadge'
+import { registerPushNotifications } from './pushNotifications'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
@@ -141,8 +142,8 @@ const translations = {
     sessionExpired: 'Vous avez été déconnecté après 30 minutes d’inactivité.',
     notificationNewMessageTitle: 'Nouveau message Hubbing',
     notificationNewMessageBody: 'Vous avez reçu un nouveau message.',
-    notificationNewSignupTitle: 'Nouvelle inscription Hubbing',
-    notificationNewSignupBody: (name) => `${name || 'Une entreprise'} vient de s’inscrire sur Hubbing.`,
+    notificationNewMatchTitle: 'Nouveau match Hubbing',
+    notificationNewMatchBody: 'Une entreprise vient de matcher avec vous.',
     demoMode: 'Mode visiteur',
     demoSwipe: 'Mode visiteur — connectez-vous pour matcher',
     demoMap: 'Mode visiteur — connectez-vous pour voir toutes les entreprises',
@@ -222,8 +223,8 @@ const translations = {
     sessionExpired: 'Sie wurden nach 30 Minuten Inaktivität abgemeldet.',
     notificationNewMessageTitle: 'Neue Hubbing-Nachricht',
     notificationNewMessageBody: 'Sie haben eine neue Nachricht erhalten.',
-    notificationNewSignupTitle: 'Neue Hubbing-Registrierung',
-    notificationNewSignupBody: (name) => `${name || 'Ein Unternehmen'} hat sich gerade bei Hubbing registriert.`,
+    notificationNewMatchTitle: 'Neues Hubbing-Match',
+    notificationNewMatchBody: 'Ein Unternehmen hat gerade mit Ihnen gematcht.',
     demoMode: 'Besucher-Modus',
     demoSwipe: 'Besucher-Modus — anmelden zum Matchen',
     demoMap: 'Besucher-Modus — anmelden für alle Unternehmen',
@@ -303,8 +304,8 @@ const translations = {
     sessionExpired: 'Sei stato disconnesso dopo 30 minuti di inattività.',
     notificationNewMessageTitle: 'Nuovo messaggio Hubbing',
     notificationNewMessageBody: 'Hai ricevuto un nuovo messaggio.',
-    notificationNewSignupTitle: 'Nuova iscrizione Hubbing',
-    notificationNewSignupBody: (name) => `${name || "Un'azienda"} si è appena iscritta a Hubbing.`,
+    notificationNewMatchTitle: 'Nuovo match Hubbing',
+    notificationNewMatchBody: "Un'azienda ha appena fatto match con te.",
     demoMode: 'Modalità visitatore',
     demoSwipe: 'Modalità visitatore — accedi per fare match',
     demoMap: 'Modalità visitatore — accedi per vedere tutte le aziende',
@@ -384,8 +385,8 @@ const translations = {
     sessionExpired: 'You were signed out after 30 minutes of inactivity.',
     notificationNewMessageTitle: 'New Hubbing message',
     notificationNewMessageBody: 'You received a new message.',
-    notificationNewSignupTitle: 'New Hubbing registration',
-    notificationNewSignupBody: (name) => `${name || 'A company'} just registered on Hubbing.`,
+    notificationNewMatchTitle: 'New Hubbing match',
+    notificationNewMatchBody: 'A company just matched with you.',
     demoMode: 'Visitor mode',
     demoSwipe: 'Visitor mode — log in to match',
     demoMap: 'Visitor mode — log in to see all companies',
@@ -1547,30 +1548,15 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [companyProfileReturn, setCompanyProfileReturn] = useState(null)
   const [userPlan, setUserPlan] = useState('Starter')
   const [unreadCount, setUnreadCount] = useState(0)
-  const [adminRegistrationCount, setAdminRegistrationCount] = useState(0)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [directMessageCompanyId, setDirectMessageCompanyId] = useState(null)
   const [directMessageDraft, setDirectMessageDraft] = useState(null)
   const unreadCountRef = useRef(0)
-  const adminRegistrationCountRef = useRef(0)
   const sessionTokenRef = useRef(null)
   const signingOutRef = useRef(false)
   const inactivityTimerRef = useRef(null)
   const ui = getUiText(lang)
-  const adminRegistrationStorageKey = `hubbing_admin_registration_badge_${user.id}`
-
-const setAdminRegistrationBadge = (count) => {
-  const safeCount = Math.max(0, Number(count) || 0)
-  adminRegistrationCountRef.current = safeCount
-  setAdminRegistrationCount(safeCount)
-  if (safeCount > 0) {
-    window.localStorage.setItem(adminRegistrationStorageKey, String(safeCount))
-  } else {
-    window.localStorage.removeItem(adminRegistrationStorageKey)
-  }
-}
 
 const releaseSessionLock = async () => {
   const token = sessionTokenRef.current
@@ -1594,10 +1580,6 @@ const forceSignOut = async (message) => {
 useEffect(() => {
   unreadCountRef.current = unreadCount
 }, [unreadCount])
-
-useEffect(() => {
-  adminRegistrationCountRef.current = adminRegistrationCount
-}, [adminRegistrationCount])
 
 useEffect(() => {
   let cancelled = false
@@ -1681,26 +1663,21 @@ useEffect(() => {
 }, [sessionReady, t.sessionExpired])
 
 useEffect(() => {
-  let cancelled = false
-  const checkAdminAccess = async () => {
-    const { data } = await supabase
-      .from('admins')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    if (cancelled) return
-    const allowed = Boolean(data)
-    setIsAdmin(allowed)
-    if (allowed) {
-      const storedCount = Number(window.localStorage.getItem(adminRegistrationStorageKey) || 0)
-      setAdminRegistrationBadge(storedCount)
+  if (!sessionReady) return undefined
+  let cleanupPush = null
+  let active = true
+  registerPushNotifications().then(cleanup => {
+    if (!active) {
+      cleanup?.()
+      return
     }
-  }
-  checkAdminAccess()
+    cleanupPush = cleanup
+  })
   return () => {
-    cancelled = true
+    active = false
+    cleanupPush?.()
   }
-}, [user.id])
+}, [sessionReady, user.id])
 
 useEffect(() => {
   if (!sessionReady) return undefined
@@ -1716,21 +1693,28 @@ useEffect(() => {
         await showNativeNotification({
           title: t.notificationNewMessageTitle,
           body: t.notificationNewMessageBody,
-          count: nextUnreadCount + adminRegistrationCountRef.current,
+          count: nextUnreadCount,
           id: `message-${payload.new?.id || Date.now()}`,
+        })
+      } else if (payload.new?.type === 'new_match') {
+        await showNativeNotification({
+          title: t.notificationNewMatchTitle,
+          body: t.notificationNewMatchBody,
+          count: nextUnreadCount,
+          id: `match-${payload.new?.id || Date.now()}`,
         })
       }
     })
     .subscribe()
   return () => supabase.removeChannel(sub)
-}, [sessionReady, user.id, t.notificationNewMessageTitle, t.notificationNewMessageBody])
+}, [sessionReady, user.id, t.notificationNewMessageTitle, t.notificationNewMessageBody, t.notificationNewMatchTitle, t.notificationNewMatchBody])
 
 const loadUnreadCount = async () => {
   const { count } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .eq('type', 'new_message')
+    .in('type', ['new_message', 'new_match'])
     .eq('read', false)
   const nextCount = count || 0
   unreadCountRef.current = nextCount
@@ -1739,34 +1723,8 @@ const loadUnreadCount = async () => {
 }
 
   useEffect(() => {
-    syncUnreadAppBadge(unreadCount + adminRegistrationCount)
-  }, [unreadCount, adminRegistrationCount])
-
-useEffect(() => {
-  if (!sessionReady || !isAdmin) return undefined
-  const sub = supabase
-    .channel('admin-company-inserts-' + user.id)
-    .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'companies',
-    }, async (payload) => {
-      const nextCount = adminRegistrationCountRef.current + 1
-      setAdminRegistrationBadge(nextCount)
-      await showNativeNotification({
-        title: t.notificationNewSignupTitle,
-        body: t.notificationNewSignupBody(payload.new?.name),
-        count: unreadCountRef.current + nextCount,
-        id: `registration-${payload.new?.id || Date.now()}`,
-      })
-    })
-    .subscribe()
-  return () => supabase.removeChannel(sub)
-}, [sessionReady, isAdmin, user.id, t.notificationNewSignupTitle, t.notificationNewSignupBody])
-
-useEffect(() => {
-  if (isAdmin && activeTab === 'profile' && adminRegistrationCount > 0) {
-    setAdminRegistrationBadge(0)
-  }
-}, [isAdmin, activeTab, adminRegistrationCount])
+    syncUnreadAppBadge(unreadCount)
+  }, [unreadCount])
 
   useEffect(() => {
   supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
@@ -1942,11 +1900,6 @@ const handleCompanyProfileBack = () => {
         {tab.id === 'messages' && unreadCount > 0 && (
           <div style={{position:'absolute',top:-3,right:'calc(50% - 20px)',background:'#E24B4A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>
             {unreadCount > 9 ? '9+' : unreadCount}
-          </div>
-        )}
-        {tab.id === 'profile' && isAdmin && adminRegistrationCount > 0 && (
-          <div style={{position:'absolute',top:-3,right:'calc(50% - 20px)',background:'#E24B4A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>
-            {adminRegistrationCount > 9 ? '9+' : adminRegistrationCount}
           </div>
         )}
       </div>

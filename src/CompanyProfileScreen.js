@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
+import { createNotificationAndPush } from './pushDelivery'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -134,10 +135,11 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             .eq('id', companyId)
             .single()
           if (otherUser?.user_id) {
-            await supabase.from('notifications').insert([
-              { user_id: user.id, type: 'new_match', match_id: newMatch.id },
-              { user_id: otherUser.user_id, type: 'new_match', match_id: newMatch.id }
-            ])
+            await createNotificationAndPush({
+              user_id: otherUser.user_id,
+              type: 'new_match',
+              match_id: newMatch.id
+            })
           }
         }
       }

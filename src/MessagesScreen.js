@@ -5,6 +5,7 @@ import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
+import { createNotificationAndPush } from './pushDelivery'
 
 const STARTER_DAILY_MESSAGE_LIMIT = 5
 const MESSAGE_CHAR_LIMITS = {
@@ -140,7 +141,7 @@ useEffect(() => {
       .from('notifications')
       .select('match_id')
       .eq('user_id', user.id)
-      .eq('type', 'new_message')
+      .in('type', ['new_message', 'new_match'])
       .eq('read', false)
     const grouped = {}
     ;(data || []).forEach(item => {
@@ -156,7 +157,7 @@ useEffect(() => {
       .from('notifications')
       .update({ read: true })
       .eq('user_id', user.id)
-      .eq('type', 'new_message')
+      .in('type', ['new_message', 'new_match'])
       .eq('match_id', matchId)
       .eq('read', false)
     setUnreadByMatch(current => ({ ...current, [matchId]: 0 }))
@@ -275,7 +276,7 @@ useEffect(() => {
   const notifyMessageRecipient = async (match) => {
     const other = getOtherCompany(match)
     if (!other?.user_id) return
-    await supabase.from('notifications').insert({
+    await createNotificationAndPush({
       user_id: other.user_id,
       type: 'new_message',
       match_id: match.id
