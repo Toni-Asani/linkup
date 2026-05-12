@@ -54,6 +54,7 @@ const sectors = Object.keys(sectorColors)
 const SWIPE_THRESHOLD = 85
 const SWIPE_ANIMATION_MS = 420
 const UNDO_ANIMATION_MS = 360
+const PLAN_PRIORITY = { premium: 0, basic: 1, starter: 2 }
 
 const haversine = (lat1, lng1, lat2, lng2) => {
   const R = 6371
@@ -71,6 +72,18 @@ const getActiveTags = (needs_tags) => {
     return tags.filter(t => !t.expires || new Date(t.expires) > new Date())
   } catch { return [] }
 }
+
+const getCompanyPlanRank = (company) => {
+  const subscription = Array.isArray(company?.subscriptions) ? company.subscriptions[0] : company?.subscriptions
+  const plan = String(subscription?.plan || 'starter').toLowerCase()
+  return PLAN_PRIORITY[plan] ?? PLAN_PRIORITY.starter
+}
+
+const sortCompaniesForSwipe = (companyList = []) => [...companyList].sort((a, b) => {
+  const planDiff = getCompanyPlanRank(a) - getCompanyPlanRank(b)
+  if (planDiff !== 0) return planDiff
+  return String(a?.name || '').localeCompare(String(b?.name || ''), 'fr', { sensitivity: 'base' })
+})
 
 export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActiveTab, setSelectedCompanyId, setCompanyProfileReturn, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
   const ui = getUiText(lang)
@@ -195,15 +208,16 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
       return
     }
     const companiesWithSubscriptions = await attachCompanySubscriptions(supabase, data || [])
+    const orderedCompanies = sortCompaniesForSwipe(companiesWithSubscriptions)
     if (!data || data.length === 0) {
       setAllSeen(true)
       setCompanies([])
       setFilteredCompanies([])
     } else {
-      setCompanies(companiesWithSubscriptions)
-      setFilteredCompanies(companiesWithSubscriptions)
+      setCompanies(orderedCompanies)
+      setFilteredCompanies(orderedCompanies)
       setCurrent(0)
-      const avgRatings = await loadRatings(companiesWithSubscriptions)
+      const avgRatings = await loadRatings(orderedCompanies)
       setRatings(avgRatings)
     }
     setLoading(false)

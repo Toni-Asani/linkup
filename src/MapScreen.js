@@ -234,15 +234,28 @@ const cantons = [
   {code:'ZG', name:'Zoug'},
   {code:'ZH', name:'Zurich'},
 ]
-  const createIcon = (color, isSelected = false) => L.divIcon({
-    className: '',
-    html: `<div style="position:relative;width:${isSelected ? 36 : 28}px;height:${isSelected ? 42 : 28}px;">
-      ${isSelected ? `<div style="position:absolute;left:50%;top:-7px;transform:translateX(-50%);width:15px;height:15px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.35);"></div>` : ''}
-      <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:${isSelected ? 34 : 28}px;height:${isSelected ? 34 : 28}px;background:${color};border-radius:50%;border:${isSelected ? 4 : 3}px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.35);"></div>
-    </div>`,
-    iconSize: [isSelected ? 36 : 28, isSelected ? 42 : 28],
-    iconAnchor: [isSelected ? 18 : 14, isSelected ? 25 : 14],
-  })
+  const createIcon = (color, isSelected = false) => {
+    if (isSelected) {
+      return L.divIcon({
+        className: '',
+        html: `<div style="position:relative;width:30px;height:32px;">
+          <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:28px solid white;filter:drop-shadow(0 2px 7px rgba(0,0,0,0.35));"></div>
+          <div style="position:absolute;left:50%;bottom:5px;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:20px solid ${color};"></div>
+        </div>`,
+        iconSize: [30, 32],
+        iconAnchor: [15, 32],
+      })
+    }
+
+    return L.divIcon({
+      className: '',
+      html: `<div style="position:relative;width:28px;height:28px;">
+        <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:28px;height:28px;background:${color};border-radius:50%;border:3px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.35);"></div>
+      </div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    })
+  }
   const isSatellite = mapStyle === 'satellite'
   const openSelectedProfile = () => {
     if (!selected) return

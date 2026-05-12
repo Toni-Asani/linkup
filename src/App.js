@@ -25,6 +25,50 @@ const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
 const SESSION_LOCK_TTL_MINUTES = 35
 
+const COMPANY_SECTORS = [
+  'Fiduciaire & Comptabilité',
+  'Design & Créatif',
+  'Informatique & Tech',
+  'BTP & Construction',
+  'Marketing & Publicité',
+  'Ressources Humaines',
+  'Transport & Déménagement',
+  'Services aux entreprises',
+  'Architecture & Urbanisme',
+  'Assurance & Prévoyance',
+  'Automobile & Mobilité',
+  'Banque & Finance',
+  'Chimie & Pharmacie',
+  'Commerce de détail',
+  'Communication & PR',
+  'Conseil & Stratégie',
+  'Distribution & Logistique',
+  'Droit & Juridique',
+  'E-commerce',
+  'Éducation & Formation',
+  'Energie & Environnement',
+  'Hôtellerie & Restauration',
+  'Immobilier',
+  'Import & Export',
+  'Imprimerie & Édition',
+  'Industrie & Manufacturing',
+  'Luxe & Horlogerie',
+  'Médias & Presse',
+  'Médical & Clinique',
+  'Nettoyage & Facility',
+  'Optique & Lunetterie',
+  'Santé & Bien-être',
+  'Sanitaire & Plomberie',
+  'Sécurité & Surveillance',
+  'Sport & Loisirs',
+  'Telecommunications',
+  'Textile & Mode',
+  'Tourisme & Voyages',
+  'Agriculture & Viticulture',
+  'Arts & Culture',
+  'Autre',
+]
+
 const getStoredSessionToken = (userId) => {
   const key = `hubbing_session_token_${userId}`
   const existing = window.localStorage.getItem(key)
@@ -98,6 +142,7 @@ const translations = {
     registerSubtitle: 'Réservé aux entreprises enregistrées en Suisse',
     companyInfo: 'INFORMATIONS ENTREPRISE',
     companyName: "Nom de l'entreprise *",
+    sector: "Secteur d'activité *",
     ideNumber: 'Numéro IDE (CHE-xxx.xxx.xxx) *',
     companyAddress: "Adresse de l'entreprise *",
     contactInfo: 'DÉCIDEUR / CONTACT PRINCIPAL',
@@ -179,6 +224,7 @@ const translations = {
     registerSubtitle: 'Nur für in der Schweiz registrierte Unternehmen',
     companyInfo: 'UNTERNEHMENSINFORMATIONEN',
     companyName: 'Unternehmensname *',
+    sector: 'Branche *',
     ideNumber: 'UID-Nummer (CHE-xxx.xxx.xxx) *',
     companyAddress: 'Unternehmensadresse *',
     contactInfo: 'ENTSCHEIDUNGSTRÄGER / HAUPTKONTAKT',
@@ -260,6 +306,7 @@ const translations = {
     registerSubtitle: 'Riservato alle aziende registrate in Svizzera',
     companyInfo: 'INFORMAZIONI AZIENDALI',
     companyName: "Nome dell'azienda *",
+    sector: 'Settore di attività *',
     ideNumber: 'Numero IDE (CHE-xxx.xxx.xxx) *',
     companyAddress: "Indirizzo dell'azienda *",
     contactInfo: 'RESPONSABILE / CONTATTO PRINCIPALE',
@@ -341,6 +388,7 @@ const translations = {
     registerSubtitle: 'Reserved for companies registered in Switzerland',
     companyInfo: 'COMPANY INFORMATION',
     companyName: 'Company name *',
+    sector: 'Business sector *',
     ideNumber: 'IDE number (CHE-xxx.xxx.xxx) *',
     companyAddress: 'Company address *',
     contactInfo: 'DECISION MAKER / MAIN CONTACT',
@@ -987,6 +1035,7 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
 function LoginScreen({ setScreen, t }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -1022,8 +1071,15 @@ function LoginScreen({ setScreen, t }) {
       <h2 style={{fontSize:24,fontWeight:700,marginBottom:'0.5rem'}}>{t.loginTitle}</h2>
       <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email"
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
-      <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type="password"
-        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+      <div style={{position:'relative'}}>
+        <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type={showPassword ? 'text' : 'password'}
+          style={{width:'100%',padding:'14px 96px 14px 14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+        <button type="button" onClick={() => setShowPassword(value => !value)}
+          aria-label={showPassword ? t.hidePassword : t.showPassword}
+          style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',border:'none',background:'#f5f5f5',borderRadius:8,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#666',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+          {showPassword ? t.hidePassword : t.showPassword}
+        </button>
+      </div>
       {error && <p style={{color:'#E24B4A',fontSize:13}}>{error}</p>}
       <button onClick={handleLogin} disabled={loading}
         style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
@@ -1045,6 +1101,7 @@ function RegisterScreen({ setScreen, t }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [company, setCompany] = useState('')
+  const [sector, setSector] = useState('')
   const [zefix, setZefix] = useState('')
   const [contactName, setContactName] = useState('')
   const [contactTitle, setContactTitle] = useState('')
@@ -1089,6 +1146,7 @@ const verifyZefixForRegistration = async (clean) => {
       body: JSON.stringify({
         zefix: clean,
         company,
+        sector,
         email: email.trim().toLowerCase(),
         address,
         npa,
@@ -1187,7 +1245,7 @@ const handleRegister = async () => {
       return
     }
 
-if (!normalizedEmail || !password || !company || !zefix || !contactName || !contactTitle || !address || !city || !canton || !npa) {      setError(t.errorFields)
+if (!normalizedEmail || !password || !company || !sector || !zefix || !contactName || !contactTitle || !address || !city || !canton || !npa) {      setError(t.errorFields)
       setLoading(false)
       return
     }
@@ -1261,6 +1319,7 @@ if (zefixStatus === 'invalid') {
       const { error: insertError } = await supabase.from('companies').insert({
         user_id: userId,
       name: company,
+      sector,
       zefix_uid: clean,
       contact_name: contactName,
       contact_title: contactTitle,
@@ -1293,6 +1352,7 @@ if (zefixStatus === 'invalid') {
         body: JSON.stringify({
           email: normalizedEmail,
           company,
+          sector,
           zefix: clean,
           contactName,
           contactTitle,
@@ -1346,6 +1406,36 @@ if (zefixStatus === 'invalid') {
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.5rem'}}>{t.companyInfo}</p>
       <input value={company} onChange={e => setCompany(e.target.value)} placeholder={t.companyName}
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+      <div style={{position:'relative',width:'100%',height:56,flexShrink:0}}>
+        <div style={{
+          position:'absolute',
+          inset:0,
+          padding:'0 44px 0 14px',
+          border:'1px solid #ddd',
+          borderRadius:10,
+          background:'white',
+          display:'flex',
+          alignItems:'center',
+          fontSize:16,
+          lineHeight:1.2,
+          fontFamily:'Plus Jakarta Sans',
+          color:sector ? '#111' : '#999',
+          pointerEvents:'none',
+          overflow:'hidden',
+          textOverflow:'ellipsis',
+          whiteSpace:'nowrap'
+        }}>
+          {sector || t.sector}
+        </div>
+        <span style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',fontSize:18,color:'#111',pointerEvents:'none'}}>⌄</span>
+        <select value={sector} onChange={e => setSector(e.target.value)} aria-label={t.sector}
+          style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',fontSize:16}}>
+          <option value="">{t.sector}</option>
+          {COMPANY_SECTORS.map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+      </div>
       <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}
   style={{padding:'14px',border:`1px solid ${zefixBorderColor}`,borderRadius:10,fontSize:16,outline:'none'}} />
 {zefixStatus === 'valid' && <p style={{fontSize:12,color:'#F39C12'}}>{t.zefixValidFormat}</p>}
@@ -1518,7 +1608,7 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
        {activeTab === 'map' && <Suspense fallback={<div>{ui.common.loading}</div>}><MapScreen user={null} setScreen={setScreen} lang={lang} /></Suspense>}
         {activeTab === 'messages' && (
           <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
-            <HubbingIcon name="message" size={48} color="#E24B4A" />
+            <HubbingIcon name="messages" size={48} color="#E24B4A" />
             <h3 style={{fontSize:18,fontWeight:700}}>{t.messagesTitle}</h3>
             <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>{t.messagesDesc}</p>
             <button onClick={() => setShowModal(true)}
@@ -1967,7 +2057,7 @@ const handleCompanyProfileBack = () => {
       <div style={{position:'relative',height:26,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:2}}>
         <HubbingIcon name={tab.icon} active={activeTab === tab.id} />
         {tab.id === 'messages' && unreadCount > 0 && (
-          <div style={{position:'absolute',top:-3,right:'calc(50% - 20px)',background:'#E24B4A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>
+          <div style={{position:'absolute',top:-7,right:'calc(50% - 28px)',background:'#E24B4A',color:'white',borderRadius:999,minWidth:20,height:18,padding:'0 5px',fontSize:10,lineHeight:1,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white',boxShadow:'0 2px 5px rgba(0,0,0,0.18)',boxSizing:'border-box'}}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </div>
         )}

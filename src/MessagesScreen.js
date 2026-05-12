@@ -149,6 +149,7 @@ useEffect(() => {
       grouped[item.match_id] = (grouped[item.match_id] || 0) + 1
     })
     setUnreadByMatch(grouped)
+    return grouped
   }
 
   const markNotificationsRead = async (matchId) => {
@@ -169,6 +170,13 @@ useEffect(() => {
   const sortMatchesByActivity = (matchList) => [...(matchList || [])].sort((a, b) =>
     new Date(getMatchActivityAt(b) || 0) - new Date(getMatchActivityAt(a) || 0)
   )
+
+  const sortMatchesByPriority = (matchList, unreadMap = unreadByMatch) => [...(matchList || [])].sort((a, b) => {
+    const aUnread = Number(unreadMap?.[a.id] || 0) > 0 ? 1 : 0
+    const bUnread = Number(unreadMap?.[b.id] || 0) > 0 ? 1 : 0
+    if (aUnread !== bUnread) return bUnread - aUnread
+    return new Date(getMatchActivityAt(b) || 0) - new Date(getMatchActivityAt(a) || 0)
+  })
 
   const isMessageVisibleForCompany = (message, companyId) => {
     if (!message || message.deleted_for_all) return false
@@ -206,7 +214,7 @@ useEffect(() => {
 
   const updateMatchLastMessage = (message) => {
     if (!message?.match_id) return
-    setMatches(current => sortMatchesByActivity(current.map(match => {
+    setMatches(current => sortMatchesByPriority(current.map(match => {
       if (match.id !== message.match_id) return match
       const currentActivity = new Date(getMatchActivityAt(match) || 0).getTime()
       const nextActivity = new Date(message.created_at || 0).getTime()
@@ -313,8 +321,8 @@ const loadMyCompanyAndMatches = async () => {
     company_b: companyById[match.company_b?.id] || match.company_b,
   }))
   const matchesWithActivity = await loadLatestMessagesForMatches(enrichedMatches, myComp.id)
-  setMatches(matchesWithActivity)
-  await loadUnreadNotifications()
+  const unreadMap = await loadUnreadNotifications()
+  setMatches(sortMatchesByPriority(matchesWithActivity, unreadMap))
   setLoading(false)
 }
 
@@ -606,8 +614,9 @@ const handleFileUpload = async (e) => {
   }
 
   const normalizedConversationSearch = conversationSearch.trim().toLowerCase()
+  const orderedMatches = sortMatchesByPriority(matches, unreadByMatch)
   const visibleMatches = normalizedConversationSearch
-    ? matches.filter(match => {
+    ? orderedMatches.filter(match => {
       const other = getOtherCompany(match)
       if (!other) return false
       const searchableText = [
@@ -619,7 +628,7 @@ const handleFileUpload = async (e) => {
       ].filter(Boolean).join(' ').toLowerCase()
       return searchableText.includes(normalizedConversationSearch)
     })
-    : matches
+    : orderedMatches
 
   // Vue conversation
   if (selectedMatch) {
@@ -724,7 +733,7 @@ const handleFileUpload = async (e) => {
 	          {visibleMessages.length === 0 && (
 	            <div style={{textAlign:'center',padding:'2rem',color:'#999'}}>
 	              <div style={{display:'flex',justifyContent:'center',marginBottom:8}}>
-	                <HubbingIcon name="message" size={32} color="#9CA3AF" />
+	                <HubbingIcon name="messages" size={32} color="#9CA3AF" />
 	              </div>
 	              <p style={{fontSize:14}}>{ui.messages.startConversation(other?.name)}</p>
               <p style={{fontSize:12,marginTop:4}}>{ui.messages.introduce}</p>
@@ -904,7 +913,7 @@ const handleFileUpload = async (e) => {
         </div>
       ) : matches.length === 0 ? (
 	        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
-	          <HubbingIcon name="message" size={48} color="#9CA3AF" />
+	          <HubbingIcon name="messages" size={48} color="#9CA3AF" />
 	          <h3 style={{fontSize:18,fontWeight:700}}>{ui.messages.noConnections}</h3>
           <p style={{color:'#999',fontSize:14,lineHeight:1.6}}>{ui.messages.noConnectionsDesc}</p>
         </div>
