@@ -1069,10 +1069,10 @@ function LoginScreen({ setScreen, t }) {
         {t.back}
       </button>
       <h2 style={{fontSize:24,fontWeight:700,marginBottom:'0.5rem'}}>{t.loginTitle}</h2>
-      <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email"
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email" inputMode="email" autoComplete="username"
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <div style={{position:'relative'}}>
-        <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type={showPassword ? 'text' : 'password'}
+        <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type={showPassword ? 'text' : 'password'} autoComplete="current-password"
           style={{width:'100%',padding:'14px 96px 14px 14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
         <button type="button" onClick={() => setShowPassword(value => !value)}
           aria-label={showPassword ? t.hidePassword : t.showPassword}
@@ -1472,10 +1472,10 @@ if (zefixStatus === 'invalid') {
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{t.access}</p>
-      <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email"
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email" inputMode="email" autoComplete="email"
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <div style={{position:'relative'}}>
-        <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type={showPassword ? 'text' : 'password'}
+        <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password} type={showPassword ? 'text' : 'password'} autoComplete="new-password"
           style={{width:'100%',padding:'14px 96px 14px 14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
         <button type="button" onClick={() => setShowPassword(value => !value)}
           aria-label={showPassword ? t.hidePassword : t.showPassword}

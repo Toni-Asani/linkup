@@ -16,12 +16,52 @@ L.Icon.Default.mergeOptions({
 })
 
 const sectorColors = {
+  'Fiduciaire & Comptabilité': '#3B6D11',
+  'Design & Créatif': '#533AB7',
+  'Informatique & Tech': '#185FA5',
+  'BTP & Construction': '#854F0B',
+  'Marketing & Publicité': '#993556',
+  'Ressources Humaines': '#0F6E56',
+  'Transport & Déménagement': '#444441',
+  'Services aux entreprises': '#993C1D',
+  'Architecture & Urbanisme': '#2D6A8F',
+  'Assurance & Prévoyance': '#1A5276',
+  'Automobile & Mobilité': '#6E2F1A',
+  'Banque & Finance': '#1A3A5C',
+  'Chimie & Pharmacie': '#4A235A',
+  'Commerce de détail': '#784212',
+  'Communication & PR': '#1D6A4A',
+  'Conseil & Stratégie': '#2E4057',
+  'Distribution & Logistique': '#4A4A4A',
+  'Droit & Juridique': '#2C3E50',
+  'E-commerce': '#1ABC9C',
+  'Éducation & Formation': '#2980B9',
+  'Energie & Environnement': '#27AE60',
+  'Hôtellerie & Restauration': '#E67E22',
+  'Immobilier': '#8E44AD',
+  'Import & Export': '#16A085',
+  'Imprimerie & Édition': '#D35400',
+  'Industrie & Manufacturing': '#7F8C8D',
+  'Luxe & Horlogerie': '#C0392B',
+  'Médias & Presse': '#2C3E50',
+  'Médical & Clinique': '#E74C3C',
+  'Nettoyage & Facility': '#3498DB',
+  'Optique & Lunetterie': '#9B59B6',
+  'Santé & Bien-être': '#1ABC9C',
+  'Sanitaire & Plomberie': '#2980B9',
+  'Sécurité & Surveillance': '#E74C3C',
+  'Sport & Loisirs': '#F39C12',
+  'Telecommunications': '#2980B9',
+  'Textile & Mode': '#8E44AD',
+  'Tourisme & Voyages': '#16A085',
+  'Agriculture & Viticulture': '#27AE60',
+  'Arts & Culture': '#E91E63',
+  'Autre': '#666',
   'Fiduciaire': '#3B6D11',
   'Design & Communication': '#533AB7',
   'Informatique': '#185FA5',
   'Construction': '#854F0B',
   'Marketing Digital': '#993556',
-  'Ressources Humaines': '#0F6E56',
   'Transport & Logistique': '#444441',
   'Services': '#993C1D',
 }
@@ -43,6 +83,13 @@ const haversine = (lat1, lng1, lat2, lng2) => {
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLng / 2) * Math.sin(dLng / 2)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const coordinateKey = (company) => {
+  const lat = Number(company?.mapLat)
+  const lng = Number(company?.mapLng)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return ''
+  return `${lat.toFixed(6)},${lng.toFixed(6)}`
 }
 
 function MapSelectionFocus({ selected }) {
@@ -206,6 +253,12 @@ export default function MapScreen({ user, setScreen, plan = 'Starter', setSelect
     return counts
   }, {})
   const sectors = Object.keys(sectorCounts).sort((a, b) => a.localeCompare(b, 'fr'))
+  const selectedCoordinateKey = selected ? coordinateKey(selected) : ''
+  const selectedCoversUserLocation = Boolean(
+    selected &&
+    userLocation &&
+    haversine(selected.mapLat, selected.mapLng, userLocation.lat, userLocation.lng) < 0.02
+  )
 const cantons = [
   {code:'AG', name:'Argovie'},
   {code:'AI', name:'Appenzell Rhodes-Intérieures'},
@@ -387,7 +440,7 @@ const cantons = [
               pathOptions={{ color: '#E24B4A', fillColor: '#E24B4A', fillOpacity: 0.12, weight: 2 }}
             />
           )}
-          {userLocation && (
+          {userLocation && !selectedCoversUserLocation && (
             <>
               <Circle
                 center={[userLocation.lat, userLocation.lng]}
@@ -403,6 +456,8 @@ const cantons = [
           )}
           {filtered.map(company => {
             const isSelectedCompany = selected?.id === company.id
+            const hiddenUnderSelection = selectedCoordinateKey && !isSelectedCompany && coordinateKey(company) === selectedCoordinateKey
+            if (hiddenUnderSelection) return null
             return (
               <Marker
                 key={company.id}

@@ -51,6 +51,7 @@ const sectorColors = {
 }
 
 const sectors = Object.keys(sectorColors)
+const swissCantons = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH']
 const SWIPE_THRESHOLD = 85
 const SWIPE_ANIMATION_MS = 420
 const UNDO_ANIMATION_MS = 360
@@ -103,6 +104,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const [showFilters, setShowFilters] = useState(false)
   const [filterRadius, setFilterRadius] = useState(300)
   const [filterSector, setFilterSector] = useState('')
+  const [filterCanton, setFilterCanton] = useState('')
   const [myCompanyCoords, setMyCompanyCoords] = useState(null)
   const [matchedCompanyIds, setMatchedCompanyIds] = useState(new Set())
   const [swipeHistory, setSwipeHistory] = useState([])
@@ -124,18 +126,19 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   useEffect(() => { currentRef.current = current }, [current])
   useEffect(() => { companiesRef.current = filteredCompanies }, [filteredCompanies])
   useEffect(() => { decisionRef.current = decision }, [decision])
-  useEffect(() => { applyFilters() }, [companies, filterRadius, filterSector, myCompanyCoords])
+  useEffect(() => { applyFilters() }, [companies, filterRadius, filterSector, filterCanton, myCompanyCoords])
 
   const applyFilters = () => {
     let result = [...companies]
     if (filterSector) result = result.filter(c => c.sector === filterSector)
+    if (filterCanton) result = result.filter(c => c.canton === filterCanton)
     if (myCompanyCoords && filterRadius < 300) {
       result = result.filter(c => {
         if (!c.lat || !c.lng) return true
         return haversine(myCompanyCoords.lat, myCompanyCoords.lng, c.lat, c.lng) <= filterRadius
       })
     }
-    setFilteredCompanies(result)
+    setFilteredCompanies(sortCompaniesForSwipe(result))
     setCurrent(0)
     setSwipeHistory([])
     undoneSwipeIdsRef.current.clear()
@@ -543,12 +546,20 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
     return `translateX(${offset.x}px) translateY(${offset.y}px) rotate(${rotate}deg)`
   }
 
-  const activeFilters = (filterSector ? 1 : 0) + (filterRadius < 300 ? 1 : 0)
-  const sectorCountBase = myCompanyCoords && filterRadius < 300
-    ? companies.filter(c => !c.lat || !c.lng || haversine(myCompanyCoords.lat, myCompanyCoords.lng, c.lat, c.lng) <= filterRadius)
-    : companies
+  const activeFilters = (filterSector ? 1 : 0) + (filterCanton ? 1 : 0) + (filterRadius < 300 ? 1 : 0)
+  const isWithinRadius = (company) => {
+    if (!myCompanyCoords || filterRadius >= 300) return true
+    if (!company.lat || !company.lng) return true
+    return haversine(myCompanyCoords.lat, myCompanyCoords.lng, company.lat, company.lng) <= filterRadius
+  }
+  const sectorCountBase = companies.filter(c => isWithinRadius(c) && (!filterCanton || c.canton === filterCanton))
   const sectorCounts = sectorCountBase.reduce((acc, item) => {
     if (item.sector) acc[item.sector] = (acc[item.sector] || 0) + 1
+    return acc
+  }, {})
+  const cantonCountBase = companies.filter(c => isWithinRadius(c) && (!filterSector || c.sector === filterSector))
+  const cantonCounts = cantonCountBase.reduce((acc, item) => {
+    if (item.canton) acc[item.canton] = (acc[item.canton] || 0) + 1
     return acc
   }, {})
 
@@ -571,7 +582,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
           {ui.swipe.previousCard}
         </button>
       )}
-      {activeFilters > 0 && <button onClick={() => { setFilterSector(''); setFilterRadius(300) }} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clearFilters}</button>}
+      {activeFilters > 0 && <button onClick={() => { setFilterSector(''); setFilterCanton(''); setFilterRadius(300) }} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clearFilters}</button>}
       <button onClick={() => loadCompanies(true)} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.reviewAll}</button>
       <button onClick={() => loadCompanies(false)} style={{padding:'12px 24px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.newOnly}</button>
     </div>
@@ -626,13 +637,20 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               <div>
                 <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.sector}</p>
                 <select value={filterSector} onChange={e => setFilterSector(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
-                  <option value="">{ui.swipe.allSectors} ({sectorCountBase.length})</option>
+                  <option value="">{ui.swipe.allSectors}</option>
                   {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s] || 0})</option>)}
+                </select>
+              </div>
+              <div>
+                <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.canton}</p>
+                <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
+                  <option value="">{ui.swipe.allCantons}</option>
+                  {swissCantons.map(c => <option key={c} value={c}>{c} ({cantonCounts[c] || 0})</option>)}
                 </select>
               </div>
             </div>
             <div style={{display:'flex',gap:10,flexShrink:0,padding:'0.75rem 1.5rem 1.25rem',borderTop:'1px solid #f2f2f2',background:'white'}}>
-              <button onClick={() => { setFilterSector(''); setFilterRadius(300) }} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
+              <button onClick={() => { setFilterSector(''); setFilterCanton(''); setFilterRadius(300) }} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
               <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filteredCompanies.length)}</button>
             </div>
           </div>
