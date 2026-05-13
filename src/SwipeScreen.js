@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Check, Eye, RotateCcw, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
-import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
+import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant, isDemoCompany } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
 import { createNotificationAndPush } from './pushDelivery'
 
@@ -81,6 +81,8 @@ const getCompanyPlanRank = (company) => {
 }
 
 const sortCompaniesForSwipe = (companyList = []) => [...companyList].sort((a, b) => {
+  const demoDiff = Number(isDemoCompany(a)) - Number(isDemoCompany(b))
+  if (demoDiff !== 0) return demoDiff
   const planDiff = getCompanyPlanRank(a) - getCompanyPlanRank(b)
   if (planDiff !== 0) return planDiff
   return String(a?.name || '').localeCompare(String(b?.name || ''), 'fr', { sensitivity: 'base' })
