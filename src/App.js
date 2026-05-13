@@ -24,6 +24,13 @@ const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/d
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
 const SESSION_LOCK_TTL_MINUTES = 35
+const PUBLIC_SCREENS = ['home', 'login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password']
+
+const getPasswordResetRedirectUrl = () => {
+  const url = new URL(window.location.origin + window.location.pathname)
+  url.searchParams.set('screen', 'reset-password')
+  return url.toString()
+}
 
 const COMPANY_SECTORS = [
   'Fiduciaire & Comptabilité',
@@ -166,6 +173,23 @@ const translations = {
     register: "S'inscrire",
     connecting: 'Connexion...',
     loginBtn: 'Se connecter',
+    forgotPassword: 'Mot de passe oublié ?',
+    resetPasswordTitle: 'Réinitialiser le mot de passe',
+    resetPasswordIntro: 'Entrez votre email professionnel. Si un compte existe, vous recevrez un lien sécurisé pour choisir un nouveau mot de passe.',
+    resetPasswordEmailSent: 'Si un compte existe pour cette adresse, un email de réinitialisation vient d’être envoyé. Vérifiez aussi vos spams.',
+    sendResetLink: 'Envoyer le lien',
+    sendingResetLink: 'Envoi...',
+    backToLogin: 'Retour à la connexion',
+    newPasswordTitle: 'Nouveau mot de passe',
+    newPasswordIntro: 'Choisissez un nouveau mot de passe pour sécuriser votre compte Hubbing.',
+    newPassword: 'Nouveau mot de passe (min. 8 caractères)',
+    confirmPassword: 'Confirmer le mot de passe',
+    passwordMismatch: 'Les mots de passe ne correspondent pas.',
+    passwordTooShort: 'Le mot de passe doit contenir au moins 8 caractères.',
+    updatePassword: 'Mettre à jour le mot de passe',
+    updatingPassword: 'Mise à jour...',
+    passwordUpdated: 'Mot de passe mis à jour. Vous pouvez maintenant vous connecter.',
+    resetLinkInvalid: 'Lien de réinitialisation invalide ou expiré. Demandez un nouveau lien.',
     successTitle: 'Compte créé !',
     successMsg: 'Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.',
     successBtn: 'Se connecter',
@@ -248,6 +272,23 @@ const translations = {
     register: 'Registrieren',
     connecting: 'Verbindung...',
     loginBtn: 'Anmelden',
+    forgotPassword: 'Passwort vergessen?',
+    resetPasswordTitle: 'Passwort zurücksetzen',
+    resetPasswordIntro: 'Geben Sie Ihre geschäftliche E-Mail ein. Falls ein Konto existiert, erhalten Sie einen sicheren Link.',
+    resetPasswordEmailSent: 'Falls ein Konto für diese Adresse existiert, wurde ein Link zum Zurücksetzen gesendet. Prüfen Sie auch den Spam-Ordner.',
+    sendResetLink: 'Link senden',
+    sendingResetLink: 'Wird gesendet...',
+    backToLogin: 'Zurück zur Anmeldung',
+    newPasswordTitle: 'Neues Passwort',
+    newPasswordIntro: 'Wählen Sie ein neues Passwort für Ihr Hubbing-Konto.',
+    newPassword: 'Neues Passwort (mind. 8 Zeichen)',
+    confirmPassword: 'Passwort bestätigen',
+    passwordMismatch: 'Die Passwörter stimmen nicht überein.',
+    passwordTooShort: 'Das Passwort muss mindestens 8 Zeichen enthalten.',
+    updatePassword: 'Passwort aktualisieren',
+    updatingPassword: 'Aktualisierung...',
+    passwordUpdated: 'Passwort aktualisiert. Sie können sich jetzt anmelden.',
+    resetLinkInvalid: 'Ungültiger oder abgelaufener Link. Fordern Sie einen neuen Link an.',
     successTitle: 'Konto erstellt!',
     successMsg: 'Eine Bestätigungs-E-Mail wurde gesendet. Klicken Sie auf den Link, um Ihr Konto zu aktivieren.',
     successBtn: 'Anmelden',
@@ -330,6 +371,23 @@ const translations = {
     register: 'Registrati',
     connecting: 'Connessione...',
     loginBtn: 'Accedi',
+    forgotPassword: 'Password dimenticata?',
+    resetPasswordTitle: 'Reimposta la password',
+    resetPasswordIntro: "Inserisci l'email professionale. Se esiste un account, riceverai un link sicuro.",
+    resetPasswordEmailSent: 'Se esiste un account per questo indirizzo, è stato inviato un link. Controlla anche lo spam.',
+    sendResetLink: 'Invia il link',
+    sendingResetLink: 'Invio...',
+    backToLogin: "Torna all'accesso",
+    newPasswordTitle: 'Nuova password',
+    newPasswordIntro: 'Scegli una nuova password per il tuo account Hubbing.',
+    newPassword: 'Nuova password (min. 8 caratteri)',
+    confirmPassword: 'Conferma la password',
+    passwordMismatch: 'Le password non corrispondono.',
+    passwordTooShort: 'La password deve contenere almeno 8 caratteri.',
+    updatePassword: 'Aggiorna password',
+    updatingPassword: 'Aggiornamento...',
+    passwordUpdated: 'Password aggiornata. Ora puoi accedere.',
+    resetLinkInvalid: 'Link non valido o scaduto. Richiedi un nuovo link.',
     successTitle: 'Account creato!',
     successMsg: "Un'email di conferma è stata inviata. Clicca sul link per attivare il tuo account.",
     successBtn: 'Accedi',
@@ -412,6 +470,23 @@ const translations = {
     register: 'Sign up',
     connecting: 'Connecting...',
     loginBtn: 'Log in',
+    forgotPassword: 'Forgot password?',
+    resetPasswordTitle: 'Reset password',
+    resetPasswordIntro: 'Enter your professional email. If an account exists, you will receive a secure link.',
+    resetPasswordEmailSent: 'If an account exists for this address, a reset email has been sent. Please also check spam.',
+    sendResetLink: 'Send link',
+    sendingResetLink: 'Sending...',
+    backToLogin: 'Back to login',
+    newPasswordTitle: 'New password',
+    newPasswordIntro: 'Choose a new password for your Hubbing account.',
+    newPassword: 'New password (min. 8 characters)',
+    confirmPassword: 'Confirm password',
+    passwordMismatch: 'Passwords do not match.',
+    passwordTooShort: 'Password must contain at least 8 characters.',
+    updatePassword: 'Update password',
+    updatingPassword: 'Updating...',
+    passwordUpdated: 'Password updated. You can now log in.',
+    resetLinkInvalid: 'Invalid or expired reset link. Request a new link.',
     successTitle: 'Account created!',
     successMsg: 'A confirmation email has been sent. Click the link to activate your account.',
     successBtn: 'Log in',
@@ -459,7 +534,9 @@ const translations = {
 export default function App() {
   const [screen, setScreen] = useState(() => {
     const requestedScreen = new URLSearchParams(window.location.search).get('screen')
-    return ['home', 'login', 'register', 'visitor', 'legal', 'privacy'].includes(requestedScreen) ? requestedScreen : 'home'
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    if (hashParams.get('type') === 'recovery') return 'reset-password'
+    return PUBLIC_SCREENS.includes(requestedScreen) ? requestedScreen : 'home'
   })
   const [visitorInitialTab, setVisitorInitialTab] = useState('swipe')
   const [user, setUser] = useState(null)
@@ -501,7 +578,8 @@ export default function App() {
     
     setLoading(false)
   })
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') setScreen('reset-password')
     setUser(session?.user ?? null)
     if (!session) clearAppBadge()
   })
@@ -528,6 +606,10 @@ if (isMarketingSite) return (
       <div className="app">
         {screen === 'privacy' ? (
   <PrivacyPolicy setScreen={setScreen} lang={lang} />
+) : screen === 'forgot-password' ? (
+          <ForgotPasswordScreen setScreen={setScreen} t={t} />
+) : screen === 'reset-password' ? (
+          <ResetPasswordScreen setScreen={setScreen} t={t} />
 ) : user ? (
   <Dashboard user={user} setUser={setUser} t={t} lang={lang} setLang={setLang} />
 ) : screen === 'home' ? (
@@ -1085,9 +1167,152 @@ function LoginScreen({ setScreen, t }) {
         style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
         {loading ? t.connecting : t.loginBtn}
       </button>
+      <button type="button" onClick={() => setScreen('forgot-password')}
+        style={{background:'none',border:'none',cursor:'pointer',color:'#E24B4A',fontSize:14,fontWeight:700,fontFamily:'Plus Jakarta Sans',alignSelf:'center'}}>
+        {t.forgotPassword}
+      </button>
       <p style={{textAlign:'center',fontSize:14,color:'#666'}}>
         {t.noAccount} <span onClick={() => setScreen('register')} style={{color:'#E24B4A',cursor:'pointer',fontWeight:600}}>{t.register}</span>
       </p>
+      <button onClick={() => setScreen('legal')}
+        style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#bbb',textDecoration:'underline',marginTop:'auto'}}>
+        {t.legal}
+      </button>
+    </div>
+  )
+}
+
+function ForgotPasswordScreen({ setScreen, t }) {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+  const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const handleResetRequest = async () => {
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail) {
+      setError(t.errorFields)
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: getPasswordResetRedirectUrl(),
+    })
+
+    if (error) {
+      setError(error.message)
+    } else {
+      setSent(true)
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1rem',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
+      <button onClick={() => setScreen('login')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,alignSelf:'flex-start',padding:'0.25rem 0',marginBottom:'0.5rem'}}>
+        {t.back}
+      </button>
+      <h2 style={{fontSize:24,fontWeight:700,marginBottom:'0.25rem'}}>{t.resetPasswordTitle}</h2>
+      <p style={{fontSize:14,lineHeight:1.55,color:'#777',marginBottom:'0.5rem'}}>{t.resetPasswordIntro}</p>
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} type="email" inputMode="email" autoComplete="username"
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+      {error && <p style={{color:'#E24B4A',fontSize:13,lineHeight:1.4}}>{error}</p>}
+      {sent && <p style={{color:'#3BA75C',fontSize:13,lineHeight:1.5,background:'#f0fff4',border:'1px solid #bce7c7',borderRadius:10,padding:'12px'}}>{t.resetPasswordEmailSent}</p>}
+      <button onClick={handleResetRequest} disabled={loading || sent}
+        style={{padding:'14px',background:sent ? '#9ad3aa' : '#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:sent ? 'default' : 'pointer'}}>
+        {loading ? t.sendingResetLink : t.sendResetLink}
+      </button>
+      <button type="button" onClick={() => setScreen('login')}
+        style={{background:'none',border:'none',cursor:'pointer',color:'#666',fontSize:14,fontWeight:700,fontFamily:'Plus Jakarta Sans',alignSelf:'center'}}>
+        {t.backToLogin}
+      </button>
+      <button onClick={() => setScreen('legal')}
+        style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#bbb',textDecoration:'underline',marginTop:'auto'}}>
+        {t.legal}
+      </button>
+    </div>
+  )
+}
+
+function ResetPasswordScreen({ setScreen, t }) {
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
+      if (!session) setError(t.resetLinkInvalid)
+      setCheckingSession(false)
+    })
+    return () => { mounted = false }
+  }, [t.resetLinkInvalid])
+
+  const handlePasswordUpdate = async () => {
+    setError('')
+    if (password.length < 8) {
+      setError(t.passwordTooShort)
+      return
+    }
+    if (password !== confirmPassword) {
+      setError(t.passwordMismatch)
+      return
+    }
+
+    setLoading(true)
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
+    }
+
+    await supabase.auth.signOut()
+    window.history.replaceState({}, '', window.location.pathname)
+    setSuccess(true)
+    setLoading(false)
+  }
+
+  return (
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1rem',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
+      <button onClick={() => setScreen('login')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,alignSelf:'flex-start',padding:'0.25rem 0',marginBottom:'0.5rem'}}>
+        {t.back}
+      </button>
+      <h2 style={{fontSize:24,fontWeight:700,marginBottom:'0.25rem'}}>{t.newPasswordTitle}</h2>
+      <p style={{fontSize:14,lineHeight:1.55,color:'#777',marginBottom:'0.5rem'}}>{t.newPasswordIntro}</p>
+      <div style={{position:'relative'}}>
+        <input value={password} onChange={e => setPassword(e.target.value)} placeholder={t.newPassword} type={showPassword ? 'text' : 'password'} autoComplete="new-password"
+          disabled={success || checkingSession}
+          style={{width:'100%',padding:'14px 96px 14px 14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+        <button type="button" onClick={() => setShowPassword(value => !value)}
+          aria-label={showPassword ? t.hidePassword : t.showPassword}
+          style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',border:'none',background:'#f5f5f5',borderRadius:8,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#666',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+          {showPassword ? t.hidePassword : t.showPassword}
+        </button>
+      </div>
+      <input value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t.confirmPassword} type={showPassword ? 'text' : 'password'} autoComplete="new-password"
+        disabled={success || checkingSession}
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+      {error && <p style={{color:'#E24B4A',fontSize:13,lineHeight:1.4}}>{error}</p>}
+      {success && <p style={{color:'#3BA75C',fontSize:13,lineHeight:1.5,background:'#f0fff4',border:'1px solid #bce7c7',borderRadius:10,padding:'12px'}}>{t.passwordUpdated}</p>}
+      {!success ? (
+        <button onClick={handlePasswordUpdate} disabled={loading || checkingSession || !!error && error === t.resetLinkInvalid}
+          style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
+          {loading || checkingSession ? t.updatingPassword : t.updatePassword}
+        </button>
+      ) : (
+        <button onClick={() => setScreen('login')}
+          style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
+          {t.backToLogin}
+        </button>
+      )}
       <button onClick={() => setScreen('legal')}
         style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#bbb',textDecoration:'underline',marginTop:'auto'}}>
         {t.legal}
