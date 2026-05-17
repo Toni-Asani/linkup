@@ -1,5 +1,5 @@
 import { Fragment, useState, useEffect, useRef } from 'react'
-import { Eye, Search, X } from 'lucide-react'
+import { Eye, Search, Trash2, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile, moderateTextContent } from './moderation'
@@ -13,6 +13,7 @@ const MESSAGE_CHAR_LIMITS = {
   Basic: 1000,
   Premium: 2000,
 }
+const CONVERSATION_DELETE_ACTION_WIDTH = 96
 
 function CompanyAvatar({ company, size = 48, fontSize = 16 }) {
   const [imageFailed, setImageFailed] = useState(false)
@@ -70,22 +71,16 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setCo
   const [sendingMessage, setSendingMessage] = useState(false)
   const messagesEndRef = useRef(null)
   const [uploadingFile, setUploadingFile] = useState(false)
-  const [longPressMatch, setLongPressMatch] = useState(null)
   const [unreadByMatch, setUnreadByMatch] = useState({})
   const [conversationSearch, setConversationSearch] = useState('')
+  const [openDeleteMatchId, setOpenDeleteMatchId] = useState(null)
+  const [draggingConversation, setDraggingConversation] = useState(null)
   const fileAttachRef = useRef(null)
   const sendingMessageRef = useRef(false)
-  const longPressTimerRef = useRef(null)
-  const longPressTriggeredRef = useRef(false)
-  const touchStartPointRef = useRef(null)
+  const conversationSwipeRef = useRef(null)
+  const ignoreConversationClickRef = useRef(false)
 
   useEffect(() => { loadMyCompanyAndMatches() }, [])
-
-  useEffect(() => {
-    return () => {
-      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current)
-    }
-  }, [])
 
 useEffect(() => {
   if (openMatchWithCompanyId && matches.length > 0) {
@@ -569,45 +564,117 @@ const handleFileUpload = async (e) => {
     setSelectedCompanyId && setSelectedCompanyId(companyId)
   }
 
-  const clearLongPressTimer = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current)
-      longPressTimerRef.current = null
+  const getConversationSwipeOffset = (matchId) => {
+    if (draggingConversation?.matchId === matchId) return draggingConversation.offset
+    return openDeleteMatchId === matchId ? -CONVERSATION_DELETE_ACTION_WIDTH : 0
+  }
+
+  const startConversationSwipe = (match, e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+
+    conversationSwipeRef.current = {
+      matchId: match.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseOffset: openDeleteMatchId === match.id ? -CONVERSATION_DELETE_ACTION_WIDTH : 0,
+      currentOffset: openDeleteMatchId === match.id ? -CONVERSATION_DELETE_ACTION_WIDTH : 0,
+      isSwiping: false,
+      moved: false,
     }
   }
 
-  const startConversationLongPress = (match, e) => {
-    clearLongPressTimer()
-    longPressTriggeredRef.current = false
-    const touch = e.touches?.[0]
-    touchStartPointRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null
-    longPressTimerRef.current = setTimeout(() => {
-      longPressTriggeredRef.current = true
-      setLongPressMatch(match)
-    }, 700)
+  const moveConversationSwipe = (e) => {
+    const swipe = conversationSwipeRef.current
+    if (!swipe) return
+
+    const deltaX = e.clientX - swipe.startX
+    const deltaY = e.clientY - swipe.startY
+
+    if (!swipe.isSwiping) {
+      if (Math.abs(deltaX) < 8) return
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        conversationSwipeRef.current = null
+        return
+      }
+      swipe.isSwiping = true
+    }
+
+    const nextOffset = Math.max(
+      -CONVERSATION_DELETE_ACTION_WIDTH,
+      Math.min(0, swipe.baseOffset + deltaX)
+    )
+
+    swipe.currentOffset = nextOffset
+    swipe.moved = true
+    ignoreConversationClickRef.current = true
+    setDraggingConversation({ matchId: swipe.matchId, offset: nextOffset })
   }
 
-  const moveConversationLongPress = (e) => {
-    const start = touchStartPointRef.current
-    const touch = e.touches?.[0]
-    if (!start || !touch) return
-    const deltaX = Math.abs(touch.clientX - start.x)
-    const deltaY = Math.abs(touch.clientY - start.y)
-    if (deltaX > 10 || deltaY > 10) clearLongPressTimer()
+  const endConversationSwipe = () => {
+    const swipe = conversationSwipeRef.current
+    if (!swipe) return
+
+    const shouldOpen = swipe.currentOffset < -CONVERSATION_DELETE_ACTION_WIDTH / 2
+    setOpenDeleteMatchId(shouldOpen ? swipe.matchId : null)
+    setDraggingConversation(null)
+
+    if (swipe.moved) {
+      ignoreConversationClickRef.current = true
+      window.setTimeout(() => {
+        ignoreConversationClickRef.current = false
+      }, 120)
+    }
+
+    conversationSwipeRef.current = null
   }
 
-  const endConversationLongPress = () => {
-    clearLongPressTimer()
-    touchStartPointRef.current = null
+  const cancelConversationSwipe = () => {
+    conversationSwipeRef.current = null
+    setDraggingConversation(null)
+    window.setTimeout(() => {
+      ignoreConversationClickRef.current = false
+    }, 80)
+  }
+
+  const handleDeleteConversation = async (match) => {
+    const other = getOtherCompany(match)
+    const otherName = other?.name || 'cette entreprise'
+    const confirmed = window.confirm(ui.messages.deleteConversationConfirm(otherName))
+
+    if (!confirmed) {
+      setOpenDeleteMatchId(null)
+      return
+    }
+
+    const { error } = await supabase.from('matches').delete().eq('id', match.id)
+
+    if (error) {
+      alert(ui.messages.deleteConversationError)
+      return
+    }
+
+    setMatches(prev => prev.filter(m => m.id !== match.id))
+    if (selectedMatch?.id === match.id) setSelectedMatch(null)
+    setOpenDeleteMatchId(null)
   }
 
   const handleConversationClick = (match, e) => {
-    if (longPressTriggeredRef.current) {
+    if (ignoreConversationClickRef.current) {
       e.preventDefault()
       e.stopPropagation()
-      longPressTriggeredRef.current = false
       return
     }
+
+    if (openDeleteMatchId) {
+      setOpenDeleteMatchId(null)
+      if (openDeleteMatchId === match.id) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
+    }
+
     setConversationSubject('')
     setNewMessage('')
     setSelectedMatch(match)
@@ -862,25 +929,6 @@ const handleFileUpload = async (e) => {
   // Vue liste des conversations
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column'}}>
-      {longPressMatch && (
-        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'1rem'}}>
-          <div style={{background:'white',borderRadius:16,padding:'1.5rem',width:'100%',maxWidth:340,textAlign:'center'}}>
-            <p style={{fontWeight:700,fontSize:16,marginBottom:'1rem'}}>{getOtherCompany(longPressMatch)?.name}</p>
-            <button onClick={async () => {
-              await supabase.from('matches').delete().eq('id', longPressMatch.id)
-              setMatches(prev => prev.filter(m => m.id !== longPressMatch.id))
-              setLongPressMatch(null)
-            }}
-              style={{width:'100%',padding:'13px',background:'#FFF5F5',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',marginBottom:8}}>
-              {ui.messages.deleteConversation}
-            </button>
-            <button onClick={() => setLongPressMatch(null)}
-              style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#999'}}>
-              {ui.common.cancel}
-            </button>
-          </div>
-        </div>
-      )}
       <div style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f0f0f0'}}>
         <h2 style={{fontSize:20,fontWeight:700}}>{ui.messages.title}</h2>
         <p style={{fontSize:13,color:'#999',marginTop:2}}>{ui.messages.subtitle}</p>
@@ -930,41 +978,62 @@ const handleFileUpload = async (e) => {
             if (!other) return null
             const unread = unreadByMatch[match.id] || 0
             const otherBadgeVariant = getCompanyBadgeVariant(other)
+            const swipeOffset = getConversationSwipeOffset(match.id)
+            const isDragging = draggingConversation?.matchId === match.id
             return (
-              <div key={match.id} 
-                onClick={e => handleConversationClick(match, e)}
-                onContextMenu={e => { e.preventDefault(); setLongPressMatch(match) }}
-                onMouseDown={e => e.preventDefault()}
-                onTouchStart={e => startConversationLongPress(match, e)}
-                onTouchMove={moveConversationLongPress}
-                onTouchEnd={endConversationLongPress}
-                onTouchCancel={endConversationLongPress}
+              <div key={match.id}
                 draggable={false}
-                style={{padding:'1rem 1.5rem',borderBottom:'1px solid #f5f5f5',display:'flex',alignItems:'center',gap:12,cursor:'pointer',background:'white',userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none'}}
-                onMouseEnter={e => e.currentTarget.style.background='#fafafa'}
-                onMouseLeave={e => e.currentTarget.style.background='white'}
+                style={{position:'relative',overflow:'hidden',borderBottom:'1px solid #f5f5f5',background:'#E24B4A'}}
               >
-                <CompanyAvatar company={other} />
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <p style={{fontWeight:700,fontSize:15,margin:0,display:'flex',alignItems:'center',gap:5,minWidth:0,flex:1}}>
-                      <span style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{other.name}</span>
-                      {otherBadgeVariant && <VerifiedBadge size={15} variant={otherBadgeVariant} />}
-                    </p>
-                    <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
-                      {unread > 0 && (
-                        <span style={{minWidth:18,height:18,borderRadius:9,background:'#E24B4A',color:'white',fontSize:10,fontWeight:800,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}}>
-                          {unread > 9 ? '9+' : unread}
-                        </span>
-                      )}
-                      <span style={{fontSize:11,color:'#999'}}>{formatDate(getMatchActivityAt(match))}</span>
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleDeleteConversation(match)
+                  }}
+                  aria-label={ui.messages.deleteConversation}
+                  style={{position:'absolute',top:0,right:0,bottom:0,width:CONVERSATION_DELETE_ACTION_WIDTH,border:'none',background:'#E24B4A',color:'white',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4,fontSize:12,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}
+                >
+                  <Trash2 size={18} strokeWidth={2.4} />
+                  <span>{ui.messages.deleteConversationAction}</span>
+                </button>
+
+                <div
+                  onClick={e => handleConversationClick(match, e)}
+                  onPointerDown={e => startConversationSwipe(match, e)}
+                  onPointerMove={moveConversationSwipe}
+                  onPointerUp={endConversationSwipe}
+                  onPointerCancel={cancelConversationSwipe}
+                  draggable={false}
+                  style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',gap:12,cursor:'pointer',background: unread > 0 ? '#FFF9F9' : 'white',userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none',touchAction:'pan-y',transform:`translateX(${swipeOffset}px)`,transition:isDragging ? 'none' : 'transform 0.18s ease',position:'relative',zIndex:1}}
+                  onMouseEnter={e => {
+                    if (unread === 0) e.currentTarget.style.background = '#fafafa'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = unread > 0 ? '#FFF9F9' : 'white'
+                  }}
+                >
+                  <CompanyAvatar company={other} />
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <p style={{fontWeight:700,fontSize:15,margin:0,display:'flex',alignItems:'center',gap:5,minWidth:0,flex:1}}>
+                        <span style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{other.name}</span>
+                        {otherBadgeVariant && <VerifiedBadge size={15} variant={otherBadgeVariant} />}
+                      </p>
+                      <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+                        {unread > 0 && (
+                          <span style={{minWidth:18,height:18,borderRadius:9,background:'#E24B4A',color:'white',fontSize:10,fontWeight:800,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}}>
+                            {unread > 9 ? '9+' : unread}
+                          </span>
+                        )}
+                        <span style={{fontSize:11,color:'#999'}}>{formatDate(getMatchActivityAt(match))}</span>
+                      </div>
                     </div>
+                    <p style={{fontSize:13,color:'#999',margin:'2px 0 0',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                      {getConversationPreview(match, other)}
+                    </p>
                   </div>
-                  <p style={{fontSize:13,color:'#999',margin:'2px 0 0',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                    {getConversationPreview(match, other)}
-                  </p>
+                  <span style={{color:'#ccc',fontSize:18}}>›</span>
                 </div>
-                <span style={{color:'#ccc',fontSize:18}}>›</span>
               </div>
             )
           })}
