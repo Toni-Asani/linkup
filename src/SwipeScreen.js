@@ -80,11 +80,19 @@ const getCompanyPlanRank = (company) => {
   return PLAN_PRIORITY[plan] ?? PLAN_PRIORITY.starter
 }
 
+const getCompanyNeedsFreshness = (company) => {
+  const value = company?.needs_updated_at
+  const time = value ? new Date(value).getTime() : 0
+  return Number.isFinite(time) ? time : 0
+}
+
 const sortCompaniesForSwipe = (companyList = []) => [...companyList].sort((a, b) => {
   const demoDiff = Number(isDemoCompany(a)) - Number(isDemoCompany(b))
   if (demoDiff !== 0) return demoDiff
   const planDiff = getCompanyPlanRank(a) - getCompanyPlanRank(b)
   if (planDiff !== 0) return planDiff
+  const freshnessDiff = getCompanyNeedsFreshness(b) - getCompanyNeedsFreshness(a)
+  if (freshnessDiff !== 0) return freshnessDiff
   return String(a?.name || '').localeCompare(String(b?.name || ''), 'fr', { sensitivity: 'base' })
 })
 

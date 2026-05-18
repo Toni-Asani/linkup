@@ -265,7 +265,14 @@ const handleContactPhotoUpload = async (e) => {
     console.log('Géocodage échoué', e)
   }
 
-  const { error } = await supabase.from('companies').update({
+  const serializedNeedsTags = JSON.stringify(tags)
+  const previousNeedsDescription = String(company?.needs_description || '').trim()
+  const nextNeedsDescription = String(form.needs_description || '').trim()
+  const previousNeedsTags = String(company?.needs_tags || '[]')
+  const needsChanged = previousNeedsDescription !== nextNeedsDescription || previousNeedsTags !== serializedNeedsTags
+  const needsUpdatedAt = needsChanged ? new Date().toISOString() : company?.needs_updated_at
+
+  const updatePayload = {
     name: form.name,
     sector: form.sector,
     canton: form.canton,
@@ -279,15 +286,18 @@ const handleContactPhotoUpload = async (e) => {
     contact_phone: form.contact_phone,
     address: form.address,
     needs_description: form.needs_description,
-    needs_tags: JSON.stringify(tags),
+    needs_tags: serializedNeedsTags,
     lat,
     lng,
     notif_app: form.notif_app ?? true,
 notif_email: form.notif_email ?? true,
-  }).eq('user_id', user.id)
+  }
+  if (needsChanged) updatePayload.needs_updated_at = needsUpdatedAt
+
+  const { error } = await supabase.from('companies').update(updatePayload).eq('user_id', user.id)
 
   if (!error) {
-    setCompany({ ...company, ...form, needs_tags: JSON.stringify(tags), lat, lng })
+    setCompany({ ...company, ...form, needs_tags: serializedNeedsTags, lat, lng, needs_updated_at: needsUpdatedAt })
     setEditing(false)
     setSuccess(true)
     setTimeout(() => setSuccess(false), 3000)
