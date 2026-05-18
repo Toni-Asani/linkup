@@ -16,6 +16,81 @@ const escapeHtml = (value = '') => String(value ?? '').replace(/[&<>"']/g, char 
 
 const cleanHeader = (value = '') => String(value ?? '').replace(/[\r\n]+/g, ' ').trim()
 
+const enc = new TextEncoder()
+
+const base64Url = (value: ArrayBuffer | Uint8Array | string) => {
+  const bytes = typeof value === 'string'
+    ? enc.encode(value)
+    : value instanceof Uint8Array
+      ? value
+      : new Uint8Array(value)
+  let binary = ''
+  bytes.forEach(byte => { binary += String.fromCharCode(byte) })
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+}
+
+const signManualVerificationPayload = async (payload: string) => {
+  const secret = Deno.env.get('MANUAL_VERIFICATION_SECRET')
+  if (!secret) return null
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const signature = await crypto.subtle.sign('HMAC', key, enc.encode(payload))
+  return base64Url(signature)
+}
+
+const buildManualApprovalUrl = async (companyId?: string, userId?: string) => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  if (!supabaseUrl || !companyId || !userId) return null
+
+  const action = 'approve'
+  const expires = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30
+  const payload = `${action}|${companyId}|${userId}|${expires}`
+  const sig = await signManualVerificationPayload(payload)
+  if (!sig) return null
+
+  const url = new URL(`${supabaseUrl}/functions/v1/company-verification-action`)
+  url.searchParams.set('action', action)
+  url.searchParams.set('company_id', companyId)
+  url.searchParams.set('user_id', userId)
+  url.searchParams.set('expires', String(expires))
+  url.searchParams.set('sig', sig)
+  return url.toString()
+}
+
+const findRegistrationCompanyId = async (userId?: string, zefix?: string) => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!supabaseUrl || !serviceRoleKey || !userId) return null
+
+  const cleanZefix = String(zefix || '').replace(/[^0-9]/g, '')
+  const filters = [
+    `user_id=eq.${encodeURIComponent(userId)}`,
+    'select=id',
+    'order=created_at.desc',
+    'limit=1',
+  ]
+  if (cleanZefix) {
+    filters.unshift(`zefix_uid=eq.${encodeURIComponent(cleanZefix)}`)
+  }
+
+  const response = await fetch(`${supabaseUrl}/rest/v1/companies?${filters.join('&')}`, {
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+    },
+  })
+
+  if (!response.ok) return null
+  const rows = await response.json()
+  return typeof rows?.[0]?.id === 'string' ? rows[0].id : null
+}
+
 const hubbingSignatureHtml = `<table role="presentation" style="width:100%;border-collapse:collapse;margin-top:28px;background:#E24B4A;border-radius:16px;overflow:hidden">
   <tr>
     <td style="width:72px;padding:16px 0 16px 18px;vertical-align:middle">
@@ -70,6 +145,7 @@ serve(async (req) => {
       city,
       canton,
       userId,
+      companyId,
       zefixVerification,
     } = await req.json()
 
@@ -89,6 +165,8 @@ serve(async (req) => {
     const safeCity = escapeHtml(city || 'Non renseignée')
     const safeCanton = escapeHtml(canton || 'Non renseigné')
     const safeUserId = escapeHtml(userId || 'Non disponible')
+    const resolvedCompanyId = companyId || await findRegistrationCompanyId(userId, zefix)
+    const safeCompanyId = escapeHtml(resolvedCompanyId || 'Non disponible')
     const companyForSubject = cleanHeader(company)
     const zefixVerificationInfo = zefixVerification && typeof zefixVerification === 'object'
       ? zefixVerification as Record<string, unknown>
@@ -172,12 +250,13 @@ https://app.hubbing.ch`
 
     const validationMailto = `mailto:${email}?subject=${encodeURIComponent(validationSubject)}&body=${encodeURIComponent(validationBody)}`
     const reviewMailto = `mailto:${email}?subject=${encodeURIComponent(reviewSubject)}&body=${encodeURIComponent(reviewBody)}`
+    const manualApprovalUrl = await buildManualApprovalUrl(resolvedCompanyId, userId)
     const adminActionsHtml = autoVerified
       ? `<a href="https://www.zefix.ch/fr/search/entity/welcome" style="display:inline-block;padding:11px 14px;background:#1a1a1a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Ouvrir Zefix</a>
          <a href="https://www.uid.admin.ch" style="display:inline-block;padding:11px 14px;background:#f5f5f5;color:#1a1a1a;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Registre IDE</a>`
       : `<a href="https://www.zefix.ch/fr/search/entity/welcome" style="display:inline-block;padding:11px 14px;background:#1a1a1a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Ouvrir Zefix</a>
          <a href="https://www.uid.admin.ch" style="display:inline-block;padding:11px 14px;background:#f5f5f5;color:#1a1a1a;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Registre IDE</a>
-         <a href="${escapeHtml(validationMailto)}" style="display:inline-block;padding:11px 14px;background:#16a34a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : IDE valide</a>
+         <a href="${escapeHtml(manualApprovalUrl || validationMailto)}" style="display:inline-block;padding:11px 14px;background:#16a34a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">${manualApprovalUrl ? 'Valider et prevenir l’entreprise' : 'Repondre : IDE valide'}</a>
          <a href="${escapeHtml(reviewMailto)}" style="display:inline-block;padding:11px 14px;background:#E24B4A;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:700">Repondre : infos a completer</a>`
 
     await Promise.all([
@@ -224,6 +303,7 @@ https://app.hubbing.ch`
             <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Contact</td><td style="padding:10px;border-bottom:1px solid #eee">${safeContactName} - ${safeContactTitle}</td></tr>
             <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Email</td><td style="padding:10px;border-bottom:1px solid #eee"><a href="mailto:${safeEmail}" style="color:#E24B4A">${safeEmail}</a></td></tr>
             <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">User ID</td><td style="padding:10px;border-bottom:1px solid #eee">${safeUserId}</td></tr>
+            <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#777">Company ID</td><td style="padding:10px;border-bottom:1px solid #eee">${safeCompanyId}</td></tr>
           </table>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
             ${adminActionsHtml}
