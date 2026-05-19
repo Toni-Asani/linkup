@@ -48,15 +48,18 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         .select('id, company_a, company_b, status, created_at, company_b_profile:company_b(*)')
         .eq('company_a', comp.id)
         .eq('status', 'pending')
-      if (myMatchesError) throw myMatchesError
+      if (myMatchesError) console.warn('Unable to load following matches:', myMatchesError)
 
-      const followingMatchesRaw = (myMatches || []).filter(match => match.company_b && match.company_b !== comp.id)
+      const followingMatchesRaw = (myMatchesError ? [] : myMatches || []).filter(match => match.company_b && match.company_b !== comp.id)
       const missingFollowingIds = followingMatchesRaw.filter(m => !m.company_b_profile).map(m => m.company_b).filter(Boolean)
       let followingCompaniesById = {}
       if (missingFollowingIds.length > 0) {
         const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').in('id', missingFollowingIds)
-        if (companiesError) throw companiesError
-        followingCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
+        if (companiesError) {
+          console.warn('Unable to load followed companies:', companiesError)
+        } else {
+          followingCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
+        }
       }
       const followingMatches = followingMatchesRaw.map(m => ({
         ...m,
@@ -79,15 +82,18 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         .select('id, company_a, company_b, status, created_at, company_a_profile:company_a(*)', { count: 'exact' })
         .eq('company_b', comp.id)
         .eq('status', 'pending')
-      if (followersError) throw followersError
+      if (followersError) console.warn('Unable to load follower matches:', followersError)
 
-      const followerMatchesRaw = (followersData || []).filter(match => match.company_a && match.company_a !== comp.id)
+      const followerMatchesRaw = (followersError ? [] : followersData || []).filter(match => match.company_a && match.company_a !== comp.id)
       const missingFollowerIds = followerMatchesRaw.filter(m => !m.company_a_profile).map(m => m.company_a).filter(Boolean)
       let followerCompaniesById = {}
       if (missingFollowerIds.length > 0) {
         const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').in('id', missingFollowerIds)
-        if (companiesError) throw companiesError
-        followerCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
+        if (companiesError) {
+          console.warn('Unable to load follower companies:', companiesError)
+        } else {
+          followerCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
+        }
       }
       const followerMatches = followerMatchesRaw.map(m => ({
         ...m,
@@ -108,12 +114,12 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
       const { count: msgCount, error: messagesError } = await supabase
         .from('messages').select('*', { count: 'exact', head: true })
         .eq('sender_id', comp.id)
-      if (messagesError) throw messagesError
+      if (messagesError) console.warn('Unable to load sent message count:', messagesError)
 
       // Total entreprises sur Hubbing
       const { count: totalCompanies, error: totalCompaniesError } = await supabase
         .from('companies').select('*', { count: 'exact', head: true })
-      if (totalCompaniesError) throw totalCompaniesError
+      if (totalCompaniesError) console.warn('Unable to load company count:', totalCompaniesError)
 
       setStats({
         matches: enrichedFollowingMatches.length,
