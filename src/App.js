@@ -609,7 +609,7 @@ export default function App() {
 
   useEffect(() => {
   supabase.auth.getSession().then(async ({ data: { session } }) => {
-    setUser(session?.user ?? null)    
+    setUser(currentUser => session?.user ?? currentUser)
     // Vérifier si retour de paiement web
     const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')
@@ -627,11 +627,20 @@ export default function App() {
     }
     
     setLoading(false)
+  }).catch(error => {
+    console.warn('Unable to restore auth session:', error)
+    setLoading(false)
   })
   const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'PASSWORD_RECOVERY') setScreen('reset-password')
-    setUser(session?.user ?? null)
-    if (!session) clearAppBadge()
+    if (session?.user) {
+      setUser(session.user)
+      return
+    }
+    if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+      setUser(null)
+      clearAppBadge()
+    }
   })
   return () => subscription.unsubscribe()
 }, [])

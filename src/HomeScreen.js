@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
@@ -20,28 +20,42 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
   const [showFollowers, setShowFollowers] = useState(false)
   const [showFollowing, setShowFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
-  useEffect(() => { loadData() }, [])
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const { data: comp, error: companyError } = await supabase
+        .from('companies').select('*').eq('user_id', user.id).maybeSingle()
+      if (companyError) throw companyError
 
-  const loadData = async () => {
-    const { data: comp } = await supabase
-      .from('companies').select('*').eq('user_id', user.id).single()
+      if (!comp) {
+        setCompany(null)
+        setMatchedCompanies([])
+        setFollowerCompanies([])
+        setStats({ matches: 0, messages: 0, followers: 0, totalCompanies: 0 })
+        setLoadError(ui.common.companyNotFound)
+        return
+      }
 
-    if (comp) {
       const compWithSubscription = await attachCompanySubscriptions(supabase, comp)
       setCompany(compWithSubscription)
 
       // Matchs que j'ai initiés
-      const { data: myMatches } = await supabase
+      const { data: myMatches, error: myMatchesError } = await supabase
         .from('matches')
         .select('id, company_a, company_b, status, created_at, company_b_profile:company_b(*)')
         .eq('company_a', comp.id)
         .eq('status', 'pending')
+      if (myMatchesError) throw myMatchesError
+
       const followingMatchesRaw = (myMatches || []).filter(match => match.company_b && match.company_b !== comp.id)
       const missingFollowingIds = followingMatchesRaw.filter(m => !m.company_b_profile).map(m => m.company_b).filter(Boolean)
       let followingCompaniesById = {}
       if (missingFollowingIds.length > 0) {
-        const { data: companiesData } = await supabase.from('companies').select('*').in('id', missingFollowingIds)
+        const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').in('id', missingFollowingIds)
+        if (companiesError) throw companiesError
         followingCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
       }
       const followingMatches = followingMatchesRaw.map(m => ({
@@ -60,16 +74,19 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
       setMatchedCompanies(enrichedFollowingMatches)
 
       // Entreprises qui me suivent
-      const { data: followersData, count: followers } = await supabase
+      const { data: followersData, count: followers, error: followersError } = await supabase
         .from('matches')
         .select('id, company_a, company_b, status, created_at, company_a_profile:company_a(*)', { count: 'exact' })
         .eq('company_b', comp.id)
         .eq('status', 'pending')
+      if (followersError) throw followersError
+
       const followerMatchesRaw = (followersData || []).filter(match => match.company_a && match.company_a !== comp.id)
       const missingFollowerIds = followerMatchesRaw.filter(m => !m.company_a_profile).map(m => m.company_a).filter(Boolean)
       let followerCompaniesById = {}
       if (missingFollowerIds.length > 0) {
-        const { data: companiesData } = await supabase.from('companies').select('*').in('id', missingFollowerIds)
+        const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').in('id', missingFollowerIds)
+        if (companiesError) throw companiesError
         followerCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
       }
       const followerMatches = followerMatchesRaw.map(m => ({
@@ -88,13 +105,15 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
       setFollowerCompanies(enrichedFollowerMatches)
 
       // Messages envoyés
-      const { count: msgCount } = await supabase
+      const { count: msgCount, error: messagesError } = await supabase
         .from('messages').select('*', { count: 'exact', head: true })
         .eq('sender_id', comp.id)
+      if (messagesError) throw messagesError
 
       // Total entreprises sur Hubbing
-      const { count: totalCompanies } = await supabase
+      const { count: totalCompanies, error: totalCompaniesError } = await supabase
         .from('companies').select('*', { count: 'exact', head: true })
+      if (totalCompaniesError) throw totalCompaniesError
 
       setStats({
         matches: enrichedFollowingMatches.length,
@@ -102,10 +121,15 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         followers: enrichedFollowerMatches.length || followers || 0,
         totalCompanies: totalCompanies || 0
       })
+    } catch (error) {
+      console.warn('Unable to load home screen:', error)
+      setLoadError(error?.message || "Impossible de charger l'accueil.")
+    } finally {
+      setLoading(false)
     }
+  }, [user.id, ui.common.companyNotFound])
 
-    setLoading(false)
-  }
+  useEffect(() => { loadData() }, [loadData])
 
   const getGreeting = () => {
     const h = new Date().getHours()
@@ -152,6 +176,27 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
       <p style={{color:'#999'}}>{ui.common.loading}</p>
+    </div>
+  )
+
+  if (loadError) return (
+    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',minHeight:420,padding:'2rem'}}>
+      <div style={{width:'100%',maxWidth:360,textAlign:'center',background:'#FFF7F7',border:'1px solid #FECACA',borderRadius:14,padding:'1.25rem'}}>
+        <p style={{fontSize:16,fontWeight:700,color:'#991B1B',margin:'0 0 0.5rem'}}>
+          Impossible de charger l'accueil
+        </p>
+        <p style={{fontSize:13,lineHeight:1.5,color:'#7F1D1D',margin:'0 0 1rem'}}>
+          {loadError}
+        </p>
+        <div style={{display:'flex',gap:10}}>
+          <button type="button" onClick={loadData} style={{flex:1,padding:'10px 12px',border:'none',borderRadius:10,background:'#E24B4A',color:'white',fontWeight:700,cursor:'pointer'}}>
+            Réessayer
+          </button>
+          <button type="button" onClick={() => setActiveTab('profile')} style={{flex:1,padding:'10px 12px',border:'1px solid #FECACA',borderRadius:10,background:'white',color:'#E24B4A',fontWeight:700,cursor:'pointer'}}>
+            Profil
+          </button>
+        </div>
+      </div>
     </div>
   )
 
