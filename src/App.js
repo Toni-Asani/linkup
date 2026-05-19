@@ -31,6 +31,8 @@ const URL_SCREEN_SCREENS = ['login', 'register', 'visitor', 'legal', 'privacy', 
 const sessionTokenFallbacks = new Map()
 const REGISTRATION_DRAFT_KEY = 'hubbing_registration_draft'
 
+const signOutCurrentBrowser = () => supabase.auth.signOut({ scope: 'local' })
+
 const readRegistrationDraft = () => {
   try {
     return JSON.parse(window.sessionStorage.getItem(REGISTRATION_DRAFT_KEY) || '{}') || {}
@@ -1227,7 +1229,7 @@ function LoginScreen({ setScreen, setUser, t }) {
     }
 
     setUser(session.user)
-    setScreen('home')
+    window.history.replaceState({}, '', window.location.pathname)
     setLoading(false)
 
     if (!isNativeApp() && session.user.id) {
@@ -1379,7 +1381,7 @@ function ResetPasswordScreen({ setScreen, t }) {
       return
     }
 
-    await supabase.auth.signOut()
+    await signOutCurrentBrowser()
     window.history.replaceState({}, '', window.location.pathname)
     setSuccess(true)
     setLoading(false)
@@ -2089,7 +2091,7 @@ const forceSignOut = async (message) => {
   if (message) window.alert(message)
   await releaseSessionLock()
   await clearAppBadge()
-  await supabase.auth.signOut()
+  await signOutCurrentBrowser()
 }
 
 useEffect(() => {
@@ -2259,7 +2261,7 @@ const loadUnreadCount = async () => {
     signingOutRef.current = true
     await releaseSessionLock()
     await clearAppBadge()
-    await supabase.auth.signOut()
+    await signOutCurrentBrowser()
   }
 
 const handleTabChange = (tab) => {
