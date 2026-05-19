@@ -665,7 +665,7 @@ export default function App() {
 
   useEffect(() => {
   const params = new URLSearchParams(window.location.search)
-  if (params.get('repair') === '1') {
+  if (!isNativeApp() && params.get('repair') === '1') {
     repairLocalBrowserSession().finally(() => {
       window.history.replaceState({}, '', window.location.pathname)
       window.location.reload()
@@ -1277,6 +1277,7 @@ function LoginScreen({ setScreen, setUser, t }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [repairing, setRepairing] = useState(false)
+  const showRepairLogin = !isNativeApp()
 
   const handleLogin = async () => {
     if (loading) return
@@ -1360,10 +1361,12 @@ function LoginScreen({ setScreen, setUser, t }) {
         style={{background:'none',border:'none',cursor:'pointer',color:'#E24B4A',fontSize:14,fontWeight:700,fontFamily:'Plus Jakarta Sans',alignSelf:'center'}}>
         {t.forgotPassword}
       </button>
-      <button type="button" onClick={handleRepairLogin} disabled={repairing}
-        style={{background:'none',border:'none',cursor:'pointer',color:'#6B7280',fontSize:12,fontWeight:700,fontFamily:'Plus Jakarta Sans',alignSelf:'center'}}>
-        {repairing ? t.repairingLogin : t.repairLogin}
-      </button>
+      {showRepairLogin && (
+        <button type="button" onClick={handleRepairLogin} disabled={repairing}
+          style={{background:'none',border:'none',cursor:'pointer',color:'#6B7280',fontSize:12,fontWeight:700,fontFamily:'Plus Jakarta Sans',alignSelf:'center'}}>
+          {repairing ? t.repairingLogin : t.repairLogin}
+        </button>
+      )}
       <p style={{textAlign:'center',fontSize:14,color:'#666'}}>
         {t.noAccount} <span onClick={() => setScreen('register')} style={{color:'#E24B4A',cursor:'pointer',fontWeight:600}}>{t.register}</span>
       </p>
