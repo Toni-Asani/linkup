@@ -17,6 +17,7 @@ import { HubbingIcon } from './icons'
 import { VerifiedBadge } from './VerifiedBadge'
 import { clearAppBadge, showNativeNotification, syncUnreadAppBadge } from './appBadge'
 import { registerPushNotifications } from './pushNotifications'
+import UsageGuideModal from './UsageGuideModal'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
@@ -214,6 +215,18 @@ const translations = {
     createAccount: 'Créer un compte',
     login: 'Se connecter',
     visitorMode: 'Continuer en mode visiteur',
+    usageGuide: "Mode d'emploi",
+    usageGuideTitle: "Mode d'emploi Hubbing",
+    usageGuideIntro: 'Un repère rapide pour comprendre les menus avant de créer votre compte.',
+    usageGuideClose: "Fermer le mode d'emploi",
+    usageGuideSteps: [
+      { title: 'Accueil', body: 'Retrouvez votre résumé, votre profil et les prochaines actions importantes.' },
+      { title: 'Swipe', body: 'Parcourez les entreprises, filtrez par secteur, canton, rayon ou besoin, puis matchez les bons partenaires.' },
+      { title: 'Carte', body: 'Visualisez les entreprises suisses autour de vous et ouvrez leur profil depuis la carte.' },
+      { title: 'Messages', body: 'Échangez avec vos connexions, suivez les messages lus et gardez vos conversations organisées.' },
+      { title: 'Profil', body: 'Mettez à jour vos informations, vos besoins B2B, vos visuels et vos préférences.' },
+      { title: 'Tarifs', body: 'Comparez Starter, Basic et Premium pour choisir le niveau adapté à votre visibilité.' },
+    ],
     planPreviewCta: 'Voir les tarifs',
     planPreviews: [
       { id: 'starter', name: 'Starter', price: 'Gratuit', detail: 'Découvrir' },
@@ -315,6 +328,18 @@ const translations = {
     createAccount: 'Konto erstellen',
     login: 'Anmelden',
     visitorMode: 'Als Besucher fortfahren',
+    usageGuide: 'Anleitung',
+    usageGuideTitle: 'So nutzen Sie Hubbing',
+    usageGuideIntro: 'Eine kurze Übersicht über die Menüs, bevor Sie ein Konto erstellen.',
+    usageGuideClose: 'Anleitung schliessen',
+    usageGuideSteps: [
+      { title: 'Start', body: 'Sehen Sie Ihre Übersicht, Ihr Profil und die nächsten wichtigen Aktionen.' },
+      { title: 'Swipe', body: 'Entdecken Sie Unternehmen, filtern Sie nach Branche, Kanton, Radius oder Bedarf und matchen Sie passende Partner.' },
+      { title: 'Karte', body: 'Sehen Sie Schweizer Unternehmen auf der Karte und öffnen Sie deren Profil direkt.' },
+      { title: 'Nachrichten', body: 'Tauschen Sie sich mit Ihren Kontakten aus und behalten Sie Unterhaltungen im Blick.' },
+      { title: 'Profil', body: 'Aktualisieren Sie Unternehmensdaten, B2B-Bedarf, Bilder und Einstellungen.' },
+      { title: 'Preise', body: 'Vergleichen Sie Starter, Basic und Premium für die passende Sichtbarkeit.' },
+    ],
     planPreviewCta: 'Preise ansehen',
     planPreviews: [
       { id: 'starter', name: 'Starter', price: 'Gratis', detail: 'Entdecken' },
@@ -416,6 +441,18 @@ const translations = {
     createAccount: 'Crea un account',
     login: 'Accedi',
     visitorMode: 'Continua in modalità visitatore',
+    usageGuide: "Guida all'uso",
+    usageGuideTitle: 'Come usare Hubbing',
+    usageGuideIntro: 'Una panoramica rapida dei menu prima di creare il tuo account.',
+    usageGuideClose: 'Chiudi la guida',
+    usageGuideSteps: [
+      { title: 'Home', body: 'Trova il riepilogo, il profilo e le prossime azioni importanti.' },
+      { title: 'Swipe', body: 'Scopri aziende, filtra per settore, cantone, raggio o bisogno e crea match utili.' },
+      { title: 'Mappa', body: 'Visualizza le aziende svizzere sulla mappa e apri il loro profilo.' },
+      { title: 'Messaggi', body: 'Scambia messaggi con le connessioni e tieni ordinate le conversazioni.' },
+      { title: 'Profilo', body: 'Aggiorna dati aziendali, bisogni B2B, immagini e preferenze.' },
+      { title: 'Tariffe', body: 'Confronta Starter, Basic e Premium per scegliere la visibilità giusta.' },
+    ],
     planPreviewCta: 'Vedi tariffe',
     planPreviews: [
       { id: 'starter', name: 'Starter', price: 'Gratis', detail: 'Scoprire' },
@@ -517,6 +554,18 @@ const translations = {
     createAccount: 'Create an account',
     login: 'Log in',
     visitorMode: 'Continue as visitor',
+    usageGuide: 'User guide',
+    usageGuideTitle: 'How to use Hubbing',
+    usageGuideIntro: 'A quick overview of the menus before creating your account.',
+    usageGuideClose: 'Close guide',
+    usageGuideSteps: [
+      { title: 'Home', body: 'Find your summary, profile status and the next important actions.' },
+      { title: 'Swipe', body: 'Browse companies, filter by sector, canton, radius or need, then match useful partners.' },
+      { title: 'Map', body: 'See Swiss companies on the map and open their profile directly.' },
+      { title: 'Messages', body: 'Exchange messages with your connections and keep conversations organized.' },
+      { title: 'Profile', body: 'Update company details, B2B needs, visuals and preferences.' },
+      { title: 'Pricing', body: 'Compare Starter, Basic and Premium to choose the right visibility level.' },
+    ],
     planPreviewCta: 'View pricing',
     planPreviews: [
       { id: 'starter', name: 'Starter', price: 'Free', detail: 'Discover' },
@@ -1196,6 +1245,7 @@ const handleWaitlist = async () => {
 }
 function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
   const [showLangMenu, setShowLangMenu] = useState(false)
+  const [showUsageGuide, setShowUsageGuide] = useState(false)
   const langs = [
     { code: 'fr', label: '🇫🇷 Français' },
     { code: 'de', label: '🇩🇪 Deutsch' },
@@ -1209,6 +1259,7 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
 
   return (
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.25rem) 1.5rem calc(env(safe-area-inset-bottom) + 1.5rem)',gap:'1rem',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
+      {showUsageGuide && <UsageGuideModal t={t} onClose={() => setShowUsageGuide(false)} />}
       <div style={{position:'absolute',top:'calc(env(safe-area-inset-top) + 1rem)',right:'1rem'}}>
         <button onClick={() => setShowLangMenu(!showLangMenu)}
           style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'6px 14px',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',fontWeight:500,display:'inline-flex',alignItems:'center',gap:6}}>
@@ -1240,6 +1291,11 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
       <button onClick={() => { setVisitorInitialTab && setVisitorInitialTab('swipe'); setScreen('visitor') }}
         style={{width:'100%',padding:'14px',background:'#F8FAFC',color:'#475569',border:'1px solid #CBD5E1',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:'0 6px 18px rgba(71,85,105,0.08)'}}>
         {t.visitorMode}
+      </button>
+      <button onClick={() => setShowUsageGuide(true)}
+        style={{width:'100%',padding:'13px 14px',background:'white',color:'#185FA5',border:'1px solid #BFDBFE',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+        <HubbingIcon name="sparkles" size={17} color="#185FA5" />
+        {t.usageGuide}
       </button>
       <div style={{width:'100%',display:'grid',gridTemplateColumns:'repeat(3, minmax(0, 1fr))',gap:8}}>
         {t.planPreviews.map((plan, index) => {

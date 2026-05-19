@@ -6,6 +6,7 @@ import { geocodeSwissAddress } from './geo'
 import { isNativeIOS } from './platform'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
+import UsageGuideModal from './UsageGuideModal'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -76,6 +77,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' })
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordNotice, setPasswordNotice] = useState(null)
+  const [showUsageGuide, setShowUsageGuide] = useState(false)
   const fileInputRef = useRef(null)
 
   useEffect(() => { loadProfile() }, [])
@@ -542,6 +544,7 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>
+      {showUsageGuide && <UsageGuideModal t={ui.usageGuide} onClose={() => setShowUsageGuide(false)} />}
 
       {/* Header */}
       <div style={{
@@ -681,6 +684,11 @@ style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outli
   style={{padding:'14px',background:'white',color:'#666',border:'1px solid #eee',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',textDecoration:'none',display:'block'}}>
   {ui.profile.contactHubbing}
 </a>
+        <button onClick={() => setShowUsageGuide(true)}
+          style={{padding:'14px',background:'white',color:'#185FA5',border:'1px solid #BFDBFE',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <HubbingIcon name="sparkles" size={17} color="#185FA5" />
+          {ui.usageGuide.usageGuide}
+        </button>
         <DeleteAccountButton user={user} lang={lang} />
 
 <button onClick={() => window.location.href = window.location.pathname + '?admin=true'}

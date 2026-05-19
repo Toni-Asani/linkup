@@ -27,6 +27,20 @@ const dictionaries = {
       profile: 'Profil',
       pricing: 'Tarifs',
     },
+    usageGuide: {
+      usageGuide: "Mode d'emploi",
+      usageGuideTitle: "Mode d'emploi Hubbing",
+      usageGuideIntro: 'Un repère rapide pour comprendre les menus et retrouver les fonctions principales.',
+      usageGuideClose: "Fermer le mode d'emploi",
+      usageGuideSteps: [
+        { title: 'Accueil', body: 'Retrouvez votre résumé, votre profil et les prochaines actions importantes.' },
+        { title: 'Swipe', body: 'Parcourez les entreprises, filtrez par secteur, canton, rayon ou besoin, puis matchez les bons partenaires.' },
+        { title: 'Carte', body: 'Visualisez les entreprises suisses autour de vous et ouvrez leur profil depuis la carte.' },
+        { title: 'Messages', body: 'Échangez avec vos connexions, suivez les messages lus et gardez vos conversations organisées.' },
+        { title: 'Profil', body: 'Mettez à jour vos informations, vos besoins B2B, vos visuels et vos préférences.' },
+        { title: 'Tarifs', body: 'Comparez Starter, Basic et Premium pour choisir le niveau adapté à votre visibilité.' },
+      ],
+    },
     home: {
       morning: 'Bonjour',
       afternoon: 'Bon après-midi',
@@ -365,6 +379,20 @@ dictionaries.de = {
     profile: 'Profil',
     pricing: 'Preise',
   },
+  usageGuide: {
+    usageGuide: 'Anleitung',
+    usageGuideTitle: 'So nutzen Sie Hubbing',
+    usageGuideIntro: 'Eine kurze Übersicht über die Menüs und wichtigsten Funktionen.',
+    usageGuideClose: 'Anleitung schliessen',
+    usageGuideSteps: [
+      { title: 'Start', body: 'Sehen Sie Ihre Übersicht, Ihr Profil und die nächsten wichtigen Schritte.' },
+      { title: 'Swipe', body: 'Entdecken Sie Unternehmen, filtern Sie nach Branche, Kanton, Radius oder Bedarf und matchen Sie passende Partner.' },
+      { title: 'Karte', body: 'Sehen Sie Schweizer Unternehmen in Ihrer Nähe und öffnen Sie deren Profil direkt auf der Karte.' },
+      { title: 'Nachrichten', body: 'Schreiben Sie Ihren Kontakten, sehen Sie gelesene Nachrichten und behalten Sie Gespräche im Blick.' },
+      { title: 'Profil', body: 'Aktualisieren Sie Ihre Daten, B2B-Bedürfnisse, Bilder und Einstellungen.' },
+      { title: 'Preise', body: 'Vergleichen Sie Starter, Basic und Premium, um die passende Sichtbarkeit zu wählen.' },
+    ],
+  },
   home: {
     morning: 'Guten Morgen',
     afternoon: 'Guten Nachmittag',
@@ -556,6 +584,20 @@ dictionaries.it = {
     profile: 'Profilo',
     pricing: 'Tariffe',
   },
+  usageGuide: {
+    usageGuide: "Guida all'uso",
+    usageGuideTitle: 'Come usare Hubbing',
+    usageGuideIntro: 'Una panoramica rapida dei menu e delle funzioni principali.',
+    usageGuideClose: 'Chiudi la guida',
+    usageGuideSteps: [
+      { title: 'Home', body: 'Trova il riepilogo, il profilo e le prossime azioni importanti.' },
+      { title: 'Swipe', body: 'Scopri aziende, filtra per settore, cantone, raggio o bisogno e crea match con i partner giusti.' },
+      { title: 'Mappa', body: 'Visualizza le aziende svizzere vicino a te e apri il loro profilo dalla mappa.' },
+      { title: 'Messaggi', body: 'Comunica con le tue connessioni, segui i messaggi letti e mantieni organizzate le conversazioni.' },
+      { title: 'Profilo', body: 'Aggiorna informazioni, bisogni B2B, immagini e preferenze.' },
+      { title: 'Tariffe', body: 'Confronta Starter, Basic e Premium per scegliere la visibilità più adatta.' },
+    ],
+  },
 }
 
 dictionaries.en = {
@@ -583,6 +625,20 @@ dictionaries.en = {
     messages: 'Messages',
     profile: 'Profile',
     pricing: 'Pricing',
+  },
+  usageGuide: {
+    usageGuide: 'User guide',
+    usageGuideTitle: 'How to use Hubbing',
+    usageGuideIntro: 'A quick overview of the menus and main features.',
+    usageGuideClose: 'Close guide',
+    usageGuideSteps: [
+      { title: 'Home', body: 'Find your summary, profile and next important actions.' },
+      { title: 'Swipe', body: 'Browse companies, filter by sector, canton, radius or need, then match with the right partners.' },
+      { title: 'Map', body: 'See Swiss companies around you and open their profile from the map.' },
+      { title: 'Messages', body: 'Chat with your connections, track read messages and keep conversations organized.' },
+      { title: 'Profile', body: 'Update your information, B2B needs, visuals and preferences.' },
+      { title: 'Pricing', body: 'Compare Starter, Basic and Premium to choose the right visibility level.' },
+    ],
   },
 }
 
