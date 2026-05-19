@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { HubbingIcon } from './icons'
 
 export default function UsageGuideModal({ t, onClose }) {
   const overlayRef = useRef(null)
   const scrollRef = useRef(null)
+  const tabsRef = useRef(null)
+  const tabRefs = useRef([])
   const touchStartYRef = useRef(0)
   const [activeIndex, setActiveIndex] = useState(0)
   const guideColors = ['#E24B4A', '#185FA5', '#16A34A', '#7C3AED', '#F59E0B', '#0F766E']
@@ -77,31 +80,38 @@ export default function UsageGuideModal({ t, onClose }) {
   }, [])
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'auto' })
+    tabRefs.current[activeIndex]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
   }, [activeIndex])
 
-  return (
-    <div ref={overlayRef} style={{position:'fixed',inset:0,zIndex:50000,background:'rgba(15,23,42,0.58)',display:'flex',justifyContent:'center',overflow:'hidden',overscrollBehavior:'none'}} role="dialog" aria-modal="true">
+  const modal = (
+    <div ref={overlayRef} style={{position:'fixed',inset:0,zIndex:2147483647,background:'rgba(15,23,42,0.58)',display:'flex',justifyContent:'center',overflow:'hidden',overscrollBehavior:'none'}} role="dialog" aria-modal="true">
       <div style={{width:'100%',maxWidth:430,height:'100dvh',background:'white',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 18px 55px rgba(15,23,42,0.28)'}}>
-        <div style={{flexShrink:0,padding:'calc(env(safe-area-inset-top) + 0.9rem) 1rem 0.75rem',borderBottom:'1px solid #E5E7EB',background:'white',zIndex:2}}>
-          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
-            <div style={{minWidth:0}}>
-              <p style={{fontSize:12,color:'#E24B4A',fontWeight:800,margin:'0 0 4px'}}>{t.usageGuide}</p>
-              <h2 style={{fontSize:22,fontWeight:850,margin:0,color:'#111827',lineHeight:1.12}}>{t.usageGuideTitle}</h2>
-            </div>
+        <div style={{flexShrink:0,padding:'calc(env(safe-area-inset-top) + 0.45rem) 1rem 0.75rem',borderBottom:'1px solid #E5E7EB',background:'white',zIndex:2}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,marginBottom:8}}>
+            <button onClick={onClose}
+              style={{minWidth:0,height:36,padding:'0 12px',border:'1px solid #E5E7EB',borderRadius:999,background:'white',display:'flex',alignItems:'center',justifyContent:'center',gap:6,cursor:'pointer',fontSize:13,fontWeight:800,color:'#475569',fontFamily:'Plus Jakarta Sans'}}>
+              ← {t.usageGuideBack || 'Retour'}
+            </button>
             <button onClick={onClose} aria-label={t.usageGuideClose}
-              style={{width:38,height:38,border:'1px solid #E5E7EB',borderRadius:'50%',background:'white',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              style={{width:36,height:36,border:'1px solid #E5E7EB',borderRadius:'50%',background:'white',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
               <HubbingIcon name="x" size={18} color="#64748B" />
             </button>
           </div>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
+            <div style={{minWidth:0}}>
+              <p style={{fontSize:12,color:'#E24B4A',fontWeight:800,margin:'0 0 4px'}}>{t.usageGuide}</p>
+              <h2 style={{fontSize:20,fontWeight:850,margin:0,color:'#111827',lineHeight:1.12}}>{t.usageGuideTitle}</h2>
+            </div>
+          </div>
           <p style={{fontSize:13,color:'#64748B',lineHeight:1.45,margin:'0.65rem 0 0'}}>{t.usageGuideIntro}</p>
-          <div style={{display:'flex',gap:8,overflowX:'auto',padding:'0.85rem 0 0.2rem',WebkitOverflowScrolling:'touch'}}>
+          <div ref={tabsRef} style={{display:'flex',gap:8,overflowX:'auto',overflowY:'hidden',padding:'0.85rem 1rem 0.2rem 0',WebkitOverflowScrolling:'touch',scrollbarWidth:'none',touchAction:'pan-x',overscrollBehaviorX:'contain'}}>
             {pages.map((page, index) => {
               const selected = index === activeIndex
               const color = page.color || guideColors[index] || '#E24B4A'
               return (
-                <button key={page.title} onClick={() => setActiveIndex(index)}
-                  style={{flexShrink:0,minHeight:42,padding:'8px 12px',borderRadius:999,border:selected ? `2px solid ${color}` : '1px solid #E2E8F0',background:selected ? `${color}12` : 'white',color:selected ? color : '#475569',fontSize:13,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',gap:7}}>
+                <button key={page.title} ref={element => { tabRefs.current[index] = element }} onClick={() => setActiveIndex(index)}
+                  style={{flexShrink:0,minHeight:40,padding:'8px 11px',borderRadius:999,border:selected ? `2px solid ${color}` : '1px solid #E2E8F0',background:selected ? `${color}12` : 'white',color:selected ? color : '#475569',fontSize:13,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',gap:7,whiteSpace:'nowrap',fontFamily:'Plus Jakarta Sans'}}>
                   <HubbingIcon name={page.icon || fallbackIcons[index] || 'sparkles'} size={16} color={selected ? color : '#64748B'} />
                   {page.title}
                 </button>
@@ -151,4 +161,6 @@ export default function UsageGuideModal({ t, onClose }) {
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }

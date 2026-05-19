@@ -31,6 +31,7 @@ const dictionaries = {
       usageGuide: "Mode d'emploi",
       usageGuideTitle: "Mode d'emploi Hubbing",
       usageGuideIntro: 'Un repère rapide pour comprendre les menus et retrouver les fonctions principales.',
+      usageGuideBack: 'Retour',
       usageGuideClose: "Fermer le mode d'emploi",
       usageGuideSteps: [
         { title: 'Accueil', body: 'Retrouvez votre résumé, votre profil et les prochaines actions importantes.' },
@@ -578,6 +579,7 @@ dictionaries.de = {
     usageGuide: 'Anleitung',
     usageGuideTitle: 'So nutzen Sie Hubbing',
     usageGuideIntro: 'Eine kurze Übersicht über die Menüs und wichtigsten Funktionen.',
+    usageGuideBack: 'Zurück',
     usageGuideClose: 'Anleitung schliessen',
     usageGuideSteps: [
       { title: 'Start', body: 'Sehen Sie Ihre Übersicht, Ihr Profil und die nächsten wichtigen Schritte.' },
@@ -783,6 +785,7 @@ dictionaries.it = {
     usageGuide: "Guida all'uso",
     usageGuideTitle: 'Come usare Hubbing',
     usageGuideIntro: 'Una panoramica rapida dei menu e delle funzioni principali.',
+    usageGuideBack: 'Indietro',
     usageGuideClose: 'Chiudi la guida',
     usageGuideSteps: [
       { title: 'Home', body: 'Trova il riepilogo, il profilo e le prossime azioni importanti.' },
@@ -825,6 +828,7 @@ dictionaries.en = {
     usageGuide: 'User guide',
     usageGuideTitle: 'How to use Hubbing',
     usageGuideIntro: 'A quick overview of the menus and main features.',
+    usageGuideBack: 'Back',
     usageGuideClose: 'Close guide',
     usageGuideSteps: [
       { title: 'Home', body: 'Find your summary, profile and next important actions.' },

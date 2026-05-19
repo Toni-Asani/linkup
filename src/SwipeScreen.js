@@ -601,6 +601,55 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
     return acc
   }, {})
 
+  const filtersModal = showFilters ? (
+    <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',zIndex:40000,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 0.75rem) 0 calc(76px + env(safe-area-inset-bottom))'}} onClick={() => setShowFilters(false)}>
+      <div style={{width:'100%',maxWidth:430,maxHeight:'100%',background:'white',borderRadius:'20px 20px 0 0',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 -12px 40px rgba(0,0,0,0.18)'}} onClick={e => e.stopPropagation()}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1.25rem 1.5rem 0.75rem',flexShrink:0}}>
+          <h3 style={{fontSize:18,fontWeight:700,margin:0}}>{ui.swipe.filters}</h3>
+          <button onClick={() => setShowFilters(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#999',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}}><X size={22} strokeWidth={2.4} /></button>
+        </div>
+        <div style={{flex:1,minHeight:0,overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch',padding:'0.5rem 1.5rem 1rem',display:'flex',flexDirection:'column',gap:'1.25rem'}}>
+          <div>
+            <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.needsSearch}</p>
+            <input
+              value={filterNeedsQuery}
+              onChange={e => setFilterNeedsQuery(e.target.value)}
+              placeholder={ui.swipe.needsSearchPlaceholder}
+              type="search"
+              autoCorrect="off"
+              autoCapitalize="none"
+              style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}
+            />
+          </div>
+          <div>
+            <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.radius(filterRadius)}</p>
+            <input type="range" min={10} max={300} step={10} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
+            <div style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:11,color:'#999',marginTop:4}}><span>10 km</span><span style={{textAlign:'right'}}>{ui.swipe.allSwitzerland}</span></div>
+            {!myCompanyCoords && <p style={{fontSize:11,color:'#F39C12',marginTop:8,lineHeight:1.45,overflowWrap:'anywhere'}}>{ui.swipe.saveProfileRadius}</p>}
+          </div>
+          <div>
+            <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.sector}</p>
+            <select value={filterSector} onChange={e => setFilterSector(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
+              <option value="">{ui.swipe.allSectors}</option>
+              {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s] || 0})</option>)}
+            </select>
+          </div>
+          <div>
+            <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.canton}</p>
+            <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
+              <option value="">{ui.swipe.allCantons}</option>
+              {swissCantons.map(c => <option key={c} value={c}>{c} ({cantonCounts[c] || 0})</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:10,flexShrink:0,padding:'0.75rem 1.5rem 1.25rem',borderTop:'1px solid #f2f2f2',background:'white'}}>
+          <button onClick={resetFilters} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
+          <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filteredCompanies.length)}</button>
+        </div>
+      </div>
+    </div>
+  ) : null
+
   if (loading) return (
     <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
       <p style={{color:'#999'}}>{ui.common.loading}</p>
@@ -609,6 +658,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
 
   if (allSeen || current >= filteredCompanies.length) return (
     <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
+      {filtersModal}
       <div style={{width:56,height:56,borderRadius:'50%',background:'#FFF5F5',display:'flex',alignItems:'center',justifyContent:'center'}}>
         <HubbingIcon name={activeFilters > 0 ? 'search' : 'sparkles'} size={28} color="#E24B4A" />
       </div>
@@ -658,52 +708,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
         </div>
       )}
 
-      {showFilters && (
-        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',zIndex:40000,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 0.75rem) 0 calc(76px + env(safe-area-inset-bottom))'}} onClick={() => setShowFilters(false)}>
-          <div style={{width:'100%',maxWidth:430,maxHeight:'100%',background:'white',borderRadius:'20px 20px 0 0',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 -12px 40px rgba(0,0,0,0.18)'}} onClick={e => e.stopPropagation()}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1.25rem 1.5rem 0.75rem',flexShrink:0}}>
-              <h3 style={{fontSize:18,fontWeight:700,margin:0}}>{ui.swipe.filters}</h3>
-              <button onClick={() => setShowFilters(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#999',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}}><X size={22} strokeWidth={2.4} /></button>
-            </div>
-            <div style={{flex:1,minHeight:0,overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch',padding:'0.5rem 1.5rem 1rem',display:'flex',flexDirection:'column',gap:'1.25rem'}}>
-              <div>
-                <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.needsSearch}</p>
-                <input
-                  value={filterNeedsQuery}
-                  onChange={e => setFilterNeedsQuery(e.target.value)}
-                  placeholder={ui.swipe.needsSearchPlaceholder}
-                  type="search"
-                  style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}
-                />
-              </div>
-              <div>
-                <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.radius(filterRadius)}</p>
-                <input type="range" min={10} max={300} step={10} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
-                <div style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:11,color:'#999',marginTop:4}}><span>10 km</span><span style={{textAlign:'right'}}>{ui.swipe.allSwitzerland}</span></div>
-                {!myCompanyCoords && <p style={{fontSize:11,color:'#F39C12',marginTop:8,lineHeight:1.45,overflowWrap:'anywhere'}}>{ui.swipe.saveProfileRadius}</p>}
-              </div>
-              <div>
-                <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.sector}</p>
-                <select value={filterSector} onChange={e => setFilterSector(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
-                  <option value="">{ui.swipe.allSectors}</option>
-                  {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s] || 0})</option>)}
-                </select>
-              </div>
-              <div>
-                <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.canton}</p>
-                <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
-                  <option value="">{ui.swipe.allCantons}</option>
-                  {swissCantons.map(c => <option key={c} value={c}>{c} ({cantonCounts[c] || 0})</option>)}
-                </select>
-              </div>
-            </div>
-            <div style={{display:'flex',gap:10,flexShrink:0,padding:'0.75rem 1.5rem 1.25rem',borderTop:'1px solid #f2f2f2',background:'white'}}>
-              <button onClick={resetFilters} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
-              <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filteredCompanies.length)}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {filtersModal}
 
       {!user && (
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.5rem 1rem',width:'100%',textAlign:'center'}}>
