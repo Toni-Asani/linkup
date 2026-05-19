@@ -33,6 +33,54 @@ const REGISTRATION_DRAFT_KEY = 'hubbing_registration_draft'
 
 const signOutCurrentBrowser = () => supabase.auth.signOut({ scope: 'local' })
 
+const clearHubbingStorage = (storage) => {
+  if (!storage) return
+  try {
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index)
+      const normalizedKey = String(key || '').toLowerCase()
+      if (
+        normalizedKey.startsWith('sb-') ||
+        normalizedKey.startsWith('hubbing_') ||
+        normalizedKey.includes('supabase')
+      ) {
+        storage.removeItem(key)
+      }
+    }
+  } catch (error) {
+    console.warn('Unable to clear local storage:', error)
+  }
+}
+
+const repairLocalBrowserSession = async () => {
+  try {
+    await signOutCurrentBrowser()
+  } catch (error) {
+    console.warn('Unable to sign out local browser session:', error)
+  }
+
+  clearHubbingStorage(window.localStorage)
+  clearHubbingStorage(window.sessionStorage)
+
+  if (window.caches?.keys) {
+    try {
+      const cacheNames = await window.caches.keys()
+      await Promise.all(cacheNames.map(cacheName => window.caches.delete(cacheName)))
+    } catch (error) {
+      console.warn('Unable to clear browser caches:', error)
+    }
+  }
+
+  if (window.navigator?.serviceWorker?.getRegistrations) {
+    try {
+      const registrations = await window.navigator.serviceWorker.getRegistrations()
+      await Promise.all(registrations.map(registration => registration.unregister()))
+    } catch (error) {
+      console.warn('Unable to unregister service workers:', error)
+    }
+  }
+}
+
 const readRegistrationDraft = () => {
   try {
     return JSON.parse(window.sessionStorage.getItem(REGISTRATION_DRAFT_KEY) || '{}') || {}
@@ -202,6 +250,8 @@ const translations = {
     connecting: 'Connexion...',
     loginBtn: 'Se connecter',
     forgotPassword: 'Mot de passe oublié ?',
+    repairLogin: 'Réparer la connexion sur cet appareil',
+    repairingLogin: 'Nettoyage...',
     resetPasswordTitle: 'Réinitialiser le mot de passe',
     resetPasswordIntro: 'Entrez votre email professionnel. Si un compte existe, vous recevrez un lien sécurisé pour choisir un nouveau mot de passe.',
     resetPasswordEmailSent: 'Si un compte existe pour cette adresse, un email de réinitialisation vient d’être envoyé. Vérifiez aussi vos spams.',
@@ -301,6 +351,8 @@ const translations = {
     connecting: 'Verbindung...',
     loginBtn: 'Anmelden',
     forgotPassword: 'Passwort vergessen?',
+    repairLogin: 'Anmeldung auf diesem Gerät reparieren',
+    repairingLogin: 'Bereinigung...',
     resetPasswordTitle: 'Passwort zurücksetzen',
     resetPasswordIntro: 'Geben Sie Ihre geschäftliche E-Mail ein. Falls ein Konto existiert, erhalten Sie einen sicheren Link.',
     resetPasswordEmailSent: 'Falls ein Konto für diese Adresse existiert, wurde ein Link zum Zurücksetzen gesendet. Prüfen Sie auch den Spam-Ordner.',
@@ -400,6 +452,8 @@ const translations = {
     connecting: 'Connessione...',
     loginBtn: 'Accedi',
     forgotPassword: 'Password dimenticata?',
+    repairLogin: "Riparare l'accesso su questo dispositivo",
+    repairingLogin: 'Pulizia...',
     resetPasswordTitle: 'Reimposta la password',
     resetPasswordIntro: "Inserisci l'email professionale. Se esiste un account, riceverai un link sicuro.",
     resetPasswordEmailSent: 'Se esiste un account per questo indirizzo, è stato inviato un link. Controlla anche lo spam.',
@@ -499,6 +553,8 @@ const translations = {
     connecting: 'Connecting...',
     loginBtn: 'Log in',
     forgotPassword: 'Forgot password?',
+    repairLogin: 'Repair login on this device',
+    repairingLogin: 'Cleaning...',
     resetPasswordTitle: 'Reset password',
     resetPasswordIntro: 'Enter your professional email. If an account exists, you will receive a secure link.',
     resetPasswordEmailSent: 'If an account exists for this address, a reset email has been sent. Please also check spam.',
@@ -608,10 +664,18 @@ export default function App() {
   }, [hostname, isMarketingSite])
 
   useEffect(() => {
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('repair') === '1') {
+    repairLocalBrowserSession().finally(() => {
+      window.history.replaceState({}, '', window.location.pathname)
+      window.location.reload()
+    })
+    return undefined
+  }
+
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     setUser(currentUser => session?.user ?? currentUser)
     // Vérifier si retour de paiement web
-    const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')
     const paymentPlan = params.get('plan')
     if (paymentStatus === 'success' && paymentPlan && session?.user) {
@@ -1212,6 +1276,7 @@ function LoginScreen({ setScreen, setUser, t }) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [repairing, setRepairing] = useState(false)
 
   const handleLogin = async () => {
     if (loading) return
@@ -1261,6 +1326,14 @@ function LoginScreen({ setScreen, setUser, t }) {
     }
   }
 
+  const handleRepairLogin = async () => {
+    if (repairing) return
+    setRepairing(true)
+    await repairLocalBrowserSession()
+    window.history.replaceState({}, '', window.location.pathname)
+    window.location.reload()
+  }
+
   return (
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2rem)',gap:'1rem',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
       <button onClick={() => setScreen('home')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,alignSelf:'flex-start',padding:'0.25rem 0',marginBottom:'0.5rem'}}>
@@ -1286,6 +1359,10 @@ function LoginScreen({ setScreen, setUser, t }) {
       <button type="button" onClick={() => setScreen('forgot-password')}
         style={{background:'none',border:'none',cursor:'pointer',color:'#E24B4A',fontSize:14,fontWeight:700,fontFamily:'Plus Jakarta Sans',alignSelf:'center'}}>
         {t.forgotPassword}
+      </button>
+      <button type="button" onClick={handleRepairLogin} disabled={repairing}
+        style={{background:'none',border:'none',cursor:'pointer',color:'#6B7280',fontSize:12,fontWeight:700,fontFamily:'Plus Jakarta Sans',alignSelf:'center'}}>
+        {repairing ? t.repairingLogin : t.repairLogin}
       </button>
       <p style={{textAlign:'center',fontSize:14,color:'#666'}}>
         {t.noAccount} <span onClick={() => setScreen('register')} style={{color:'#E24B4A',cursor:'pointer',fontWeight:600}}>{t.register}</span>
