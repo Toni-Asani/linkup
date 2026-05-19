@@ -27,7 +27,17 @@ const SESSION_LOCK_TTL_MINUTES = 35
 const ENFORCE_SINGLE_DEVICE_LOCK = false
 const ENABLE_INACTIVITY_SIGNOUT = false
 const PUBLIC_SCREENS = ['home', 'login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
+const URL_SCREEN_SCREENS = ['login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
 const sessionTokenFallbacks = new Map()
+const REGISTRATION_DRAFT_KEY = 'hubbing_registration_draft'
+
+const readRegistrationDraft = () => {
+  try {
+    return JSON.parse(window.sessionStorage.getItem(REGISTRATION_DRAFT_KEY) || '{}') || {}
+  } catch {
+    return {}
+  }
+}
 
 const getPasswordResetRedirectUrl = () => {
   const url = new URL(window.location.origin + window.location.pathname)
@@ -548,7 +558,7 @@ const translations = {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState(() => {
+  const [screen, setScreenState] = useState(() => {
     const requestedScreen = new URLSearchParams(window.location.search).get('screen')
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     if (hashParams.get('type') === 'recovery') return 'reset-password'
@@ -562,6 +572,28 @@ export default function App() {
   const isStandalonePwa = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true
   const isMarketingSite = (hostname === 'hubbing.ch' || hostname === 'www.hubbing.ch') && !isStandalonePwa
   const t = translations[lang]
+  const setScreen = (nextScreenOrUpdater) => {
+    setScreenState(currentScreen => {
+      const nextScreen = typeof nextScreenOrUpdater === 'function'
+        ? nextScreenOrUpdater(currentScreen)
+        : nextScreenOrUpdater
+
+      if (PUBLIC_SCREENS.includes(nextScreen)) {
+        const url = new URL(window.location.href)
+        if (URL_SCREEN_SCREENS.includes(nextScreen)) {
+          url.searchParams.set('screen', nextScreen)
+        } else {
+          url.searchParams.delete('screen')
+        }
+        if (nextScreen !== 'verification-result') {
+          ;['tone', 'status', 'title', 'message'].forEach(param => url.searchParams.delete(param))
+        }
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+      }
+
+      return nextScreen
+    })
+  }
 
   useEffect(() => {
     if (isNativeApp()) return
@@ -633,7 +665,7 @@ if (isMarketingSite) return (
 ) : screen === 'home' ? (
           <LandingScreen setScreen={setScreen} setVisitorInitialTab={setVisitorInitialTab} t={t} lang={lang} setLang={setLang} />
         ) : screen === 'login' ? (
-          <LoginScreen setScreen={setScreen} t={t} />
+          <LoginScreen setScreen={setScreen} setUser={setUser} t={t} />
         ) : screen === 'register' ? (
           <RegisterScreen setScreen={setScreen} t={t} />
         ) : screen === 'visitor' ? (
@@ -1163,7 +1195,7 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
     </div>
   )
 }
-function LoginScreen({ setScreen, t }) {
+function LoginScreen({ setScreen, setUser, t }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -1171,27 +1203,51 @@ function LoginScreen({ setScreen, t }) {
   const [loading, setLoading] = useState(false)
 
   const handleLogin = async () => {
+    if (loading) return
     setLoading(true)
     setError('')
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const normalizedEmail = email.trim().toLowerCase()
+    const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
     if (error) {
       setError(error.message)
-    } else if (!isNativeApp() && data?.user?.id) {
-      const userId = data.user.id
-      const [{ data: companyData }, { data: subscriptionData }] = await Promise.all([
+      setLoading(false)
+      return
+    }
+
+    let session = data?.session
+    if (!session?.user) {
+      const { data: sessionData } = await supabase.auth.getSession()
+      session = sessionData?.session
+    }
+
+    if (!session?.user) {
+      setError("Connexion acceptée, mais Safari n'a pas pu enregistrer la session. Autorisez les cookies/données de site pour app.hubbing.ch puis réessayez.")
+      setLoading(false)
+      return
+    }
+
+    setUser(session.user)
+    setScreen('home')
+    setLoading(false)
+
+    if (!isNativeApp() && session.user.id) {
+      const userId = session.user.id
+      Promise.all([
         supabase.from('companies').select('name, city, canton').eq('user_id', userId).maybeSingle(),
         supabase.from('subscriptions').select('plan, status').eq('user_id', userId).maybeSingle(),
-      ])
-      notifyTelegramActivity('login', {
-        email: data.user.email || email,
-        company: companyData?.name,
-        city: companyData?.city,
-        canton: companyData?.canton,
-        plan: subscriptionData?.plan || 'Starter',
-        status: subscriptionData?.status,
-      }, { cooldownMinutes: 0 })
+      ]).then(([{ data: companyData }, { data: subscriptionData }]) => {
+        notifyTelegramActivity('login', {
+          email: session.user.email || normalizedEmail,
+          company: companyData?.name,
+          city: companyData?.city,
+          canton: companyData?.canton,
+          plan: subscriptionData?.plan || 'Starter',
+          status: subscriptionData?.status,
+        }, { cooldownMinutes: 0 })
+      }).catch(error => {
+        console.warn('Login activity notification failed:', error)
+      })
     }
-    setLoading(false)
   }
 
   return (
@@ -1371,25 +1427,46 @@ function ResetPasswordScreen({ setScreen, t }) {
 }
 
 function RegisterScreen({ setScreen, t }) {
-  const [email, setEmail] = useState('')
+  const [registrationDraft] = useState(readRegistrationDraft)
+  const [email, setEmail] = useState(registrationDraft.email || '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [company, setCompany] = useState('')
-  const [sector, setSector] = useState('')
-  const [zefix, setZefix] = useState('')
-  const [contactName, setContactName] = useState('')
-  const [contactTitle, setContactTitle] = useState('')
-  const [address, setAddress] = useState('')
-  const [city, setCity] = useState('')
-  const [canton, setCanton] = useState('')
-  const [npa, setNpa] = useState('')
-  const [accepted, setAccepted] = useState(false)
+  const [company, setCompany] = useState(registrationDraft.company || '')
+  const [sector, setSector] = useState(registrationDraft.sector || '')
+  const [zefix, setZefix] = useState(registrationDraft.zefix || '')
+  const [contactName, setContactName] = useState(registrationDraft.contactName || '')
+  const [contactTitle, setContactTitle] = useState(registrationDraft.contactTitle || '')
+  const [address, setAddress] = useState(registrationDraft.address || '')
+  const [city, setCity] = useState(registrationDraft.city || '')
+  const [canton, setCanton] = useState(registrationDraft.canton || '')
+  const [npa, setNpa] = useState(registrationDraft.npa || '')
+  const [accepted, setAccepted] = useState(Boolean(registrationDraft.accepted))
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
  const [zefixStatus, setZefixStatus] = useState('idle') // idle, checking, valid, verified, manual, invalid
 const [zefixCompanyName, setZefixCompanyName] = useState('')
 const [zefixVerification, setZefixVerification] = useState(null)
+
+useEffect(() => {
+  try {
+    window.sessionStorage.setItem(REGISTRATION_DRAFT_KEY, JSON.stringify({
+      email,
+      company,
+      sector,
+      zefix,
+      contactName,
+      contactTitle,
+      address,
+      city,
+      canton,
+      npa,
+      accepted,
+    }))
+  } catch {
+    // Safari private windows can block sessionStorage; the form still works without draft restore.
+  }
+}, [email, company, sector, zefix, contactName, contactTitle, address, city, canton, npa, accepted])
 
 const handleZefixLookup = (ideNumber) => {
   setZefix(ideNumber)
@@ -1645,6 +1722,11 @@ if (zefixStatus === 'invalid') {
       console.error('Registration email error:', emailError)
     }
 
+    try {
+      window.sessionStorage.removeItem(REGISTRATION_DRAFT_KEY)
+    } catch {
+      // Ignore storage cleanup failures.
+    }
     setSuccess(true)
     setLoading(false)
   }
