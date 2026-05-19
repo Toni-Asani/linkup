@@ -25,7 +25,9 @@ const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
 const SESSION_LOCK_TTL_MINUTES = 35
 const ENFORCE_SINGLE_DEVICE_LOCK = false
-const PUBLIC_SCREENS = ['home', 'login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password']
+const ENABLE_INACTIVITY_SIGNOUT = false
+const PUBLIC_SCREENS = ['home', 'login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
+const sessionTokenFallbacks = new Map()
 
 const getPasswordResetRedirectUrl = () => {
   const url = new URL(window.location.origin + window.location.pathname)
@@ -79,10 +81,23 @@ const COMPANY_SECTORS = [
 
 const getStoredSessionToken = (userId) => {
   const key = `hubbing_session_token_${userId}`
-  const existing = window.localStorage.getItem(key)
-  if (existing) return existing
+  try {
+    const existing = window.localStorage.getItem(key)
+    if (existing) return existing
+  } catch (error) {
+    console.warn('Session token storage unavailable:', error)
+  }
+
+  const fallbackToken = sessionTokenFallbacks.get(userId)
+  if (fallbackToken) return fallbackToken
+
   const token = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  window.localStorage.setItem(key, token)
+  sessionTokenFallbacks.set(userId, token)
+  try {
+    window.localStorage.setItem(key, token)
+  } catch (error) {
+    console.warn('Unable to persist session token:', error)
+  }
   return token
 }
 
@@ -611,6 +626,8 @@ if (isMarketingSite) return (
           <ForgotPasswordScreen setScreen={setScreen} t={t} />
 ) : screen === 'reset-password' ? (
           <ResetPasswordScreen setScreen={setScreen} t={t} />
+) : screen === 'verification-result' ? (
+          <VerificationResultScreen setScreen={setScreen} />
 ) : user ? (
   <Dashboard user={user} setUser={setUser} t={t} lang={lang} setLang={setLang} />
 ) : screen === 'home' ? (
@@ -630,6 +647,37 @@ if (isMarketingSite) return (
         ) : null}
       </div>
     </>
+  )
+}
+
+function VerificationResultScreen({ setScreen }) {
+  const params = new URLSearchParams(window.location.search)
+  const title = params.get('title') || 'Validation Hubbing'
+  const message = params.get('message') || 'La demande de validation a été traitée.'
+  const tone = params.get('tone') === 'error' ? 'error' : 'success'
+  const color = tone === 'error' ? '#E24B4A' : '#16a34a'
+  const background = tone === 'error' ? '#FFF5F5' : '#F0FDF4'
+  const border = tone === 'error' ? '#FECACA' : '#BBF7D0'
+
+  const goHome = () => {
+    window.history.replaceState({}, '', window.location.pathname)
+    setScreen('home')
+  }
+
+  return (
+    <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.5rem) 1.5rem calc(env(safe-area-inset-bottom) + 1.5rem)',background:'#f7f7f7'}}>
+      <section style={{width:'100%',maxWidth:360,background:'white',border:'1px solid #eee',borderRadius:20,padding:'1.5rem',boxShadow:'0 18px 50px rgba(0,0,0,0.08)'}}>
+        <img src="/logo192.png" alt="Hubbing" style={{width:64,height:64,borderRadius:16,display:'block',marginBottom:22}} />
+        <h1 style={{fontSize:24,lineHeight:1.2,margin:'0 0 14px',fontWeight:800}}>{title}</h1>
+        <div style={{background,border:`1px solid ${border}`,borderRadius:14,padding:'1rem',margin:'0 0 1rem'}}>
+          <p style={{margin:0,fontSize:14,lineHeight:1.6,color,fontWeight:700}}>{message}</p>
+        </div>
+        <button onClick={goHome}
+          style={{width:'100%',padding:'13px 18px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+          Ouvrir Hubbing
+        </button>
+      </section>
+    </div>
   )
 }
 
@@ -2036,7 +2084,7 @@ useEffect(() => {
 }, [sessionReady, t.sessionAlreadyOpen])
 
 useEffect(() => {
-  if (!sessionReady) return undefined
+  if (!sessionReady || !ENABLE_INACTIVITY_SIGNOUT) return undefined
 
   const expireForInactivity = async () => {
     await forceSignOut(t.sessionExpired)

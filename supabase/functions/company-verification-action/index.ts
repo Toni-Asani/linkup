@@ -166,33 +166,13 @@ const sendApprovalEmail = async (email: string, companyName: string) => {
 }
 
 const htmlPage = (title: string, message: string, status = 200, tone: 'success' | 'error' = 'success') => {
-  const color = tone === 'success' ? '#16a34a' : '#E24B4A'
-  const bg = tone === 'success' ? '#F0FDF4' : '#FFF5F5'
-  const border = tone === 'success' ? '#BBF7D0' : '#FECACA'
-
-  return new Response(`<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>${escapeHtml(title)} - Hubbing</title>
-  </head>
-  <body style="margin:0;background:#f7f7f7;font-family:Arial,sans-serif;color:#1a1a1a">
-    <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
-      <section style="width:100%;max-width:520px;background:white;border:1px solid #eee;border-radius:20px;padding:28px;box-shadow:0 18px 50px rgba(0,0,0,0.08)">
-        <img src="https://www.hubbing.ch/logo192.png" width="64" height="64" style="border-radius:16px;display:block" alt="Hubbing" />
-        <h1 style="font-size:26px;line-height:1.2;margin:22px 0 12px">${escapeHtml(title)}</h1>
-        <div style="background:${bg};border:1px solid ${border};border-radius:14px;padding:16px;margin:18px 0">
-          <p style="margin:0;font-size:15px;line-height:1.6;color:${color}">${escapeHtml(message)}</p>
-        </div>
-        <a href="https://app.hubbing.ch" style="display:inline-block;margin-top:6px;padding:13px 18px;background:#E24B4A;color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:700">Ouvrir Hubbing</a>
-      </section>
-    </main>
-  </body>
-</html>`, {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' },
-  })
+  const resultUrl = new URL('https://app.hubbing.ch/')
+  resultUrl.searchParams.set('screen', 'verification-result')
+  resultUrl.searchParams.set('tone', tone)
+  resultUrl.searchParams.set('status', String(status))
+  resultUrl.searchParams.set('title', title)
+  resultUrl.searchParams.set('message', message)
+  return Response.redirect(resultUrl.toString(), 303)
 }
 
 serve(async (req) => {
