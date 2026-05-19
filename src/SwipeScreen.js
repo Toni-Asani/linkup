@@ -74,6 +74,26 @@ const getActiveTags = (needs_tags) => {
   } catch { return [] }
 }
 
+const normalizeSearchText = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9\s]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const getCompanyNeedsSearchText = (company) => [
+  company?.needs_description,
+  ...getActiveTags(company?.needs_tags).map(tag => tag.label),
+].filter(Boolean).join(' ')
+
+const matchesNeedsQuery = (company, query) => {
+  const terms = normalizeSearchText(query).split(' ').filter(Boolean)
+  if (terms.length === 0) return true
+  const searchableText = normalizeSearchText(getCompanyNeedsSearchText(company))
+  return terms.every(term => searchableText.includes(term))
+}
+
 const getCompanyPlanRank = (company) => {
   const subscription = Array.isArray(company?.subscriptions) ? company.subscriptions[0] : company?.subscriptions
   const plan = String(subscription?.plan || 'starter').toLowerCase()
@@ -115,6 +135,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const [filterRadius, setFilterRadius] = useState(300)
   const [filterSector, setFilterSector] = useState('')
   const [filterCanton, setFilterCanton] = useState('')
+  const [filterNeedsQuery, setFilterNeedsQuery] = useState('')
   const [myCompanyCoords, setMyCompanyCoords] = useState(null)
   const [matchedCompanyIds, setMatchedCompanyIds] = useState(new Set())
   const [swipeHistory, setSwipeHistory] = useState([])
@@ -136,12 +157,13 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   useEffect(() => { currentRef.current = current }, [current])
   useEffect(() => { companiesRef.current = filteredCompanies }, [filteredCompanies])
   useEffect(() => { decisionRef.current = decision }, [decision])
-  useEffect(() => { applyFilters() }, [companies, filterRadius, filterSector, filterCanton, myCompanyCoords])
+  useEffect(() => { applyFilters() }, [companies, filterRadius, filterSector, filterCanton, filterNeedsQuery, myCompanyCoords])
 
   const applyFilters = () => {
     let result = [...companies]
     if (filterSector) result = result.filter(c => c.sector === filterSector)
     if (filterCanton) result = result.filter(c => c.canton === filterCanton)
+    if (filterNeedsQuery.trim()) result = result.filter(c => matchesNeedsQuery(c, filterNeedsQuery))
     if (myCompanyCoords && filterRadius < 300) {
       result = result.filter(c => {
         if (!c.lat || !c.lng) return true
@@ -556,18 +578,24 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
     return `translateX(${offset.x}px) translateY(${offset.y}px) rotate(${rotate}deg)`
   }
 
-  const activeFilters = (filterSector ? 1 : 0) + (filterCanton ? 1 : 0) + (filterRadius < 300 ? 1 : 0)
+  const activeFilters = (filterSector ? 1 : 0) + (filterCanton ? 1 : 0) + (filterRadius < 300 ? 1 : 0) + (filterNeedsQuery.trim() ? 1 : 0)
+  const resetFilters = () => {
+    setFilterSector('')
+    setFilterCanton('')
+    setFilterRadius(300)
+    setFilterNeedsQuery('')
+  }
   const isWithinRadius = (company) => {
     if (!myCompanyCoords || filterRadius >= 300) return true
     if (!company.lat || !company.lng) return true
     return haversine(myCompanyCoords.lat, myCompanyCoords.lng, company.lat, company.lng) <= filterRadius
   }
-  const sectorCountBase = companies.filter(c => isWithinRadius(c) && (!filterCanton || c.canton === filterCanton))
+  const sectorCountBase = companies.filter(c => isWithinRadius(c) && (!filterCanton || c.canton === filterCanton) && matchesNeedsQuery(c, filterNeedsQuery))
   const sectorCounts = sectorCountBase.reduce((acc, item) => {
     if (item.sector) acc[item.sector] = (acc[item.sector] || 0) + 1
     return acc
   }, {})
-  const cantonCountBase = companies.filter(c => isWithinRadius(c) && (!filterSector || c.sector === filterSector))
+  const cantonCountBase = companies.filter(c => isWithinRadius(c) && (!filterSector || c.sector === filterSector) && matchesNeedsQuery(c, filterNeedsQuery))
   const cantonCounts = cantonCountBase.reduce((acc, item) => {
     if (item.canton) acc[item.canton] = (acc[item.canton] || 0) + 1
     return acc
@@ -592,7 +620,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
           {ui.swipe.previousCard}
         </button>
       )}
-      {activeFilters > 0 && <button onClick={() => { setFilterSector(''); setFilterCanton(''); setFilterRadius(300) }} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clearFilters}</button>}
+      {activeFilters > 0 && <button onClick={resetFilters} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clearFilters}</button>}
       <button onClick={() => loadCompanies(true)} style={{padding:'12px 24px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.reviewAll}</button>
       <button onClick={() => loadCompanies(false)} style={{padding:'12px 24px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>{ui.swipe.newOnly}</button>
     </div>
@@ -639,6 +667,16 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
             </div>
             <div style={{flex:1,minHeight:0,overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch',padding:'0.5rem 1.5rem 1rem',display:'flex',flexDirection:'column',gap:'1.25rem'}}>
               <div>
+                <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.needsSearch}</p>
+                <input
+                  value={filterNeedsQuery}
+                  onChange={e => setFilterNeedsQuery(e.target.value)}
+                  placeholder={ui.swipe.needsSearchPlaceholder}
+                  type="search"
+                  style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}
+                />
+              </div>
+              <div>
                 <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.radius(filterRadius)}</p>
                 <input type="range" min={10} max={300} step={10} value={filterRadius} onChange={e => setFilterRadius(Number(e.target.value))} style={{width:'100%',accentColor:'#E24B4A'}} />
                 <div style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:11,color:'#999',marginTop:4}}><span>10 km</span><span style={{textAlign:'right'}}>{ui.swipe.allSwitzerland}</span></div>
@@ -660,7 +698,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               </div>
             </div>
             <div style={{display:'flex',gap:10,flexShrink:0,padding:'0.75rem 1.5rem 1.25rem',borderTop:'1px solid #f2f2f2',background:'white'}}>
-              <button onClick={() => { setFilterSector(''); setFilterCanton(''); setFilterRadius(300) }} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
+              <button onClick={resetFilters} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
               <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filteredCompanies.length)}</button>
             </div>
           </div>
