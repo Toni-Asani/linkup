@@ -24,6 +24,7 @@ const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/d
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
 const SESSION_LOCK_TTL_MINUTES = 35
+const ENFORCE_SINGLE_DEVICE_LOCK = false
 const PUBLIC_SCREENS = ['home', 'login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password']
 
 const getPasswordResetRedirectUrl = () => {
@@ -1982,7 +1983,12 @@ useEffect(() => {
       return
     }
     if (data?.acquired === false) {
-      await forceSignOut(t.sessionAlreadyOpen)
+      console.warn('Session lock already active; allowing access to avoid blocking login:', data)
+      if (ENFORCE_SINGLE_DEVICE_LOCK) {
+        await forceSignOut(t.sessionAlreadyOpen)
+        return
+      }
+      setSessionReady(true)
       return
     }
     setSessionReady(true)
@@ -2009,7 +2015,10 @@ useEffect(() => {
       return
     }
     if (data?.active === false) {
-      await forceSignOut(t.sessionAlreadyOpen)
+      console.warn('Session lock inactive; keeping current auth session active:', data)
+      if (ENFORCE_SINGLE_DEVICE_LOCK) {
+        await forceSignOut(t.sessionAlreadyOpen)
+      }
     }
   }
 
