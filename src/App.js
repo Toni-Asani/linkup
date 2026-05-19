@@ -1246,6 +1246,7 @@ const handleWaitlist = async () => {
 function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showUsageGuide, setShowUsageGuide] = useState(false)
+  const usageGuideText = getUiText(lang).usageGuide
   const langs = [
     { code: 'fr', label: '🇫🇷 Français' },
     { code: 'de', label: '🇩🇪 Deutsch' },
@@ -1259,7 +1260,7 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
 
   return (
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.25rem) 1.5rem calc(env(safe-area-inset-bottom) + 1.5rem)',gap:'1rem',position:'relative',background:'white',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}}>
-      {showUsageGuide && <UsageGuideModal t={t} onClose={() => setShowUsageGuide(false)} />}
+      {showUsageGuide && <UsageGuideModal t={usageGuideText} onClose={() => setShowUsageGuide(false)} />}
       <div style={{position:'absolute',top:'calc(env(safe-area-inset-top) + 1rem)',right:'1rem'}}>
         <button onClick={() => setShowLangMenu(!showLangMenu)}
           style={{background:'#f5f5f5',border:'1px solid #eee',borderRadius:20,padding:'6px 14px',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',fontWeight:500,display:'inline-flex',alignItems:'center',gap:6}}>

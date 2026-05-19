@@ -40,6 +40,201 @@ const dictionaries = {
         { title: 'Profil', body: 'Mettez à jour vos informations, vos besoins B2B, vos visuels et vos préférences.' },
         { title: 'Tarifs', body: 'Comparez Starter, Basic et Premium pour choisir le niveau adapté à votre visibilité.' },
       ],
+      usageGuidePages: [
+        {
+          title: 'Accueil',
+          icon: 'home',
+          color: '#E24B4A',
+          summary: "La page d'accueil sert de tableau de bord. Elle vous montre l'état de votre compte, vos connexions et les actions importantes à faire.",
+          sections: [
+            {
+              title: 'Ce que vous voyez',
+              items: [
+                "Le résumé de votre activité sur Hubbing, comme vos connexions, vos messages et les informations importantes de votre profil.",
+                "Les étapes de démarrage si votre profil n'est pas encore complet : logo, photo, besoins B2B, informations entreprise et plan.",
+                "Des raccourcis vers les actions utiles pour améliorer votre visibilité auprès des autres entreprises.",
+              ],
+            },
+            {
+              title: 'Comment l’utiliser',
+              items: [
+                "Commencez par vérifier si une action est demandée sur votre profil ou votre abonnement.",
+                "Utilisez les raccourcis pour compléter les informations manquantes avant de chercher des partenaires.",
+                "Revenez sur cette page après vos matchs pour garder une vue simple de votre activité.",
+              ],
+            },
+            {
+              title: 'Bonnes pratiques',
+              items: [
+                "Un profil avec logo, description claire et besoins actuels inspire davantage confiance.",
+                "Mettez à jour vos besoins quand vous cherchez réellement un partenaire, un fournisseur ou un service.",
+                "Si votre entreprise vient d’être validée, vérifiez que vos informations publiques sont propres avant de commencer à matcher.",
+              ],
+            },
+          ],
+        },
+        {
+          title: 'Swipe',
+          icon: 'swipe',
+          color: '#185FA5',
+          summary: 'Le Swipe permet de découvrir rapidement des entreprises et de créer des connexions B2B avec celles qui correspondent à vos besoins.',
+          sections: [
+            {
+              title: 'Fonctionnement',
+              items: [
+                "Chaque carte présente une entreprise avec son secteur, sa ville, son plan, son badge et ses besoins B2B s'ils sont renseignés.",
+                "Vous pouvez passer une entreprise, montrer votre intérêt ou revenir sur la carte précédente avec le bouton de retour.",
+                "Quand deux entreprises montrent un intérêt mutuel, une connexion peut être créée pour ouvrir l'échange.",
+              ],
+            },
+            {
+              title: 'Filtres disponibles',
+              items: [
+                "Le filtre secteur permet de cibler un domaine précis comme BTP, fiduciaire, informatique ou nettoyage.",
+                "Le filtre canton limite les cartes à une région suisse précise.",
+                "Le filtre rayon utilise votre position ou celle de votre profil pour afficher les entreprises proches.",
+                "La recherche par besoin permet d’écrire un mot comme résine, comptable ou site web pour trouver les entreprises qui ont indiqué ce besoin.",
+              ],
+            },
+            {
+              title: 'À savoir',
+              items: [
+                "Les entreprises sont triées pour mettre en avant les profils les plus complets et actifs, puis les cartes démo arrivent après les vraies entreprises.",
+                "Un besoin cliquable peut vous aider à démarrer une conversation avec un contexte précis.",
+                "Si aucun résultat ne s’affiche, élargissez le rayon, changez de canton ou videz la recherche par besoin.",
+              ],
+            },
+          ],
+        },
+        {
+          title: 'Carte',
+          icon: 'map',
+          color: '#16A34A',
+          summary: 'La carte vous aide à visualiser les entreprises suisses autour de vous et à ouvrir rapidement leur profil.',
+          sections: [
+            {
+              title: 'Ce que la carte affiche',
+              items: [
+                "Les entreprises inscrites sur Hubbing avec leur position approximative ou leur adresse selon les informations disponibles.",
+                "Votre position si vous l’autorisez, afin de mieux utiliser le filtre par rayon.",
+                "Un marqueur de sélection quand vous choisissez une entreprise sur la carte.",
+              ],
+            },
+            {
+              title: 'Recherche et filtres',
+              items: [
+                "La barre de recherche permet de trouver une entreprise, une ville ou un secteur.",
+                "Les filtres secteur, canton et rayon réduisent la carte aux entreprises les plus pertinentes.",
+                "Le rayon peut être ajusté par kilomètres pour chercher proche de vous ou sur une zone plus large.",
+              ],
+            },
+            {
+              title: 'Utilisation pratique',
+              items: [
+                "Touchez une entreprise pour ouvrir sa fiche rapide, puis son profil complet selon votre plan.",
+                "Utilisez la carte pour repérer les partenaires locaux avant de les contacter depuis Swipe ou Messages.",
+                "Si plusieurs entreprises sont dans la même zone, zoomez pour mieux les distinguer.",
+              ],
+            },
+          ],
+        },
+        {
+          title: 'Messages',
+          icon: 'messages',
+          color: '#7C3AED',
+          summary: 'La messagerie sert à échanger avec les entreprises connectées, suivre les discussions et garder un historique clair.',
+          sections: [
+            {
+              title: 'Organisation',
+              items: [
+                "Les conversations récentes et les messages non lus sont mis en avant pour ne pas manquer une réponse.",
+                "La recherche permet de retrouver une conversation par nom d’entreprise, secteur, ville ou contenu récent.",
+                "Les indicateurs d’envoi et de lecture vous aident à comprendre l’état de vos messages.",
+              ],
+            },
+            {
+              title: 'Échanger efficacement',
+              items: [
+                "Présentez rapidement votre besoin, votre délai et ce que vous attendez de l’autre entreprise.",
+                "Depuis certains besoins, le message peut être préparé avec le sujet pour donner du contexte.",
+                "Vous pouvez ouvrir le profil de l’entreprise depuis la conversation pour relire ses informations.",
+              ],
+            },
+            {
+              title: 'Règles importantes',
+              items: [
+                "Le plan Starter limite l’envoi de messages, mais la réception reste possible.",
+                "Les coordonnées externes peuvent être bloquées dans la messagerie pour éviter le contournement des règles.",
+                "Gardez les échanges professionnels : les contenus abusifs, sexuels, racistes ou inappropriés peuvent être refusés.",
+              ],
+            },
+          ],
+        },
+        {
+          title: 'Profil',
+          icon: 'profile',
+          color: '#F59E0B',
+          summary: 'Le profil est votre vitrine. C’est ici que vous mettez à jour les informations vues par les autres entreprises.',
+          sections: [
+            {
+              title: 'Informations principales',
+              items: [
+                "Vous pouvez modifier le nom public, le secteur, la ville, l’adresse, la description et les informations de contact.",
+                "Le logo, le fond et la photo du décideur rendent votre profil plus crédible et plus reconnaissable.",
+                "Le statut de vérification indique si votre entreprise a été validée automatiquement via Zefix ou manuellement par Hubbing.",
+              ],
+            },
+            {
+              title: 'Besoins B2B',
+              items: [
+                "Ajoutez vos besoins actuels pour indiquer ce que vous recherchez : fournisseur, partenaire, service, matériel ou compétence.",
+                "Une échéance peut être ajoutée pour montrer si le besoin est urgent ou temporaire.",
+                "Des besoins précis améliorent les résultats dans Swipe et donnent aux autres entreprises une bonne raison de vous écrire.",
+              ],
+            },
+            {
+              title: 'Sécurité et compte',
+              items: [
+                "Vous pouvez modifier votre mot de passe depuis le profil si vous êtes connecté.",
+                "Votre plan actuel est visible depuis le profil et peut vous rediriger vers les tarifs.",
+                "La suppression de compte se trouve tout en bas et doit être utilisée avec prudence, surtout si un abonnement App Store est actif.",
+              ],
+            },
+          ],
+        },
+        {
+          title: 'Tarifs',
+          icon: 'pricing',
+          color: '#0F766E',
+          summary: 'La page Tarifs explique les différences entre Starter, Basic et Premium pour choisir le niveau adapté à votre utilisation.',
+          sections: [
+            {
+              title: 'Plans',
+              items: [
+                "Starter permet de découvrir Hubbing avec les fonctions essentielles et une visibilité de base.",
+                "Basic débloque davantage d’échanges et un accès plus confortable aux informations utiles.",
+                "Premium offre la visibilité la plus forte, les coordonnées complètes selon les règles du plan et des fonctions plus avancées.",
+              ],
+            },
+            {
+              title: 'Abonnement',
+              items: [
+                "Sur le web, l’abonnement peut passer par Stripe selon le parcours utilisé.",
+                "Sur iPhone, les achats et abonnements passent par l’App Store conformément aux règles Apple.",
+                "Si vous êtes sur iPhone, vous pouvez restaurer vos achats ou gérer votre abonnement Apple depuis les options prévues.",
+              ],
+            },
+            {
+              title: 'Avant de choisir',
+              items: [
+                "Choisissez Starter si vous voulez tester et compléter votre profil tranquillement.",
+                "Choisissez Basic si vous voulez utiliser Hubbing régulièrement pour contacter des entreprises.",
+                "Choisissez Premium si votre objectif est d’être plus visible et d’avoir l’expérience la plus complète.",
+              ],
+            },
+          ],
+        },
+      ],
     },
     home: {
       morning: 'Bonjour',
@@ -1388,4 +1583,10 @@ export const localeForLang = (lang = 'fr') => ({
   en: 'en-GB',
 }[lang] || 'fr-CH')
 
-export const getUiText = (lang = 'fr') => deepMerge(dictionaries.fr, dictionaries[lang] || {})
+export const getUiText = (lang = 'fr') => {
+  const merged = deepMerge(dictionaries.fr, dictionaries[lang] || {})
+  if (lang !== 'fr' && !dictionaries[lang]?.usageGuide?.usageGuidePages) {
+    delete merged.usageGuide.usageGuidePages
+  }
+  return merged
+}
