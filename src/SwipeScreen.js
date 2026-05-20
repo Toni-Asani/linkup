@@ -121,6 +121,13 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const isPremium = plan === 'Premium'
   const canViewCompanyProfiles = Boolean(user)
   const isVisitor = !user
+  const swipeBackgroundStyle = {
+    backgroundColor: '#fbf1ea',
+    backgroundImage: 'linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18)), url("./FondSwipe.svg")',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  }
   const [companies, setCompanies] = useState([])
   const [filteredCompanies, setFilteredCompanies] = useState([])
   const [current, setCurrent] = useState(0)
@@ -652,13 +659,13 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   ) : null
 
   if (loading) return (
-    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
+    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400,...swipeBackgroundStyle}}>
       <p style={{color:'#999'}}>{ui.common.loading}</p>
     </div>
   )
 
   if (allSeen || current >= filteredCompanies.length) return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem',...swipeBackgroundStyle}}>
       {filtersModal}
       <div style={{width:56,height:56,borderRadius:'50%',background:'#FFF5F5',display:'flex',alignItems:'center',justifyContent:'center'}}>
         <HubbingIcon name={activeFilters > 0 ? 'search' : 'sparkles'} size={28} color="#E24B4A" />
@@ -685,7 +692,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const hasNeeds = company.needs_description || activeTags.length > 0
 
   return (
-    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',alignItems:'center',padding:'0.5rem 1rem 1rem',gap:'0.5rem',userSelect:'none',overflow:'hidden'}}>
+    <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',alignItems:'center',padding:'0.75rem 1rem 1rem',gap:'0.5rem',userSelect:'none',overflow:'hidden',...swipeBackgroundStyle}}>
 
       {showMatchModal && (
         <div style={{position:'fixed',top:'15%',left:'50%',transform:'translateX(-50%)',background:'white',borderRadius:16,padding:'1.5rem 2rem',boxShadow:'0 8px 40px rgba(0,0,0,0.15)',zIndex:100,textAlign:'center',width:'80%',maxWidth:300}}>
@@ -726,9 +733,9 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
         </button>
       </div>
 
-      <div style={{position:'relative',width:'100%',flex:1,minHeight:0,borderRadius:24,overflow:'hidden',backgroundImage:'linear-gradient(rgba(255,255,255,0.16), rgba(255,255,255,0.16)), url("./FondSwipe.svg")',backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat'}}>
+      <div style={{position:'relative',width:'100%',flex:1,minHeight:0}}>
         {nextCompany && (
-          <div style={{position:'absolute',top:16,left:16,right:16,bottom:8,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
+          <div style={{position:'absolute',top:8,left:8,right:8,bottom:0,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
         )}
         <div
           onPointerDown={handlePointerDown}
@@ -740,7 +747,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
           style={{
-          position:'absolute',top:8,left:8,right:8,bottom:8,
+          position:'absolute',top:0,left:0,right:0,bottom:0,
           background:'white',borderRadius:20,border:'1px solid #eee',
           boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
           transform: getCardTransform(),
