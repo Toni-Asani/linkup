@@ -1,0 +1,20 @@
+{
+  "ios": {
+    "latest_version": "1.0.2",
+    "minimum_supported_version": "1.0.2",
+    "minimum_supported_build": 70,
+    "store_url": "https://apps.apple.com/ch/app/hubbing/id6762903411",
+    "title": "Mise à jour nécessaire",
+    "message": "Une nouvelle version de Hubbing est disponible. Veuillez mettre à jour l'application pour continuer.",
+    "button_label": "Mettre à jour"
+  },
+  "android": {
+    "latest_version": "1.0.2",
+    "minimum_supported_version": "1.0.2",
+    "minimum_supported_build": 70,
+    "store_url": "https://play.google.com/store/apps/details?id=ch.hubbing.app",
+    "title": "Mise à jour nécessaire",
+    "message": "Une nouvelle version de Hubbing est disponible. Veuillez mettre à jour l'application pour continuer.",
+    "button_label": "Mettre à jour"
+  }
+}

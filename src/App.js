@@ -11,7 +11,7 @@ import CompanyProfileScreen from './CompanyProfileScreen'
 import PrivacyPolicy from './PrivacyPolicy'
 import { getUiText } from './i18n'
 import { geocodeSwissAddress } from './geo'
-import { isNativeApp } from './platform'
+import { getPlatform, isNativeApp } from './platform'
 import { notifyTelegramActivity } from './telegramAlerts'
 import { HubbingIcon } from './icons'
 import { VerifiedBadge } from './VerifiedBadge'
@@ -22,6 +22,10 @@ import LoadingIndicator from './LoadingIndicator'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
+const ANDROID_PLAY_URL = 'https://play.google.com/store/apps/details?id=ch.hubbing.app'
+const APP_VERSION = '1.0.2'
+const APP_BUILD_NUMBER = 70
+const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
@@ -32,6 +36,55 @@ const PUBLIC_SCREENS = ['home', 'login', 'register', 'visitor', 'legal', 'privac
 const URL_SCREEN_SCREENS = ['login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
 const sessionTokenFallbacks = new Map()
 const REGISTRATION_DRAFT_KEY = 'hubbing_registration_draft'
+
+const parseVersionParts = (version) => (
+  String(version || '0')
+    .split(/[^\d]+/)
+    .filter(Boolean)
+    .map(part => Number.parseInt(part, 10) || 0)
+)
+
+const compareVersions = (left, right) => {
+  const leftParts = parseVersionParts(left)
+  const rightParts = parseVersionParts(right)
+  const length = Math.max(leftParts.length, rightParts.length)
+
+  for (let index = 0; index < length; index += 1) {
+    const leftValue = leftParts[index] || 0
+    const rightValue = rightParts[index] || 0
+    if (leftValue > rightValue) return 1
+    if (leftValue < rightValue) return -1
+  }
+
+  return 0
+}
+
+const shouldRequireUpdate = (platformConfig) => {
+  const minimumVersion = platformConfig?.minimum_supported_version || platformConfig?.min_version
+  const minimumBuild = Number(platformConfig?.minimum_supported_build || platformConfig?.min_build || 0)
+
+  if (minimumVersion && compareVersions(APP_VERSION, minimumVersion) < 0) return true
+  if (minimumVersion && compareVersions(APP_VERSION, minimumVersion) === 0 && minimumBuild && APP_BUILD_NUMBER < minimumBuild) return true
+  if (!minimumVersion && minimumBuild && APP_BUILD_NUMBER < minimumBuild) return true
+
+  return false
+}
+
+const getDefaultStoreUrl = (platform) => (
+  platform === 'android' ? ANDROID_PLAY_URL : APP_STORE_URL
+)
+
+const getRequiredUpdate = (config, platform) => {
+  const platformConfig = config?.[platform]
+  if (!platformConfig || !shouldRequireUpdate(platformConfig)) return null
+
+  return {
+    title: platformConfig.title || 'Mise à jour nécessaire',
+    message: platformConfig.message || "Une nouvelle version de Hubbing est disponible. Veuillez mettre à jour l'application pour continuer.",
+    buttonLabel: platformConfig.button_label || 'Mettre à jour',
+    storeUrl: platformConfig.store_url || getDefaultStoreUrl(platform),
+  }
+}
 
 const signOutCurrentBrowser = () => supabase.auth.signOut({ scope: 'local' })
 
@@ -676,6 +729,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
+  const [requiredUpdate, setRequiredUpdate] = useState(null)
   const hostname = window.location.hostname.toLowerCase()
   const isStandalonePwa = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true
   const isMarketingSite = (hostname === 'hubbing.ch' || hostname === 'www.hubbing.ch') && !isStandalonePwa
@@ -712,6 +766,28 @@ export default function App() {
       cooldownKey: `visit_${hostname}_${window.location.pathname}`,
     })
   }, [hostname, isMarketingSite])
+
+  useEffect(() => {
+    let cancelled = false
+    const platform = getPlatform()
+
+    if (!isNativeApp() || !['ios', 'android'].includes(platform)) {
+      setRequiredUpdate(null)
+      return undefined
+    }
+
+    fetch(`${APP_VERSION_CONFIG_URL}?t=${Date.now()}`, { cache: 'no-store' })
+      .then(response => response.ok ? response.json() : null)
+      .then(config => {
+        if (cancelled) return
+        setRequiredUpdate(getRequiredUpdate(config, platform))
+      })
+      .catch(error => {
+        console.warn('Unable to check app version:', error)
+      })
+
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
   const params = new URLSearchParams(window.location.search)
@@ -803,6 +879,7 @@ if (isMarketingSite) return (
           <AdminScreen user={user} setScreen={setScreen} />
         ) : null}
       </div>
+      {requiredUpdate && <RequiredUpdateScreen updateRequirement={requiredUpdate} />}
     </>
   )
 }
@@ -833,6 +910,36 @@ function VerificationResultScreen({ setScreen }) {
           style={{width:'100%',padding:'13px 18px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
           Ouvrir Hubbing
         </button>
+      </section>
+    </div>
+  )
+}
+
+function RequiredUpdateScreen({ updateRequirement }) {
+  const [openingStore, setOpeningStore] = useState(false)
+
+  const openStore = () => {
+    setOpeningStore(true)
+    window.location.href = updateRequirement.storeUrl
+  }
+
+  return (
+    <div role="dialog" aria-modal="true" style={{position:'fixed',inset:0,zIndex:10000,background:'rgba(15,23,42,0.72)',display:'flex',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.5rem) 1.25rem calc(env(safe-area-inset-bottom) + 1.5rem)',backdropFilter:'blur(8px)'}}>
+      <section style={{width:'100%',maxWidth:360,background:'white',borderRadius:24,padding:'1.6rem',boxShadow:'0 28px 70px rgba(0,0,0,0.25)',textAlign:'center',border:'1px solid rgba(255,255,255,0.8)'}}>
+        <img src="/LOGO-HUBBING-ICON.svg" alt="Hubbing" style={{width:74,height:74,borderRadius:'50%',boxShadow:'0 16px 40px rgba(226,75,74,0.22)',margin:'0 auto 1rem',display:'block'}} />
+        <h1 style={{fontSize:24,lineHeight:1.15,fontWeight:900,color:'#111827',margin:'0 0 0.75rem',letterSpacing:0}}>
+          {updateRequirement.title}
+        </h1>
+        <p style={{fontSize:15,lineHeight:1.55,color:'#64748B',margin:'0 0 1.25rem'}}>
+          {updateRequirement.message}
+        </p>
+        <button type="button" onClick={openStore}
+          style={{width:'100%',padding:'14px 18px',background:'#E24B4A',color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:900,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 14px 34px rgba(226,75,74,0.28)'}}>
+          {openingStore ? 'Ouverture...' : updateRequirement.buttonLabel}
+        </button>
+        <p style={{fontSize:11,lineHeight:1.45,color:'#94A3B8',margin:'0.9rem 0 0'}}>
+          Version installée : {APP_VERSION} ({APP_BUILD_NUMBER})
+        </p>
       </section>
     </div>
   )
