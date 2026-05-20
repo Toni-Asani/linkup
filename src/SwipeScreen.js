@@ -726,9 +726,9 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
         </button>
       </div>
 
-      <div style={{position:'relative',width:'100%',flex:1,minHeight:0}}>
+      <div style={{position:'relative',width:'100%',flex:1,minHeight:0,borderRadius:24,overflow:'hidden',backgroundImage:'linear-gradient(rgba(255,255,255,0.16), rgba(255,255,255,0.16)), url("./FondSwipe.svg")',backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat'}}>
         {nextCompany && (
-          <div style={{position:'absolute',top:8,left:8,right:8,bottom:0,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
+          <div style={{position:'absolute',top:16,left:16,right:16,bottom:8,background:'white',borderRadius:20,border:'1px solid #eee',transform:'scale(0.97)',zIndex:1}} />
         )}
         <div
           onPointerDown={handlePointerDown}
@@ -740,7 +740,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
           style={{
-          position:'absolute',top:0,left:0,right:0,bottom:0,
+          position:'absolute',top:8,left:8,right:8,bottom:8,
           background:'white',borderRadius:20,border:'1px solid #eee',
           boxShadow:'0 8px 30px rgba(0,0,0,0.08)',
           transform: getCardTransform(),
