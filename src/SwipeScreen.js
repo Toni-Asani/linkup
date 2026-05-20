@@ -123,7 +123,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const isVisitor = !user
   const swipeBackgroundStyle = {
     backgroundColor: '#fbf1ea',
-    backgroundImage: 'linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18)), url("./FondSwipe.svg")',
+    backgroundImage: 'linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18)), url("./FondSwipe-v2.svg")',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
