@@ -125,6 +125,7 @@ function MapLocationFocus({ location, focusKey }) {
 
 export default function MapScreen({ user, setScreen, plan = 'Starter', setSelectedCompanyId, setCompanyProfileReturn, setActiveTab, lang = 'fr' }) {
   const ui = getUiText(lang)
+  const isVisitor = !user
   const [companies, setCompanies] = useState([])
   const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState('')
@@ -364,7 +365,7 @@ const cantons = [
             </div>
             <div style={{display:'flex',gap:10,padding:'0.75rem 1.5rem 1.25rem',borderTop:'1px solid #f2f2f2',background:'white'}}>
               <button onClick={() => { setFilterRadius(300); setShowRadiusFilter(false) }} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
-              <button onClick={applyRadiusFilter} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filtered.length)}</button>
+              <button onClick={applyRadiusFilter} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{isVisitor ? ui.swipe.applyNoCount : ui.swipe.apply(filtered.length)}</button>
             </div>
           </div>
         </div>
@@ -400,8 +401,8 @@ const cantons = [
       <div style={{padding:'0.5rem 1rem',borderBottom:'1px solid #f0f0f0',flexShrink:0,display:'grid',gridTemplateColumns:'minmax(0, 3fr) minmax(74px, 1fr)',gap:8}}>
         <select value={filter} onChange={e => setFilter(e.target.value)}
           style={{width:'100%',minWidth:0,padding:'10px 12px',border:'1px solid #eee',borderRadius:10,fontSize:16,lineHeight:1.2,outline:'none',background:'#f9f9f9',fontFamily:'Plus Jakarta Sans',color:'#111'}}>
-          <option value="">{ui.map.allSectors(companies.length)}</option>
-          {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s]})</option>)}
+          <option value="">{isVisitor ? ui.swipe.allSectors : ui.map.allSectors(companies.length)}</option>
+          {sectors.map(s => <option key={s} value={s}>{isVisitor ? s : `${s} (${sectorCounts[s]})`}</option>)}
         </select>
         <button onClick={() => setShowRadiusFilter(true)}
           style={{width:'100%',minWidth:0,padding:'10px 8px',background:filterRadius < 300 ? '#FFF5F5' : '#f9f9f9',color:filterRadius < 300 ? '#E24B4A' : '#444',border:`1px solid ${filterRadius < 300 ? '#FECACA' : '#eee'}`,borderRadius:10,fontSize:13,lineHeight:1.2,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
@@ -533,16 +534,20 @@ const cantons = [
         </div>
       )}
 
+      {(user || locationStatus === 'denied' || locationStatus === 'unavailable') && (
       <div style={{padding:'6px',textAlign:'center',background:'#f9f9f9',borderTop:'1px solid #f0f0f0',flexShrink:0}}>
-  <span style={{fontSize:12,color:'#999',display:'inline-flex',alignItems:'center',gap:4}}>
-    <HubbingIcon name="building" size={14} color="#999" /> {ui.map.filteredCount(filtered.length, companies.length)}
-  </span>
+  {user && (
+    <span style={{fontSize:12,color:'#999',display:'inline-flex',alignItems:'center',gap:4}}>
+      <HubbingIcon name="building" size={14} color="#999" /> {ui.map.filteredCount(filtered.length, companies.length)}
+    </span>
+  )}
   {(locationStatus === 'denied' || locationStatus === 'unavailable') && (
     <p style={{fontSize:11,color:'#F39C12',margin:'3px 0 0'}}>
       {locationStatus === 'denied' ? ui.map.locationDenied : ui.map.locationUnavailable}
     </p>
   )}
 </div>
+      )}
     </div>
   )
 }

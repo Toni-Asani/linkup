@@ -120,6 +120,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const ui = getUiText(lang)
   const isPremium = plan === 'Premium'
   const canViewCompanyProfiles = Boolean(user)
+  const isVisitor = !user
   const [companies, setCompanies] = useState([])
   const [filteredCompanies, setFilteredCompanies] = useState([])
   const [current, setCurrent] = useState(0)
@@ -631,20 +632,20 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
             <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.sector}</p>
             <select value={filterSector} onChange={e => setFilterSector(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
               <option value="">{ui.swipe.allSectors}</option>
-              {sectors.map(s => <option key={s} value={s}>{s} ({sectorCounts[s] || 0})</option>)}
+              {sectors.map(s => <option key={s} value={s}>{isVisitor ? s : `${s} (${sectorCounts[s] || 0})`}</option>)}
             </select>
           </div>
           <div>
             <p style={{fontSize:13,fontWeight:600,color:'#444',marginBottom:8,lineHeight:1.4}}>{ui.swipe.canton}</p>
             <select value={filterCanton} onChange={e => setFilterCanton(e.target.value)} style={{width:'100%',padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',background:'white',fontFamily:'Plus Jakarta Sans'}}>
               <option value="">{ui.swipe.allCantons}</option>
-              {swissCantons.map(c => <option key={c} value={c}>{c} ({cantonCounts[c] || 0})</option>)}
+              {swissCantons.map(c => <option key={c} value={c}>{isVisitor ? c : `${c} (${cantonCounts[c] || 0})`}</option>)}
             </select>
           </div>
         </div>
         <div style={{display:'flex',gap:10,flexShrink:0,padding:'0.75rem 1.5rem 1.25rem',borderTop:'1px solid #f2f2f2',background:'white'}}>
           <button onClick={resetFilters} style={{flex:1,padding:'12px',background:'#f5f5f5',color:'#444',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.clear}</button>
-          <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{ui.swipe.apply(filteredCompanies.length)}</button>
+          <button onClick={() => setShowFilters(false)} style={{flex:2,padding:'12px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer'}}>{isVisitor ? ui.swipe.applyNoCount : ui.swipe.apply(filteredCompanies.length)}</button>
         </div>
       </div>
     </div>
@@ -719,7 +720,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
       )}
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%'}}>
-        <span style={{fontSize:13,color:'#999'}}>{current + 1} / {filteredCompanies.length}</span>
+        <span style={{fontSize:13,color:'#999'}}>{isVisitor ? ui.swipe.discovery : `${current + 1} / ${filteredCompanies.length}`}</span>
         <button onClick={() => setShowFilters(true)} style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background: activeFilters > 0 ? '#E24B4A' : 'white',color: activeFilters > 0 ? 'white' : '#444',border:'1px solid #ddd',borderRadius:20,fontSize:12,fontWeight:600,cursor:'pointer'}}>
           {ui.swipe.filtersButton} {activeFilters > 0 ? `(${activeFilters})` : ''}
         </button>
