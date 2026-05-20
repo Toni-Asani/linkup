@@ -14,6 +14,9 @@ const MESSAGE_CHAR_LIMITS = {
   Premium: 2000,
 }
 const CONVERSATION_DELETE_ACTION_WIDTH = 96
+const CONVERSATION_SWIPE_START_THRESHOLD = 5
+const CONVERSATION_VERTICAL_CANCEL_THRESHOLD = 14
+const CONVERSATION_DELETE_OPEN_THRESHOLD = 28
 const conversationBackgroundStyle = {
   backgroundColor: '#fff8f4',
   backgroundImage: 'linear-gradient(rgba(255,255,255,0.38), rgba(255,255,255,0.38)), url("./FondMessageHubbing-01.svg")',
@@ -597,15 +600,20 @@ const handleFileUpload = async (e) => {
 
     const deltaX = e.clientX - swipe.startX
     const deltaY = e.clientY - swipe.startY
+    const absDeltaX = Math.abs(deltaX)
+    const absDeltaY = Math.abs(deltaY)
 
     if (!swipe.isSwiping) {
-      if (Math.abs(deltaX) < 8) return
-      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      if (absDeltaX < CONVERSATION_SWIPE_START_THRESHOLD && absDeltaY < CONVERSATION_SWIPE_START_THRESHOLD) return
+      if (absDeltaY > CONVERSATION_VERTICAL_CANCEL_THRESHOLD && absDeltaY > absDeltaX * 1.35) {
         conversationSwipeRef.current = null
         return
       }
+      if (absDeltaX < CONVERSATION_SWIPE_START_THRESHOLD) return
       swipe.isSwiping = true
     }
+
+    e.preventDefault?.()
 
     const nextOffset = Math.max(
       -CONVERSATION_DELETE_ACTION_WIDTH,
@@ -622,7 +630,7 @@ const handleFileUpload = async (e) => {
     const swipe = conversationSwipeRef.current
     if (!swipe) return
 
-    const shouldOpen = swipe.currentOffset < -CONVERSATION_DELETE_ACTION_WIDTH / 2
+    const shouldOpen = swipe.currentOffset < -CONVERSATION_DELETE_OPEN_THRESHOLD
     setOpenDeleteMatchId(shouldOpen ? swipe.matchId : null)
     setDraggingConversation(null)
 
