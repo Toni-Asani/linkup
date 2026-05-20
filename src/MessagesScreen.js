@@ -15,8 +15,8 @@ const MESSAGE_CHAR_LIMITS = {
 }
 const CONVERSATION_DELETE_ACTION_WIDTH = 96
 const conversationBackgroundStyle = {
-  backgroundColor: '#fbf1ea',
-  backgroundImage: 'linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.12)), url("./FondMessageHubbing-01.svg")',
+  backgroundColor: '#fff8f4',
+  backgroundImage: 'linear-gradient(rgba(255,255,255,0.38), rgba(255,255,255,0.38)), url("./FondMessageHubbing-01.svg")',
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat',
@@ -849,7 +849,8 @@ const handleFileUpload = async (e) => {
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                   background: isMe ? '#E24B4A' : 'white',
                   color: isMe ? 'white' : '#1a1a1a',
-                  boxShadow:'0 1px 4px rgba(0,0,0,0.08)',
+                  border: isMe ? '1px solid rgba(226,75,74,0.06)' : '1px solid rgba(15,23,42,0.04)',
+                  boxShadow: isMe ? '0 6px 16px rgba(226,75,74,0.18)' : '0 5px 14px rgba(15,23,42,0.10)',
                   fontSize:14,lineHeight:1.5
                 }}>
                   {msg.attachment_url ? (
@@ -979,7 +980,7 @@ const handleFileUpload = async (e) => {
           <p style={{color:'#999',fontSize:13,lineHeight:1.6}}>{ui.messages.searchHint}</p>
         </div>
       ) : (
-        <div style={{flex:1,overflowY:'auto'}}>
+        <div style={{flex:1,overflowY:'auto',padding:'0.55rem 0.75rem 0.75rem',background:'#FAFAFB'}}>
           {visibleMatches.map(match => {
             const other = getOtherCompany(match)
             if (!other) return null
@@ -990,7 +991,7 @@ const handleFileUpload = async (e) => {
             return (
               <div key={match.id}
                 draggable={false}
-                style={{position:'relative',overflow:'hidden',borderBottom:'1px solid #f5f5f5',background:'#E24B4A'}}
+                style={{position:'relative',overflow:'hidden',borderRadius:14,marginBottom:8,background:'#E24B4A',boxShadow:'0 5px 16px rgba(15,23,42,0.08)'}}
               >
                 <button
                   onClick={e => {
@@ -1011,7 +1012,7 @@ const handleFileUpload = async (e) => {
                   onPointerUp={endConversationSwipe}
                   onPointerCancel={cancelConversationSwipe}
                   draggable={false}
-                  style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',gap:12,cursor:'pointer',background: unread > 0 ? '#FFF9F9' : 'white',userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none',touchAction:'pan-y',transform:`translateX(${swipeOffset}px)`,transition:isDragging ? 'none' : 'transform 0.18s ease',position:'relative',zIndex:1}}
+                  style={{padding:'0.9rem 1rem',display:'flex',alignItems:'center',gap:12,cursor:'pointer',background: unread > 0 ? '#FFF9F9' : 'white',border:'1px solid #F1F5F9',borderRadius:14,userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none',touchAction:'pan-y',transform:`translateX(${swipeOffset}px)`,transition:isDragging ? 'none' : 'transform 0.18s ease',position:'relative',zIndex:1}}
                   onMouseEnter={e => {
                     if (unread === 0) e.currentTarget.style.background = '#fafafa'
                   }}

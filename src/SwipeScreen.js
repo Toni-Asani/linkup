@@ -122,8 +122,8 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const canViewCompanyProfiles = Boolean(user)
   const isVisitor = !user
   const swipeBackgroundStyle = {
-    backgroundColor: '#fbf1ea',
-    backgroundImage: 'linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18)), url("./FondSwipe-v2.svg")',
+    backgroundColor: '#fff8f4',
+    backgroundImage: 'linear-gradient(rgba(255,255,255,0.42), rgba(255,255,255,0.42)), url("./FondSwipe-v2.svg")',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
