@@ -20,7 +20,7 @@ const CONVERSATION_VERTICAL_CANCEL_THRESHOLD = 14
 const CONVERSATION_DELETE_OPEN_THRESHOLD = 28
 const conversationBackgroundStyle = {
   backgroundColor: '#fff8f4',
-  backgroundImage: 'linear-gradient(rgba(255,255,255,0.38), rgba(255,255,255,0.38)), url("./FondMessageHubbing-01.svg")',
+  backgroundImage: 'linear-gradient(rgba(255,255,255,0.38), rgba(255,255,255,0.38)), url("./FondMessageHubbing-2.png")',
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat',
