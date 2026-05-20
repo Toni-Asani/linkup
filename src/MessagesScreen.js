@@ -14,6 +14,13 @@ const MESSAGE_CHAR_LIMITS = {
   Premium: 2000,
 }
 const CONVERSATION_DELETE_ACTION_WIDTH = 96
+const conversationBackgroundStyle = {
+  backgroundColor: '#fbf1ea',
+  backgroundImage: 'linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.12)), url("./FondMessageHubbing-01.svg")',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+}
 
 function CompanyAvatar({ company, size = 48, fontSize = 16 }) {
   const [imageFailed, setImageFailed] = useState(false)
@@ -796,7 +803,7 @@ const handleFileUpload = async (e) => {
         )}
 
         {/* Messages */}
-        <div style={{flex:1,overflowY:'auto',padding:'1rem',display:'flex',flexDirection:'column',gap:8,background:'#f9f9f9'}}>
+        <div style={{flex:1,overflowY:'auto',padding:'1rem',display:'flex',flexDirection:'column',gap:8,...conversationBackgroundStyle}}>
 	          {visibleMessages.length === 0 && (
 	            <div style={{textAlign:'center',padding:'2rem',color:'#999'}}>
 	              <div style={{display:'flex',justifyContent:'center',marginBottom:8}}>
@@ -814,7 +821,7 @@ const handleFileUpload = async (e) => {
             <Fragment key={msg.id}>
               {showDateSeparator && (
                 <div style={{display:'flex',justifyContent:'center',margin:'6px 0 10px'}}>
-                  <span style={{background:'#eeeeee',color:'#777',borderRadius:999,padding:'5px 10px',fontSize:11,fontWeight:700,boxShadow:'0 1px 3px rgba(0,0,0,0.06)'}}>
+                  <span style={{background:'rgba(255,255,255,0.72)',color:'#777',borderRadius:999,padding:'5px 10px',fontSize:11,fontWeight:700,boxShadow:'0 1px 3px rgba(0,0,0,0.06)',backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)'}}>
                     {formatMessageDay(msg.created_at)}
                   </span>
                 </div>
