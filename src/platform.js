@@ -11,3 +11,5 @@ export const getPlatform = () => {
 export const isNativeApp = () => getPlatform() !== 'web'
 
 export const isNativeIOS = () => getPlatform() === 'ios'
+
+export const isNativeAndroid = () => getPlatform() === 'android'

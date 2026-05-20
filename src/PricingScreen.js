@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { APPLE_PRODUCT_IDS, HubbingPurchases } from './applePurchases'
-import { isNativeIOS } from './platform'
+import { isNativeAndroid, isNativeIOS } from './platform'
 import { VerifiedBadge } from './VerifiedBadge'
 
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
@@ -51,6 +51,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   const ui = getUiText(lang)
   const plans = getPlans(ui)
   const nativeIOS = isNativeIOS()
+  const nativeAndroid = isNativeAndroid()
   const [currentPlan, setCurrentPlan] = useState('starter')
   const [loading, setLoading] = useState(null)
   const [restoring, setRestoring] = useState(false)
@@ -154,6 +155,11 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
         return
       }
 
+      if (nativeAndroid) {
+        alert(ui.pricing.androidBillingUnavailable)
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
       const accessToken = session?.access_token
       if (!accessToken) throw new Error('missing_session')
@@ -191,6 +197,11 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
     try {
       if (nativeIOS) {
         window.open('https://apps.apple.com/account/subscriptions', '_blank', 'noopener,noreferrer')
+        return
+      }
+
+      if (nativeAndroid) {
+        alert(ui.pricing.androidBillingUnavailable)
         return
       }
 
@@ -385,7 +396,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
       )}
 
       <p style={{fontSize:11,color:'#999',textAlign:'center',marginTop:'1rem',lineHeight:1.5}}>
-        {nativeIOS ? ui.pricing.appleFooter : ui.pricing.footer}
+        {nativeIOS ? ui.pricing.appleFooter : nativeAndroid ? ui.pricing.androidFooter : ui.pricing.footer}
       </p>
       <div style={{marginTop:'0.85rem',padding:'0.9rem',background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,textAlign:'center'}}>
         <p style={{fontSize:12,fontWeight:700,color:'#334155',margin:'0 0 0.6rem'}}>

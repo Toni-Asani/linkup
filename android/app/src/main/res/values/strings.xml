@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Hubbing</string>
+    <string name="title_activity_main">Hubbing</string>
+    <string name="package_name">ch.hubbing.app</string>
+    <string name="custom_url_scheme">ch.hubbing.app</string>
+</resources>

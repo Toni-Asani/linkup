@@ -1,4 +1,35 @@
 workflows:
+  android-distribution:
+    name: Hubbing Android Distribution
+    max_build_duration: 60
+
+    environment:
+      android_signing:
+        - HubbingAndroidUpload
+      vars:
+        PACKAGE_NAME: "ch.hubbing.app"
+
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+
+      - name: Build web assets
+        script: |
+          GENERATE_SOURCEMAP=false npm run build
+
+      - name: Capacitor sync
+        script: |
+          npx cap sync android
+
+      - name: Build Android app bundle
+        script: |
+          cd android
+          ./gradlew bundleRelease
+
+    artifacts:
+      - android/app/build/outputs/**/*.aab
+
   ios-distribution:
     name: Hubbing iOS Distribution
     max_build_duration: 60
