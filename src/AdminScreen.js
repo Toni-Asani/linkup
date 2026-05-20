@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
+import LoadingIndicator from './LoadingIndicator'
 
 export default function AdminScreen({ user, setScreen }) {
   const [isAdmin, setIsAdmin] = useState(false)
@@ -84,9 +85,7 @@ export default function AdminScreen({ user, setScreen }) {
   const formatDate = (d) => new Date(d).toLocaleDateString('fr-CH')
 
   if (loading) return (
-    <div style={{minHeight:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'white'}}>
-      <p style={{color:'#999'}}>Vérification des droits...</p>
-    </div>
+    <LoadingIndicator label="Vérification des droits..." fullScreen background="white" />
   )
 
   if (!isAdmin) return (

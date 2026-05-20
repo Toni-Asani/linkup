@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
+import LoadingIndicator from './LoadingIndicator'
 
 const sectorColors = {
   'Fiduciaire': '#3B6D11', 'Design & Communication': '#533AB7',
@@ -180,9 +181,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
   const showOnboarding = onboardingDone < onboardingSteps.length
 
   if (loading) return (
-    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
-      <p style={{color:'#999'}}>{ui.common.loading}</p>
-    </div>
+    <LoadingIndicator label={ui.common.loading} height={400} />
   )
 
   if (loadError) return (

@@ -18,6 +18,7 @@ import { VerifiedBadge } from './VerifiedBadge'
 import { clearAppBadge, showNativeNotification, syncUnreadAppBadge } from './appBadge'
 import { registerPushNotifications } from './pushNotifications'
 import UsageGuideModal from './UsageGuideModal'
+import LoadingIndicator from './LoadingIndicator'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
@@ -757,7 +758,7 @@ export default function App() {
   })
   return () => subscription.unsubscribe()
 }, [])
-  if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh',background:'white',fontFamily:'Plus Jakarta Sans'}}>Chargement...</div>
+  if (loading) return <LoadingIndicator label={getUiText(lang).common.loading} fullScreen background="white" />
 if (isMarketingSite) return (
     <>
       <style>{styles + `
@@ -2109,7 +2110,7 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
   paddingBottom:'calc(60px + env(safe-area-inset-bottom))'
 }}>
         {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} lang={lang} />}
-       {activeTab === 'map' && <Suspense fallback={<div>{ui.common.loading}</div>}><MapScreen user={null} setScreen={setScreen} lang={lang} /></Suspense>}
+       {activeTab === 'map' && <Suspense fallback={<LoadingIndicator label={ui.common.loading} height={220} compact />}><MapScreen user={null} setScreen={setScreen} lang={lang} /></Suspense>}
         {activeTab === 'messages' && (
           <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
             <HubbingIcon name="messages" size={48} color="#E24B4A" />
@@ -2440,14 +2441,12 @@ const handleCompanyProfileBack = () => {
 
   if (!sessionReady) {
     return (
-      <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'white',fontFamily:'Plus Jakarta Sans',color:'#666'}}>
-        {ui.common.loading}
-      </div>
+      <LoadingIndicator label={ui.common.loading} fullScreen background="white" />
     )
   }
 
   return (
-    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh'}}>{ui.common.loading}</div>}>
+    <Suspense fallback={<LoadingIndicator label={ui.common.loading} fullScreen background="white" />}>
     <div style={{
   height:'100dvh',
   display:'flex',

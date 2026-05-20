@@ -7,6 +7,7 @@ import { isNativeIOS } from './platform'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
 import UsageGuideModal from './UsageGuideModal'
+import LoadingIndicator from './LoadingIndicator'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -307,9 +308,7 @@ notif_email: form.notif_email ?? true,
   setSaving(false)
 }
   if (loading) return (
-    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
-      <p style={{color:'#999'}}>{ui.common.loading}</p>
-    </div>
+    <LoadingIndicator label={ui.common.loading} height={400} />
   )
 
   if (!company) return (

@@ -4,6 +4,7 @@ import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
 import { createNotificationAndPush } from './pushDelivery'
+import LoadingIndicator from './LoadingIndicator'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -158,9 +159,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   }
 
   if (loading) return (
-    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',height:400}}>
-      <p style={{color:'#999'}}>{ui.common.loading}</p>
-    </div>
+    <LoadingIndicator label={ui.common.loading} height={400} />
   )
 
   if (!company) return (

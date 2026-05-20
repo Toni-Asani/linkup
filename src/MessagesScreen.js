@@ -6,6 +6,7 @@ import { moderateImageFile, moderateTextContent } from './moderation'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
 import { createNotificationAndPush } from './pushDelivery'
+import LoadingIndicator from './LoadingIndicator'
 
 const STARTER_DAILY_MESSAGE_LIMIT = 5
 const MESSAGE_CHAR_LIMITS = {
@@ -972,9 +973,7 @@ const handleFileUpload = async (e) => {
       )}
 
       {loading ? (
-        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <p style={{color:'#999'}}>{ui.common.loading}</p>
-        </div>
+        <LoadingIndicator label={ui.common.loading} height={320} />
       ) : matches.length === 0 ? (
 	        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
 	          <HubbingIcon name="messages" size={48} color="#9CA3AF" />
