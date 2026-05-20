@@ -758,7 +758,7 @@ export default function App() {
   })
   return () => subscription.unsubscribe()
 }, [])
-  if (loading) return <LoadingIndicator label={getUiText(lang).common.loading} fullScreen background="white" />
+  if (loading) return <LoadingIndicator fullScreen background="white" />
 if (isMarketingSite) return (
     <>
       <style>{styles + `
@@ -2110,7 +2110,7 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
   paddingBottom:'calc(60px + env(safe-area-inset-bottom))'
 }}>
         {activeTab === 'swipe' && <SwipeScreen user={null} setScreen={setScreen} lang={lang} />}
-       {activeTab === 'map' && <Suspense fallback={<LoadingIndicator label={ui.common.loading} height={220} compact />}><MapScreen user={null} setScreen={setScreen} lang={lang} /></Suspense>}
+       {activeTab === 'map' && <Suspense fallback={<LoadingIndicator fill compact />}><MapScreen user={null} setScreen={setScreen} lang={lang} /></Suspense>}
         {activeTab === 'messages' && (
           <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
             <HubbingIcon name="messages" size={48} color="#E24B4A" />
@@ -2441,12 +2441,12 @@ const handleCompanyProfileBack = () => {
 
   if (!sessionReady) {
     return (
-      <LoadingIndicator label={ui.common.loading} fullScreen background="white" />
+      <LoadingIndicator fullScreen background="white" />
     )
   }
 
   return (
-    <Suspense fallback={<LoadingIndicator label={ui.common.loading} fullScreen background="white" />}>
+    <Suspense fallback={<LoadingIndicator fullScreen background="white" />}>
     <div style={{
   height:'100dvh',
   display:'flex',

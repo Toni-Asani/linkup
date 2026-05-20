@@ -660,7 +660,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   ) : null
 
   if (loading) return (
-    <LoadingIndicator label={ui.common.loading} height={400} background="#fff8f4" style={swipeBackgroundStyle} />
+    <LoadingIndicator fill background="#fff8f4" style={swipeBackgroundStyle} />
   )
 
   if (allSeen || current >= filteredCompanies.length) return (

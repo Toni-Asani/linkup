@@ -973,7 +973,7 @@ const handleFileUpload = async (e) => {
       )}
 
       {loading ? (
-        <LoadingIndicator label={ui.common.loading} height={320} />
+        <LoadingIndicator fill />
       ) : matches.length === 0 ? (
 	        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem'}}>
 	          <HubbingIcon name="messages" size={48} color="#9CA3AF" />

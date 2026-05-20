@@ -159,7 +159,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   }
 
   if (loading) return (
-    <LoadingIndicator label={ui.common.loading} height={400} />
+    <LoadingIndicator fill />
   )
 
   if (!company) return (

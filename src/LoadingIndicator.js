@@ -1,6 +1,7 @@
 export default function LoadingIndicator({
-  label = 'Chargement...',
+  label = null,
   fullScreen = false,
+  fill = false,
   height = 260,
   background = 'transparent',
   compact = false,
@@ -15,8 +16,10 @@ export default function LoadingIndicator({
       aria-live="polite"
       style={{
         width: '100%',
-        height: fullScreen ? '100dvh' : height,
-        minHeight: compact ? 120 : Math.min(height, 220),
+        height: fullScreen ? '100dvh' : fill ? '100%' : height,
+        minHeight: fullScreen ? '100dvh' : fill ? 0 : compact ? 120 : Math.min(height, 220),
+        flex: fill ? '1 1 auto' : undefined,
+        alignSelf: fill ? 'stretch' : undefined,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

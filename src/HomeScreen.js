@@ -181,7 +181,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
   const showOnboarding = onboardingDone < onboardingSteps.length
 
   if (loading) return (
-    <LoadingIndicator label={ui.common.loading} height={400} />
+    <LoadingIndicator fill />
   )
 
   if (loadError) return (

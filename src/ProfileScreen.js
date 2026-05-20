@@ -308,7 +308,7 @@ notif_email: form.notif_email ?? true,
   setSaving(false)
 }
   if (loading) return (
-    <LoadingIndicator label={ui.common.loading} height={400} />
+    <LoadingIndicator fill />
   )
 
   if (!company) return (

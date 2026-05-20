@@ -85,7 +85,7 @@ export default function AdminScreen({ user, setScreen }) {
   const formatDate = (d) => new Date(d).toLocaleDateString('fr-CH')
 
   if (loading) return (
-    <LoadingIndicator label="Vérification des droits..." fullScreen background="white" />
+    <LoadingIndicator fullScreen background="white" />
   )
 
   if (!isAdmin) return (
