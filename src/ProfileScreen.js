@@ -404,7 +404,7 @@ notif_email: form.notif_email ?? true,
       <Input value={form.address||''} onChange={e => setForm({...form,address:e.target.value})} placeholder={ui.profile.address} />
 <textarea value={form.description||''} onChange={e => setForm({...form,description:e.target.value})}
         rows={5} placeholder={ui.profile.description}
-        style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:15,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
+        style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
       <Input value={form.website||''} onChange={e => setForm({...form,website:e.target.value})} placeholder={ui.profile.website} />
 
       <Label>{ui.profile.contact}</Label>
@@ -431,7 +431,7 @@ notif_email: form.notif_email ?? true,
 </div>
       <Label>{ui.profile.needs}</Label>
       <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
-style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
+	style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
       <p style={{fontSize:12,color:'#666'}}>{ui.profile.needsHelp}</p>
 
       {/* Tags existants */}
