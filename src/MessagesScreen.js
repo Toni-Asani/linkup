@@ -92,6 +92,7 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setCo
   const ignoreConversationClickRef = useRef(false)
   const selectedMatchRef = useRef(null)
   const onUnreadChangeRef = useRef(onUnreadChange)
+  const foregroundRefreshTimerRef = useRef(null)
 
   useEffect(() => { loadMyCompanyAndMatches() }, [])
 
@@ -102,6 +103,33 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setCo
   useEffect(() => {
     onUnreadChangeRef.current = onUnreadChange
   }, [onUnreadChange])
+
+  useEffect(() => {
+    if (!myCompany?.id) return undefined
+
+    const refreshMessagesOnForeground = () => {
+      if (document.hidden) return
+      window.clearTimeout(foregroundRefreshTimerRef.current)
+      foregroundRefreshTimerRef.current = window.setTimeout(async () => {
+        await loadMyCompanyAndMatches()
+        await onUnreadChangeRef.current?.()
+        if (selectedMatchRef.current?.id) {
+          await loadMessages(selectedMatchRef.current.id)
+        }
+      }, 300)
+    }
+
+    window.addEventListener('focus', refreshMessagesOnForeground)
+    window.addEventListener('pageshow', refreshMessagesOnForeground)
+    document.addEventListener('visibilitychange', refreshMessagesOnForeground)
+
+    return () => {
+      window.clearTimeout(foregroundRefreshTimerRef.current)
+      window.removeEventListener('focus', refreshMessagesOnForeground)
+      window.removeEventListener('pageshow', refreshMessagesOnForeground)
+      document.removeEventListener('visibilitychange', refreshMessagesOnForeground)
+    }
+  }, [myCompany?.id])
 
 useEffect(() => {
   if (openMatchWithCompanyId && matches.length > 0) {

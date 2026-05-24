@@ -41,6 +41,7 @@ public class HubbingBadgePlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func clearBadge(_ call: CAPPluginCall) {
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         setSystemBadgeCount(0) { error in
             self.complete(call, error: error, data: ["granted": true, "count": 0])
         }
@@ -79,6 +80,14 @@ public class HubbingBadgePlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     private func setSystemBadgeCount(_ count: Int, completion: @escaping (Error?) -> Void) {
+        DispatchQueue.main.async {
+            UIApplication.shared.applicationIconBadgeNumber = count
+        }
+
+        if count == 0 {
+            UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        }
+
         if #available(iOS 16.0, *) {
             UNUserNotificationCenter.current().setBadgeCount(count) { error in
                 completion(error)

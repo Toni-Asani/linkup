@@ -5,7 +5,7 @@ import { isNativeApp } from './platform'
 
 const isIosNative = () => isNativeApp() && Capacitor.getPlatform() === 'ios'
 
-export async function registerPushNotifications() {
+export async function registerPushNotifications({ onNotification } = {}) {
   if (!isIosNative()) return () => {}
 
   const handles = []
@@ -26,8 +26,12 @@ export async function registerPushNotifications() {
       console.warn('Push notification registration failed:', error)
     }))
 
-    handles.push(await PushNotifications.addListener('pushNotificationReceived', () => {}))
-    handles.push(await PushNotifications.addListener('pushNotificationActionPerformed', () => {}))
+    handles.push(await PushNotifications.addListener('pushNotificationReceived', notification => {
+      onNotification?.(notification)
+    }))
+    handles.push(await PushNotifications.addListener('pushNotificationActionPerformed', action => {
+      onNotification?.(action?.notification)
+    }))
 
     let permission = await PushNotifications.checkPermissions()
     if (permission.receive !== 'granted') {
