@@ -90,8 +90,18 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setCo
   const sendingMessageRef = useRef(false)
   const conversationSwipeRef = useRef(null)
   const ignoreConversationClickRef = useRef(false)
+  const selectedMatchRef = useRef(null)
+  const onUnreadChangeRef = useRef(onUnreadChange)
 
   useEffect(() => { loadMyCompanyAndMatches() }, [])
+
+  useEffect(() => {
+    selectedMatchRef.current = selectedMatch
+  }, [selectedMatch])
+
+  useEffect(() => {
+    onUnreadChangeRef.current = onUnreadChange
+  }, [onUnreadChange])
 
 useEffect(() => {
   if (openMatchWithCompanyId && matches.length > 0) {
@@ -125,6 +135,7 @@ useEffect(() => {
           addMessageIfMissing(payload.new)
           if (myCompany?.id && payload.new.sender_id !== myCompany.id) {
             markMessagesRead(selectedMatch.id, [payload.new])
+            markNotificationsRead(selectedMatch.id)
           }
         })
         .on('postgres_changes', {
@@ -160,16 +171,57 @@ useEffect(() => {
 
   const markNotificationsRead = async (matchId) => {
     if (!matchId) return
-    await supabase
+    const { error } = await supabase
       .from('notifications')
       .update({ read: true })
       .eq('user_id', user.id)
       .in('type', ['new_message', 'new_match'])
       .eq('match_id', matchId)
       .eq('read', false)
-    setUnreadByMatch(current => ({ ...current, [matchId]: 0 }))
-    onUnreadChange && onUnreadChange()
+    if (error) {
+      console.warn('Unable to mark notifications as read:', error.message)
+      return
+    }
+    setUnreadByMatch(current => {
+      const next = { ...current }
+      delete next[matchId]
+      return next
+    })
+    await loadUnreadNotifications()
+    await onUnreadChangeRef.current?.()
   }
+
+  useEffect(() => {
+    if (!myCompany?.id) return undefined
+
+    loadUnreadNotifications()
+    const sub = supabase
+      .channel(`message-notifications-${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      }, async payload => {
+        const notification = payload.new || payload.old || {}
+        if (!['new_message', 'new_match'].includes(notification.type)) return
+
+        if (
+          payload.eventType === 'INSERT' &&
+          notification.match_id &&
+          selectedMatchRef.current?.id === notification.match_id
+        ) {
+          await markNotificationsRead(notification.match_id)
+          return
+        }
+
+        await loadUnreadNotifications()
+        await onUnreadChangeRef.current?.()
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(sub)
+  }, [myCompany?.id, user.id])
 
   const getMatchActivityAt = (match) => match?.last_message?.created_at || match?.created_at
 
@@ -273,19 +325,18 @@ useEffect(() => {
       }, payload => {
         const message = payload.new
         updateMatchLastMessage(message)
-        if (message.sender_id !== myCompany.id && selectedMatch?.id !== message.match_id) {
-          setUnreadByMatch(current => ({
-            ...current,
-            [message.match_id]: (current[message.match_id] || 0) + 1,
-          }))
-          onUnreadChange && onUnreadChange()
+        if (message.sender_id !== myCompany.id && selectedMatchRef.current?.id !== message.match_id) {
+          window.setTimeout(async () => {
+            await loadUnreadNotifications()
+            await onUnreadChangeRef.current?.()
+          }, 300)
         }
       })
     })
     channel.subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [myCompany?.id, matches.map(match => match.id).join(','), selectedMatch?.id])
+  }, [myCompany?.id, matches.map(match => match.id).join(',')])
 
   const notifyMessageRecipient = async (match) => {
     const other = getOtherCompany(match)

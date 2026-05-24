@@ -24,7 +24,7 @@ const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
 const ANDROID_PLAY_URL = 'https://play.google.com/store/apps/details?id=ch.hubbing.app'
 const APP_VERSION = '1.0.3'
-const APP_BUILD_NUMBER = 72
+const APP_BUILD_NUMBER = 73
 const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
@@ -2465,23 +2465,28 @@ useEffect(() => {
   const sub = supabase
     .channel('notifications-' + user.id)
     .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'notifications',
+      event: '*', schema: 'public', table: 'notifications',
       filter: `user_id=eq.${user.id}`
     }, async (payload) => {
+      const notification = payload.new || payload.old || {}
+      if (!['new_message', 'new_match'].includes(notification.type)) return
+
       const nextUnreadCount = await loadUnreadCount()
-      if (payload.new?.type === 'new_message') {
+      if (payload.eventType !== 'INSERT' || notification.read) return
+
+      if (notification.type === 'new_message') {
         await showNativeNotification({
           title: t.notificationNewMessageTitle,
           body: t.notificationNewMessageBody,
           count: nextUnreadCount,
-          id: `message-${payload.new?.id || Date.now()}`,
+          id: `message-${notification.id || Date.now()}`,
         })
-      } else if (payload.new?.type === 'new_match') {
+      } else if (notification.type === 'new_match') {
         await showNativeNotification({
           title: t.notificationNewMatchTitle,
           body: t.notificationNewMatchBody,
           count: nextUnreadCount,
-          id: `match-${payload.new?.id || Date.now()}`,
+          id: `match-${notification.id || Date.now()}`,
         })
       }
     })
@@ -2503,7 +2508,11 @@ const loadUnreadCount = async () => {
 }
 
   useEffect(() => {
-    syncUnreadAppBadge(unreadCount)
+    if (unreadCount > 0) {
+      syncUnreadAppBadge(unreadCount)
+    } else {
+      clearAppBadge()
+    }
   }, [unreadCount])
 
   useEffect(() => {
