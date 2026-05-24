@@ -181,18 +181,59 @@ useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const loadUnreadNotifications = async () => {
-    const { data } = await supabase
+  const countByMatch = (items = []) => {
+    const grouped = {}
+    items.forEach(item => {
+      if (!item.match_id) return
+      grouped[item.match_id] = (grouped[item.match_id] || 0) + 1
+    })
+    return grouped
+  }
+
+  const mergeUnreadMaps = (...maps) => {
+    const merged = {}
+    maps.forEach(map => {
+      Object.entries(map || {}).forEach(([matchId, count]) => {
+        merged[matchId] = Math.max(merged[matchId] || 0, Number(count) || 0)
+      })
+    })
+    return merged
+  }
+
+  const loadUnreadNotifications = async (matchList = matches, companyId = myCompany?.id) => {
+    const { data: notificationRows, error: notificationError } = await supabase
       .from('notifications')
       .select('match_id')
       .eq('user_id', user.id)
       .in('type', ['new_message', 'new_match'])
       .eq('read', false)
-    const grouped = {}
-    ;(data || []).forEach(item => {
-      if (!item.match_id) return
-      grouped[item.match_id] = (grouped[item.match_id] || 0) + 1
-    })
+
+    if (notificationError) {
+      console.warn('Unable to load unread notifications:', notificationError.message)
+    }
+
+    let unreadMessagesByMatch = {}
+    const matchIds = (matchList || []).map(match => match.id).filter(Boolean)
+    if (companyId && matchIds.length > 0) {
+      const { data: unreadMessages, error: unreadMessagesError } = await supabase
+        .from('messages')
+        .select('match_id')
+        .in('match_id', matchIds)
+        .neq('sender_id', companyId)
+        .is('read_at', null)
+        .or('deleted_for_all.is.null,deleted_for_all.eq.false')
+
+      if (unreadMessagesError) {
+        console.warn('Unable to load unread messages:', unreadMessagesError.message)
+      } else {
+        unreadMessagesByMatch = countByMatch(unreadMessages || [])
+      }
+    }
+
+    const grouped = mergeUnreadMaps(
+      countByMatch(notificationRows || []),
+      unreadMessagesByMatch
+    )
     setUnreadByMatch(grouped)
     return grouped
   }
@@ -354,6 +395,10 @@ useEffect(() => {
         const message = payload.new
         updateMatchLastMessage(message)
         if (message.sender_id !== myCompany.id && selectedMatchRef.current?.id !== message.match_id) {
+          setUnreadByMatch(current => ({
+            ...current,
+            [message.match_id]: (current[message.match_id] || 0) + 1,
+          }))
           window.setTimeout(async () => {
             await loadUnreadNotifications()
             await onUnreadChangeRef.current?.()
@@ -406,7 +451,7 @@ const loadMyCompanyAndMatches = async () => {
     company_b: companyById[match.company_b?.id] || match.company_b,
   }))
   const matchesWithActivity = await loadLatestMessagesForMatches(enrichedMatches, myComp.id)
-  const unreadMap = await loadUnreadNotifications()
+  const unreadMap = await loadUnreadNotifications(matchesWithActivity, myComp.id)
   setMatches(sortMatchesByPriority(matchesWithActivity, unreadMap))
   setLoading(false)
 }

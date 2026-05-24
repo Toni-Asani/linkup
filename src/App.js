@@ -24,7 +24,7 @@ const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
 const ANDROID_PLAY_URL = 'https://play.google.com/store/apps/details?id=ch.hubbing.app'
 const APP_VERSION = '1.0.5'
-const APP_BUILD_NUMBER = 75
+const APP_BUILD_NUMBER = 76
 const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
