@@ -28,6 +28,7 @@ const APP_BUILD_NUMBER = 76
 const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
+const SESSION_RESTORE_TIMEOUT_MS = 8000
 const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
 const SESSION_LOCK_TTL_MINUTES = 35
 const ENFORCE_SINGLE_DEVICE_LOCK = false
@@ -791,50 +792,70 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search)
-  if (!isNativeApp() && params.get('repair') === '1') {
-    repairLocalBrowserSession().finally(() => {
-      window.history.replaceState({}, '', window.location.pathname)
-      window.location.reload()
-    })
-    return undefined
-  }
+    let active = true
+    const params = new URLSearchParams(window.location.search)
 
-  supabase.auth.getSession().then(async ({ data: { session } }) => {
-    setUser(currentUser => session?.user ?? currentUser)
-    // Vérifier si retour de paiement web
-    const paymentStatus = params.get('payment')
-    const paymentPlan = params.get('plan')
-    if (paymentStatus === 'success' && paymentPlan && session?.user) {
-      await supabase.from('subscriptions').upsert({
-        user_id: session.user.id,
-        plan: paymentPlan,
-        status: 'active',
-        is_founder: false,
-        current_period_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      }, { onConflict: 'user_id' })
-      alert(`✅ Abonnement ${paymentPlan} activé avec succès !`)
-      window.history.replaceState({}, '', window.location.pathname)
+    if (!isNativeApp() && params.get('repair') === '1') {
+      repairLocalBrowserSession().finally(() => {
+        window.history.replaceState({}, '', window.location.pathname)
+        window.location.reload()
+      })
+      return undefined
     }
-    
-    setLoading(false)
-  }).catch(error => {
-    console.warn('Unable to restore auth session:', error)
-    setLoading(false)
-  })
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY') setScreen('reset-password')
-    if (session?.user) {
-      setUser(session.user)
-      return
+
+    const finishLoading = () => {
+      if (!active) return
+      setLoading(false)
     }
-    if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-      setUser(null)
-      clearAppBadge()
+
+    const restoreTimeout = window.setTimeout(() => {
+      console.warn('Auth session restore timed out; continuing to the app.')
+      finishLoading()
+    }, SESSION_RESTORE_TIMEOUT_MS)
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!active) return
+      window.clearTimeout(restoreTimeout)
+      setUser(currentUser => session?.user ?? currentUser)
+      // Vérifier si retour de paiement web
+      const paymentStatus = params.get('payment')
+      const paymentPlan = params.get('plan')
+      if (paymentStatus === 'success' && paymentPlan && session?.user) {
+        await supabase.from('subscriptions').upsert({
+          user_id: session.user.id,
+          plan: paymentPlan,
+          status: 'active',
+          is_founder: false,
+          current_period_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        }, { onConflict: 'user_id' })
+        if (!active) return
+        alert(`✅ Abonnement ${paymentPlan} activé avec succès !`)
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+
+      finishLoading()
+    }).catch(error => {
+      console.warn('Unable to restore auth session:', error)
+      window.clearTimeout(restoreTimeout)
+      finishLoading()
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') setScreen('reset-password')
+      if (session?.user) {
+        setUser(session.user)
+        return
+      }
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        setUser(null)
+        clearAppBadge()
+      }
+    })
+    return () => {
+      active = false
+      window.clearTimeout(restoreTimeout)
+      subscription.unsubscribe()
     }
-  })
-  return () => subscription.unsubscribe()
-}, [])
+  }, [])
   if (loading) return <LoadingIndicator fullScreen background="white" />
 if (isMarketingSite) return (
     <>
