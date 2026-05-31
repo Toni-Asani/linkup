@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, SUPABASE_ANON_KEY, SUPABASE_URL } from './supabaseClient'
 import SwipeScreen from './SwipeScreen'
 import ProfileScreen from './ProfileScreen'
 import MessagesScreen from './MessagesScreen'
@@ -24,7 +24,7 @@ const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
 const ANDROID_PLAY_URL = 'https://play.google.com/store/apps/details?id=ch.hubbing.app'
 const APP_VERSION = '1.0.5'
-const APP_BUILD_NUMBER = 76
+const APP_BUILD_NUMBER = 77
 const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
@@ -1133,7 +1133,7 @@ const handleWaitlist = async () => {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({ email })
     }).catch(e => console.log('Email error:', e))
@@ -1766,11 +1766,11 @@ const verifyZefixForRegistration = async (clean) => {
   setZefixVerification(null)
 
   try {
-    const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/verify-zefix`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/verify-zefix`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({
         zefix: clean,
@@ -1972,11 +1972,11 @@ if (zefixStatus === 'invalid') {
       }
     }
     try {
-      const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/registration-email`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/registration-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({
           email: normalizedEmail,

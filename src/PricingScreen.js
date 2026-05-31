@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, SUPABASE_URL } from './supabaseClient'
 import { getUiText } from './i18n'
 import { APPLE_PRODUCT_IDS, HubbingPurchases } from './applePurchases'
 import { isNativeAndroid, isNativeIOS } from './platform'
@@ -7,7 +7,7 @@ import { VerifiedBadge } from './VerifiedBadge'
 
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
-const SUPABASE_FUNCTIONS_URL = (process.env.REACT_APP_SUPABASE_URL || 'https://rxjrcbdeyouafhtizneh.supabase.co').replace(/\/$/, '')
+const SUPABASE_FUNCTIONS_URL = SUPABASE_URL.replace(/\/$/, '')
 
 const getPlans = (ui) => [
   {

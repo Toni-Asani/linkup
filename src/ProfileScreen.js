@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, SUPABASE_URL } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
 import { moderateImageFile } from './moderation'
 import { geocodeSwissAddress } from './geo'
@@ -204,7 +204,7 @@ const handleContactPhotoUpload = async (e) => {
   const notifyPasswordChange = async () => {
     const { data: sessionData } = await supabase.auth.getSession()
     const token = sessionData?.session?.access_token
-    const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
+    const supabaseUrl = SUPABASE_URL
     if (!token || !supabaseUrl) return false
 
     const response = await fetch(`${supabaseUrl}/functions/v1/password-change-email`, {
@@ -718,7 +718,7 @@ function DeleteAccountButton({ user, lang = 'fr' }) {
   try {
     const { data: sessionData } = await supabase.auth.getSession()
     const token = sessionData?.session?.access_token
-    const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
+    const supabaseUrl = SUPABASE_URL
     if (!token || !supabaseUrl) throw new Error('Missing session')
 
     const response = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
