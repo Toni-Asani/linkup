@@ -5,6 +5,9 @@ import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } fro
 import { HubbingIcon } from './icons'
 import { createNotificationAndPush } from './pushDelivery'
 import LoadingIndicator from './LoadingIndicator'
+import { NeedAttachmentGallery } from './NeedAttachmentComponents'
+import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag, reportNeedAttachment } from './needAttachments'
+import { shareCompanyProfileCard } from './profileShare'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -63,6 +66,29 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const [reportComment, setReportComment] = useState('')
   const [submittingReport, setSubmittingReport] = useState(false)
   const [zoomImage, setZoomImage] = useState(null)
+  const [needAttachments, setNeedAttachments] = useState([])
+  const [reportingAttachment, setReportingAttachment] = useState(null)
+  const [attachmentReportReason, setAttachmentReportReason] = useState('')
+  const [attachmentReportComment, setAttachmentReportComment] = useState('')
+  const [submittingAttachmentReport, setSubmittingAttachmentReport] = useState(false)
+  const [sharingProfile, setSharingProfile] = useState(false)
+
+  const attachmentText = ui.needAttachments || {
+    reportTitle: 'Signaler une pièce jointe',
+    reportReason: 'Motif du signalement *',
+    reportDetails: 'Détails supplémentaires (optionnel)...',
+    reportNote: 'Hubbing recevra le signalement avec les informations du fichier et un lien sécurisé temporaire.',
+    sendReport: 'Envoyer le signalement',
+    reportSent: 'Signalement envoyé. Hubbing va examiner le fichier.',
+    reportError: 'Signalement impossible.',
+    reportReasons: [
+      { value: 'sexual', label: 'Contenu sexuel ou indécent' },
+      { value: 'racist', label: 'Contenu raciste ou discriminatoire' },
+      { value: 'violent', label: 'Contenu violent ou illégal' },
+      { value: 'spam', label: 'Spam ou abus' },
+      { value: 'other', label: 'Autre' },
+    ],
+  }
 
   useEffect(() => { loadCompany() }, [companyId])
 
@@ -71,6 +97,13 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
       .from('companies').select('*').eq('id', companyId).single()
     const companyWithSubscription = await attachCompanySubscriptions(supabase, data)
     setCompany(companyWithSubscription)
+    if (companyWithSubscription?.id) {
+      try {
+        setNeedAttachments(await fetchNeedAttachments(companyWithSubscription.id))
+      } catch (error) {
+        console.warn('Need attachments load failed:', error?.message || error)
+      }
+    }
     setLoading(false)
     const { data: reviews } = await supabase
       .from('reviews')
@@ -107,6 +140,38 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   }
   setSubmittingReport(false)
 }
+
+  const handleAttachmentReport = async () => {
+    if (!reportingAttachment || !attachmentReportReason) return
+    setSubmittingAttachmentReport(true)
+    try {
+      await reportNeedAttachment({
+        attachmentId: reportingAttachment.id,
+        reason: attachmentReportReason,
+        comment: attachmentReportComment,
+        lang,
+      })
+      setReportingAttachment(null)
+      setAttachmentReportReason('')
+      setAttachmentReportComment('')
+      alert(attachmentText.reportSent)
+    } catch (error) {
+      alert(error?.message || attachmentText.reportError)
+    }
+    setSubmittingAttachmentReport(false)
+  }
+
+  const handleShareProfile = async () => {
+    if (sharingProfile) return
+    setSharingProfile(true)
+    try {
+      await shareCompanyProfileCard(company, ui)
+    } catch (error) {
+      alert(error?.message || ui.profile?.shareProfileError || 'Impossible de partager ce profil pour le moment.')
+    }
+    setSharingProfile(false)
+  }
+
   const handleContact = async (needSubject = '') => {
     setContacting(true)
     try {
@@ -179,15 +244,18 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     setSelectedCompanyId && setSelectedCompanyId(null)
     setActiveTab && setActiveTab('pricing')
   }
+  const tagText = tag => (typeof tag === 'string' ? tag : tag?.label || '').trim()
+  const groupedNeedAttachments = groupNeedAttachments(needAttachments)
 
   let parsedTags = []
   try { parsedTags = company.needs_tags ? JSON.parse(company.needs_tags) : [] } catch { parsedTags = [] }
   const activeTags = parsedTags.filter(t => {
-    if (!t.expires) return true
-    return new Date(t.expires) > new Date()
+    const expires = typeof t === 'string' ? null : t.expires
+    if (!expires) return true
+    return new Date(expires) > new Date()
   })
-  const hasNeeds = company.needs_description || activeTags.length > 0
-  const fallbackNeedSubject = activeTags[0]?.label || company.needs_description || company.name
+  const hasNeeds = company.needs_description || activeTags.length > 0 || needAttachments.length > 0
+  const fallbackNeedSubject = tagText(activeTags[0]) || company.needs_description || company.name
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>
@@ -288,18 +356,38 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>{ui.companyProfile.needs}</p>
             {company.needs_description && (
               <p onClick={() => handleContact(company.needs_description)}
-                style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0,cursor:'pointer'}}>
+                style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 || (groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0 ? 10 : 0,cursor:'pointer'}}>
                 {company.needs_description}
               </p>
             )}
+            {(groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0 && (
+              <NeedAttachmentGallery
+                attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
+                ui={ui}
+                canDownload={isPremium}
+                onReport={setReportingAttachment}
+              />
+            )}
             {activeTags.length > 0 && (
-              <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
-                {activeTags.map((tag, i) => (
-                  <button key={i} onClick={() => handleContact(tag.label)}
-                    style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:500,color:'#333',cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
-                    {tag.label}
-                  </button>
-                ))}
+              <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:10}}>
+                {activeTags.map((tag, i) => {
+                  const label = tagText(tag)
+                  const tagKey = needKeyForTag(tag)
+                  return (
+                    <div key={`${tagKey}-${i}`} style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>
+                      <button onClick={() => handleContact(label)}
+                        style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:500,color:'#333',cursor:'pointer',fontFamily:'Plus Jakarta Sans',width:'fit-content',maxWidth:'100%'}}>
+                        {label}
+                      </button>
+                      <NeedAttachmentGallery
+                        attachments={groupedNeedAttachments[tagKey] || []}
+                        ui={ui}
+                        canDownload={isPremium}
+                        onReport={setReportingAttachment}
+                      />
+                    </div>
+                  )
+                })}
               </div>
             )}
             {isStarter && (
@@ -373,6 +461,11 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           style={{width:'100%',padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
           {contacting ? ui.companyProfile.connecting : ui.companyProfile.contact(company.name)}
         </button>
+        <button onClick={handleShareProfile} disabled={sharingProfile}
+          style={{width:'100%',padding:'12px',background:'white',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:12,fontSize:14,fontWeight:700,cursor:sharingProfile ? 'default' : 'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <HubbingIcon name="sparkles" size={17} color="#E24B4A" />
+          {sharingProfile ? (ui.profile?.shareProfileBusy || 'Préparation du visuel...') : (ui.companyProfile.shareProfile || 'Partager ce profil')}
+        </button>
         {isStarter && (
           <p style={{fontSize:11,color:'#999',textAlign:'center',marginTop:-8}}>
             {ui.companyProfile.basicMessaging}
@@ -418,6 +511,38 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             <button onClick={handleReport} disabled={!reportReason || submittingReport}
               style={{width:'100%',padding:'13px',background: reportReason ? '#E24B4A' : '#eee',color: reportReason ? 'white' : '#999',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor: reportReason ? 'pointer' : 'default'}}>
               {submittingReport ? ui.common.sending : ui.companyProfile.sendReport}
+            </button>
+          </div>
+        </div>
+      )}
+      {reportingAttachment && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:320,padding:'1rem'}}>
+          <div style={{background:'white',borderRadius:16,padding:'1.5rem',width:'100%',maxWidth:360}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+              <h3 style={{fontSize:17,fontWeight:700}}>{attachmentText.reportTitle}</h3>
+              <button onClick={() => setReportingAttachment(null)}
+                style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:'#999'}}>✕</button>
+            </div>
+            <p style={{fontSize:13,color:'#666',marginBottom:12}}>{attachmentText.reportReason}</p>
+            {attachmentText.reportReasons.map(r => (
+              <div key={r.value} onClick={() => setAttachmentReportReason(r.value)}
+                style={{padding:'10px 12px',borderRadius:10,border:`2px solid ${attachmentReportReason === r.value ? '#E24B4A' : '#eee'}`,marginBottom:8,cursor:'pointer',background: attachmentReportReason === r.value ? '#FFF5F5' : 'white'}}>
+                <p style={{fontSize:13,fontWeight: attachmentReportReason === r.value ? 600 : 400,color: attachmentReportReason === r.value ? '#E24B4A' : '#444',margin:0}}>{r.label}</p>
+              </div>
+            ))}
+            <textarea
+              value={attachmentReportComment}
+              onChange={e => setAttachmentReportComment(e.target.value)}
+              placeholder={attachmentText.reportDetails}
+              rows={3}
+              style={{width:'100%',padding:'10px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',marginTop:4,marginBottom:12}}
+            />
+            <p style={{fontSize:11,color:'#999',marginBottom:12}}>
+              {attachmentText.reportNote}
+            </p>
+            <button onClick={handleAttachmentReport} disabled={!attachmentReportReason || submittingAttachmentReport}
+              style={{width:'100%',padding:'13px',background: attachmentReportReason ? '#E24B4A' : '#eee',color: attachmentReportReason ? 'white' : '#999',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor: attachmentReportReason ? 'pointer' : 'default'}}>
+              {submittingAttachmentReport ? ui.common.sending : attachmentText.sendReport}
             </button>
           </div>
         </div>

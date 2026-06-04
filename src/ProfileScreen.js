@@ -6,6 +6,9 @@ import { geocodeSwissAddress } from './geo'
 import { isNativeIOS } from './platform'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
+import { NeedAttachmentCloud, NeedAttachmentGallery, NeedAttachmentUploader } from './NeedAttachmentComponents'
+import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag } from './needAttachments'
+import { shareCompanyProfileCard } from './profileShare'
 import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
 
@@ -79,6 +82,8 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordNotice, setPasswordNotice] = useState(null)
   const [showUsageGuide, setShowUsageGuide] = useState(false)
+  const [needAttachments, setNeedAttachments] = useState([])
+  const [sharingProfile, setSharingProfile] = useState(false)
   const fileInputRef = useRef(null)
 
   useEffect(() => { loadProfile() }, [])
@@ -91,6 +96,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       setCompany(companyWithSubscription)
       setForm(companyWithSubscription)
       loadStats(data.id)
+      loadNeedAttachments(data.id)
       const { data: sub } = await supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
       if (sub) setCurrentPlan(sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1))
       try {
@@ -105,6 +111,16 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       .from('matches').select('*', { count: 'exact', head: true })
       .or(`company_a.eq.${companyId},company_b.eq.${companyId}`)
     setStats({ matches: count || 0 })
+  }
+
+  const loadNeedAttachments = async (companyId = company?.id) => {
+    if (!companyId) return
+    try {
+      const rows = await fetchNeedAttachments(companyId)
+      setNeedAttachments(rows)
+    } catch (error) {
+      console.warn('Need attachments load failed:', error?.message || error)
+    }
   }
 
   const validateAndModerateProfileImage = async (file, context) => {
@@ -191,14 +207,18 @@ const handleContactPhotoUpload = async (e) => {
   }
 }
 
+  const tagText = tag => (typeof tag === 'string' ? tag : tag?.label || '').trim()
+  const sameTag = (left, right) => tagText(left).toLowerCase() === tagText(right).toLowerCase()
+
   const addTag = () => {
-    if (!newTag.trim() || tags.includes(newTag.trim())) return
-    setTags([...tags, newTag.trim()])
+    const label = newTag.trim()
+    if (!label || tags.some(tag => sameTag(tag, label))) return
+    setTags([...tags, label])
     setNewTag('')
   }
 
   const removeTag = (tag) => {
-    setTags(tags.filter(t => t !== tag))
+    setTags(tags.filter(t => !sameTag(t, tag)))
   }
 
   const notifyPasswordChange = async () => {
@@ -250,6 +270,17 @@ const handleContactPhotoUpload = async (e) => {
       })
     }
     setPasswordSaving(false)
+  }
+
+  const handleShareProfile = async () => {
+    if (sharingProfile) return
+    setSharingProfile(true)
+    try {
+      await shareCompanyProfileCard(company, ui)
+    } catch (error) {
+      alert(error?.message || ui.profile.shareProfileError)
+    }
+    setSharingProfile(false)
   }
 
   const handleSave = async () => {
@@ -320,6 +351,7 @@ notif_email: form.notif_email ?? true,
   const color = sectorColors[company.sector] || '#E24B4A'
   const initials = company.name?.substring(0, 2).toUpperCase()
   const companyBadgeVariant = getCompanyBadgeVariant(company, currentPlan)
+  const groupedNeedAttachments = groupNeedAttachments(needAttachments)
   const verificationStatus = String(company.zefix_verification_status || 'manual_approved').toLowerCase()
   const verificationLabel = {
     verified: ui.profile.verificationVerified,
@@ -433,24 +465,54 @@ notif_email: form.notif_email ?? true,
       <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
 	style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
       <p style={{fontSize:12,color:'#666'}}>{ui.profile.needsHelp}</p>
+      {company?.id && (
+        <NeedAttachmentUploader
+          company={company}
+          plan={currentPlan}
+          needKey={GENERAL_NEED_KEY}
+          needLabel={ui.profile.needs}
+          attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
+          onChange={() => loadNeedAttachments(company.id)}
+          ui={ui}
+        />
+      )}
 
       {/* Tags existants */}
       {tags.length > 0 && (
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          {tags.map((tag, i) => (
-            <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'#f9f9f9',borderRadius:10,padding:'8px 12px'}}>
-              <div>
-                <span style={{fontSize:14,fontWeight:500}}>{tag.label}</span>
-                {tag.expires && (
-                  <span style={{fontSize:11,color:getTagColor(tag.expires),marginLeft:8}}>
-                    {getTagLabel(tag.expires)}
-                  </span>
-                )}
+          {tags.map((tag, i) => {
+            const label = tagText(tag)
+            const tagKey = needKeyForTag(tag)
+            const expires = typeof tag === 'string' ? null : tag.expires
+            return (
+            <div key={`${tagKey}-${i}`} style={{display:'flex',flexDirection:'column',gap:8,background:'#f9f9f9',borderRadius:10,padding:'8px 12px'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+                <div style={{minWidth:0}}>
+                  <span style={{fontSize:14,fontWeight:500}}>{label}</span>
+                  {expires && (
+                    <span style={{fontSize:11,color:getTagColor(expires),marginLeft:8}}>
+                      {getTagLabel(expires)}
+                    </span>
+                  )}
+                </div>
+                <button onClick={() => removeTag(tag)}
+                  style={{background:'none',border:'none',cursor:'pointer',color:'#E24B4A',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <HubbingIcon name="x" size={16} color="#E24B4A" />
+                </button>
               </div>
-	              <button onClick={() => removeTag(tag)}
-	                style={{background:'none',border:'none',cursor:'pointer',color:'#E24B4A',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}><HubbingIcon name="x" size={16} color="#E24B4A" /></button>
+              {company?.id && (
+                <NeedAttachmentUploader
+                  company={company}
+                  plan={currentPlan}
+                  needKey={tagKey}
+                  needLabel={label}
+                  attachments={groupedNeedAttachments[tagKey] || []}
+                  onChange={() => loadNeedAttachments(company.id)}
+                  ui={ui}
+                />
+              )}
             </div>
-          ))}
+          )})}
         </div>
       )}
 
@@ -462,8 +524,9 @@ notif_email: form.notif_email ?? true,
           <input type="date" value={form.newTagExpiry||''} onChange={e => setForm({...form,newTagExpiry:e.target.value})}
             style={{flex:1,padding:'10px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
           <button onClick={() => {
-            if (!newTag.trim()) return
-            setTags([...tags, { label: newTag.trim(), expires: form.newTagExpiry || null }])
+            const label = newTag.trim()
+            if (!label || tags.some(tag => sameTag(tag, label))) return
+            setTags([...tags, { label, expires: form.newTagExpiry || null }])
             setNewTag('')
             setForm({...form, newTagExpiry: ''})
           }}
@@ -539,7 +602,10 @@ notif_email: form.notif_email ?? true,
   // Récupérer les tags parsés
   let parsedTags = []
   try { parsedTags = company.needs_tags ? JSON.parse(company.needs_tags) : [] } catch { parsedTags = [] }
-  const activeTags = parsedTags.filter(t => getTagStatus(t.expires) !== 'expired')
+  const activeTags = parsedTags.filter(t => {
+    const expires = typeof t === 'string' ? null : t.expires
+    return getTagStatus(expires) !== 'expired'
+  })
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>
@@ -609,7 +675,7 @@ notif_email: form.notif_email ?? true,
         )}
 
         {/* Nos besoins */}
-        {(company.needs_description || activeTags.length > 0) && (
+        {(company.needs_description || activeTags.length > 0 || needAttachments.length > 0) && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
 	            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
 	              <HubbingIcon name="briefcase" size={14} color="#E67E22" /> {ui.profile.needs}
@@ -619,18 +685,45 @@ notif_email: form.notif_email ?? true,
                 {company.needs_description}
               </p>
             )}
+            {(groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0 && (
+              <NeedAttachmentGallery
+                attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
+                ui={ui}
+                canDownload={currentPlan === 'Premium'}
+              />
+            )}
             {activeTags.length > 0 && (
-              <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                {activeTags.map((tag, i) => (
-                  <div key={i} style={{background:'white',border:`1px solid ${getTagColor(tag.expires)}`,borderRadius:20,padding:'4px 10px',display:'flex',alignItems:'center',gap:4}}>
-                    <div style={{width:6,height:6,borderRadius:'50%',background:getTagColor(tag.expires)}}></div>
-                    <span style={{fontSize:12,fontWeight:500,color:'#333'}}>{tag.label}</span>
-                    {tag.expires && <span style={{fontSize:10,color:getTagColor(tag.expires)}}>{getTagLabel(tag.expires)}</span>}
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {activeTags.map((tag, i) => {
+                  const label = tagText(tag)
+                  const tagKey = needKeyForTag(tag)
+                  const expires = typeof tag === 'string' ? null : tag.expires
+                  return (
+                  <div key={`${tagKey}-${i}`} style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>
+                    <div style={{background:'white',border:`1px solid ${getTagColor(expires)}`,borderRadius:20,padding:'4px 10px',display:'flex',alignItems:'center',gap:4,width:'fit-content',maxWidth:'100%'}}>
+                      <div style={{width:6,height:6,borderRadius:'50%',background:getTagColor(expires)}}></div>
+                      <span style={{fontSize:12,fontWeight:500,color:'#333'}}>{label}</span>
+                      {expires && <span style={{fontSize:10,color:getTagColor(expires)}}>{getTagLabel(expires)}</span>}
+                    </div>
+                    <NeedAttachmentGallery
+                      attachments={groupedNeedAttachments[tagKey] || []}
+                      ui={ui}
+                      canDownload={currentPlan === 'Premium'}
+                    />
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </div>
+        )}
+
+        {needAttachments.length > 0 && (
+          <NeedAttachmentCloud
+            plan={currentPlan}
+            attachments={needAttachments}
+            onChange={() => loadNeedAttachments(company.id)}
+            ui={ui}
+          />
         )}
 
         {/* Décideur */}
@@ -678,6 +771,11 @@ notif_email: form.notif_email ?? true,
         <button onClick={() => setEditing(true)}
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
           {ui.profile.editProfile}
+        </button>
+        <button onClick={handleShareProfile} disabled={sharingProfile}
+          style={{padding:'14px',background:'white',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:12,fontSize:15,fontWeight:700,cursor:sharingProfile ? 'default' : 'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <HubbingIcon name="sparkles" size={17} color="#E24B4A" />
+          {sharingProfile ? (ui.profile.shareProfileBusy || 'Préparation du visuel...') : (ui.profile.shareProfile || 'Partager mon profil')}
         </button>
         <a href="mailto:contact@hubbing.ch"
   style={{padding:'14px',background:'white',color:'#666',border:'1px solid #eee',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',textDecoration:'none',display:'block'}}>
