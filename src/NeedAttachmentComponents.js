@@ -423,14 +423,14 @@ function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
 
   return (
     <div role="dialog" aria-modal="true" aria-label={attachment.file_name}
-      style={{ position: 'fixed', inset: 0, zIndex: 520, background: 'rgba(17,24,39,0.88)', display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px)' }}>
+      style={{ position: 'fixed', inset: 0, zIndex: 12000, background: 'rgba(17,24,39,0.92)', display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ margin: 0, color: '#fff', fontSize: 14, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{attachment.file_name}</p>
           <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.72)', fontSize: 11, fontWeight: 700 }}>{formatFileSize(attachment.file_size)}</p>
         </div>
         <button type="button" onClick={onClose} aria-label={text.close}
-          style={{ width: 40, height: 40, borderRadius: 14, border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          style={{ position: 'fixed', top: 'calc(env(safe-area-inset-top) + 12px)', right: 14, zIndex: 12001, width: 42, height: 42, borderRadius: 14, border: '1px solid rgba(255,255,255,0.28)', background: 'rgba(17,24,39,0.78)', boxShadow: '0 10px 26px rgba(0,0,0,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
           <HubbingIcon name="x" size={20} color="#fff" />
         </button>
       </div>
