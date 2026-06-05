@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { Check, Eye, RotateCcw, X } from 'lucide-react'
+import { Check, Eye, RotateCcw, Share2, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getUiText } from './i18n'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant, isDemoCompany } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
 import { createNotificationAndPush } from './pushDelivery'
+import { shareCompanyProfileCard } from './profileShare'
 import LoadingIndicator from './LoadingIndicator'
 
 const sectorColors = {
@@ -119,8 +120,10 @@ const sortCompaniesForSwipe = (companyList = []) => [...companyList].sort((a, b)
 
 export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActiveTab, setSelectedCompanyId, setCompanyProfileReturn, setDirectMessageCompanyId, setDirectMessageDraft, lang = 'fr' }) {
   const ui = getUiText(lang)
-  const isPremium = plan === 'Premium'
+  const normalizedPlan = String(plan || 'Starter').toLowerCase()
+  const isPremium = normalizedPlan === 'premium'
   const canViewCompanyProfiles = Boolean(user)
+  const canShareSwipeProfiles = Boolean(user)
   const isVisitor = !user
   const swipeBackgroundStyle = {
     backgroundColor: '#fff8f4',
@@ -149,6 +152,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const [matchedCompanyIds, setMatchedCompanyIds] = useState(new Set())
   const [swipeHistory, setSwipeHistory] = useState([])
   const [openingNeedMessage, setOpeningNeedMessage] = useState(false)
+  const [sharingProfileId, setSharingProfileId] = useState(null)
   const [ratings, setRatings] = useState({})
   const decisionRef = useRef(null)
   const currentRef = useRef(0)
@@ -690,6 +694,21 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const activeTags = getActiveTags(company.needs_tags)
   const hasNeeds = company.needs_description || activeTags.length > 0
 
+  const handleShareProfile = async (event) => {
+    event?.preventDefault()
+    event?.stopPropagation()
+    if (!canShareSwipeProfiles || sharingProfileId) return
+    dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
+    setOffset({ x: 0, y: 0 })
+    setSharingProfileId(company.id)
+    try {
+      await shareCompanyProfileCard(company, ui)
+    } catch (error) {
+      alert(error?.message || ui.profile?.shareProfileError || 'Impossible de partager ce profil pour le moment.')
+    }
+    setSharingProfileId(null)
+  }
+
   return (
     <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',alignItems:'center',padding:'0.75rem 1rem 1rem',gap:'0.5rem',userSelect:'none',overflow:'hidden',...swipeBackgroundStyle}}>
 
@@ -786,15 +805,30 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>★ {ratings[company.id] || ui.swipe.newLabel}</span>
             </div>
 
-            {canViewCompanyProfiles && (
-              <button
-                onClick={openCompanyProfile}
-                onPointerDown={event => event.stopPropagation()}
-                onTouchStart={event => event.stopPropagation()}
-                style={{display:'inline-flex',alignItems:'center',gap:6,marginBottom:'0.5rem',background:'#FFF5F5',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:999,padding:'7px 11px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
-                <Eye size={14} strokeWidth={2.4} />
-                {ui.swipe.viewProfile}
-              </button>
+            {(canViewCompanyProfiles || canShareSwipeProfiles) && (
+              <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:'0.5rem'}}>
+                {canViewCompanyProfiles && (
+                  <button
+                    onClick={openCompanyProfile}
+                    onPointerDown={event => event.stopPropagation()}
+                    onTouchStart={event => event.stopPropagation()}
+                    style={{display:'inline-flex',alignItems:'center',gap:6,background:'#FFF5F5',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:999,padding:'7px 11px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+                    <Eye size={14} strokeWidth={2.4} />
+                    {ui.swipe.viewProfile}
+                  </button>
+                )}
+                {canShareSwipeProfiles && (
+                  <button
+                    onClick={handleShareProfile}
+                    onPointerDown={event => event.stopPropagation()}
+                    onTouchStart={event => event.stopPropagation()}
+                    disabled={sharingProfileId === company.id}
+                    style={{display:'inline-flex',alignItems:'center',gap:6,background:'#F8FAFC',color:'#334155',border:'1px solid #E2E8F0',borderRadius:999,padding:'7px 11px',fontSize:12,fontWeight:700,cursor:sharingProfileId === company.id ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans',opacity:sharingProfileId === company.id ? 0.7 : 1}}>
+                    <Share2 size={14} strokeWidth={2.4} />
+                    {sharingProfileId === company.id ? (ui.profile?.shareProfileBusy || 'Préparation...') : (ui.profile?.shareProfile || 'Partager ce profil')}
+                  </button>
+                )}
+              </div>
             )}
 
             {isPremium && company.contact_name && (

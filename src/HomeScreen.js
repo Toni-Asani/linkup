@@ -77,6 +77,12 @@ const tokenize = (value = '') => normalizeSearchText(value)
 
 const unique = (items = []) => Array.from(new Set(items.filter(Boolean)))
 
+const getTokenRoots = (token = '') => unique([
+  token,
+  token.length >= 6 ? token.slice(0, 6) : '',
+  token.length >= 7 ? token.slice(0, 7) : '',
+].filter(part => part.length >= 5))
+
 const getCompanyNeedsText = (company) => [
   company?.needs_description,
   ...getActiveTags(company?.needs_tags).map(tag => tag.label),
@@ -123,9 +129,10 @@ const getDistanceKm = (companyA, companyB) => {
 }
 
 const getKeywordMatches = (currentCompany, opportunityCompany) => {
-  const currentTokens = new Set(tokenize(getCompanyProfileText(currentCompany)))
+  const currentTokens = tokenize(getCompanyProfileText(currentCompany))
+  const currentRoots = new Set(currentTokens.flatMap(getTokenRoots))
   const needTokens = tokenize(getCompanyNeedsText(opportunityCompany))
-  return unique(needTokens.filter(token => currentTokens.has(token))).slice(0, 4)
+  return unique(needTokens.filter(token => getTokenRoots(token).some(root => currentRoots.has(root)))).slice(0, 4)
 }
 
 const getFreshnessScore = (company) => {
@@ -140,9 +147,11 @@ const buildOpportunity = (company, currentCompany, attachmentCount = 0) => {
   const distanceKm = getDistanceKm(currentCompany, company)
   const matchReasons = []
   let score = 0
+  let relevanceScore = 0
 
   if (company?.sector && company.sector === currentCompany?.sector) {
     score += 8
+    relevanceScore += 8
     matchReasons.push(company.sector)
   }
   if (company?.canton && company.canton === currentCompany?.canton) {
@@ -151,6 +160,7 @@ const buildOpportunity = (company, currentCompany, attachmentCount = 0) => {
   }
   keywordMatches.forEach(token => {
     score += 3
+    relevanceScore += 3
     matchReasons.push(token)
   })
   if (typeof distanceKm === 'number') {
@@ -170,6 +180,7 @@ const buildOpportunity = (company, currentCompany, attachmentCount = 0) => {
     distanceKm,
     attachmentCount,
     score,
+    relevanceScore,
     freshness: getFreshnessScore(company),
     planRank: planPriority[normalizePlan(company.subscription_plan || company.plan)] ?? 3,
   }
@@ -344,6 +355,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
 
       const builtOpportunities = opportunityCompaniesWithSubscriptions
         .map(item => buildOpportunity(item, compWithSubscription, attachmentCountsByCompany[item.id] || 0))
+        .filter(item => item.relevanceScore > 0)
         .sort((a, b) => (
           b.score - a.score
           || a.planRank - b.planRank

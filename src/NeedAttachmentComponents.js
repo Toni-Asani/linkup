@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { HubbingIcon } from './icons'
 import {
   createNeedAttachmentSignedUrl,
@@ -410,6 +411,20 @@ function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
   const isImage = attachment.file_type === 'image'
   const isPdf = attachment.file_type === 'pdf'
 
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') onClose?.()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
   const deleteFile = async () => {
     if (!window.confirm(text.confirmDelete)) return
     setBusy(true)
@@ -421,18 +436,21 @@ function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
     }
   }
 
-  return (
+  const dialog = (
     <div role="dialog" aria-modal="true" aria-label={attachment.file_name}
-      style={{ position: 'fixed', inset: 0, zIndex: 12000, background: 'rgba(17,24,39,0.92)', display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+      onClick={event => {
+        if (event.target === event.currentTarget) onClose?.()
+      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 2147483647, background: 'rgba(17,24,39,0.94)', display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 14px calc(env(safe-area-inset-bottom, 0px) + 14px)' }}>
+      <button type="button" onClick={onClose} aria-label={text.close} title={text.close}
+        style={{ position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 10px)', right: 12, zIndex: 2147483647, width: 46, height: 46, borderRadius: 999, border: '1px solid rgba(17,24,39,0.12)', background: '#fff', color: '#111827', boxShadow: '0 14px 32px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 28, fontWeight: 900, lineHeight: 1 }}>
+        ×
+      </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, paddingRight: 58 }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ margin: 0, color: '#fff', fontSize: 14, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{attachment.file_name}</p>
           <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.72)', fontSize: 11, fontWeight: 700 }}>{formatFileSize(attachment.file_size)}</p>
         </div>
-        <button type="button" onClick={onClose} aria-label={text.close}
-          style={{ position: 'fixed', top: 'calc(env(safe-area-inset-top) + 12px)', right: 14, zIndex: 12001, width: 42, height: 42, borderRadius: 14, border: '1px solid rgba(255,255,255,0.28)', background: 'rgba(17,24,39,0.78)', boxShadow: '0 10px 26px rgba(0,0,0,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-          <HubbingIcon name="x" size={20} color="#fff" />
-        </button>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 20, background: 'rgba(255,255,255,0.06)' }}>
@@ -466,6 +484,8 @@ function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
       </div>
     </div>
   )
+
+  return typeof document !== 'undefined' ? createPortal(dialog, document.body) : dialog
 }
 
 function NeedAttachmentList({ attachments, ui, canDelete = false, canDownload = false, onDelete, onReport, compact = false }) {
