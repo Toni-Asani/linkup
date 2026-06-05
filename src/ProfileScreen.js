@@ -717,14 +717,12 @@ notif_email: form.notif_email ?? true,
           </div>
         )}
 
-        {needAttachments.length > 0 && (
-          <NeedAttachmentCloud
-            plan={currentPlan}
-            attachments={needAttachments}
-            onChange={() => loadNeedAttachments(company.id)}
-            ui={ui}
-          />
-        )}
+        <NeedAttachmentCloud
+          plan={currentPlan}
+          attachments={needAttachments}
+          onChange={() => loadNeedAttachments(company.id)}
+          ui={ui}
+        />
 
         {/* Décideur */}
         {company.contact_name && (

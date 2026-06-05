@@ -549,6 +549,12 @@ const dictionaries = {
         ? 'Votre espace privé : retrouvez tous vos fichiers attachés aux besoins. Personne d’autre ne peut consulter ce cloud.'
         : 'Votre espace privé : retrouvez vos fichiers attachés aux besoins. Personne d’autre ne peut consulter ce cloud. Le téléchargement complet des documents est réservé au plan Premium.',
       emptyCloud: 'Aucun fichier ajouté pour le moment.',
+      openCloud: 'Ouvrir le cloud',
+      cloudHint: 'Galerie privée de vos pièces jointes',
+      allFiles: 'Tous les fichiers',
+      close: 'Fermer',
+      previewUnavailable: 'Aperçu indisponible',
+      fileCount: (count) => `${count} fichier${count > 1 ? 's' : ''}`,
       policyLine: (plan) => plan === 'Premium'
         ? 'Premium : jusqu’à 15 fichiers par besoin, photos ou PDF. Photos 10 MB, PDF 50 MB.'
         : plan === 'Basic'
