@@ -31,6 +31,9 @@ const fallbackNeedAttachmentText = {
   importFile: 'Importer',
   uploading: 'Envoi...',
   open: 'Ouvrir',
+  share: 'Partager',
+  sharing: 'Partage...',
+  shareError: 'Partage impossible.',
   download: 'Télécharger',
   report: 'Signaler',
   delete: 'Supprimer',
@@ -62,6 +65,13 @@ const buttonBase = {
   justifyContent: 'center',
   gap: 6,
 }
+
+const getAttachmentMimeType = attachment => (
+  attachment?.mime_type
+  || (attachment?.file_type === 'pdf' ? 'application/pdf' : '')
+  || (attachment?.file_type === 'image' ? 'image/jpeg' : '')
+  || 'application/octet-stream'
+)
 
 export function NeedAttachmentUploader({ company, plan, needKey, needLabel, attachments = [], onChange, ui }) {
   const [uploading, setUploading] = useState(false)
@@ -319,6 +329,7 @@ function NeedAttachmentCloudPage({ plan, attachments, ui, countLabel, canDownloa
           item={preview}
           ui={ui}
           canDownload={canDownload}
+          canDelete
           onClose={() => setPreview(null)}
           onDelete={handleDelete}
         />
@@ -404,10 +415,11 @@ function NeedAttachmentCloudTile({ attachment, ui, onOpen, onDelete }) {
   )
 }
 
-function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
+function NeedAttachmentPreview({ item, ui, canDownload, canDelete = false, onClose, onDelete }) {
   const text = getNeedAttachmentText(ui)
   const { attachment, signedUrl } = item
   const [busy, setBusy] = useState(false)
+  const [sharing, setSharing] = useState(false)
   const isImage = attachment.file_type === 'image'
   const isPdf = attachment.file_type === 'pdf'
 
@@ -433,6 +445,37 @@ function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
     } catch (error) {
       alert(error?.message || text.deleteError)
       setBusy(false)
+    }
+  }
+
+  const shareFile = async () => {
+    if (!signedUrl || sharing) return
+    setSharing(true)
+    try {
+      const response = await fetch(signedUrl)
+      if (!response.ok) throw new Error(text.shareError || 'Partage impossible.')
+      const blob = await response.blob()
+      const file = new File([blob], attachment.file_name || 'piece-jointe', { type: blob.type || getAttachmentMimeType(attachment) })
+
+      if (typeof navigator !== 'undefined' && navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({
+          title: attachment.file_name,
+          files: [file],
+        })
+      } else {
+        const objectUrl = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = objectUrl
+        link.download = attachment.file_name || 'piece-jointe'
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
+      }
+    } catch (error) {
+      alert(error?.message || text.shareError || 'Partage impossible.')
+    } finally {
+      setSharing(false)
     }
   }
 
@@ -467,9 +510,9 @@ function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', paddingTop: 12 }}>
-        <button type="button" onClick={() => window.open(signedUrl, '_blank', 'noopener,noreferrer')}
-          style={{ ...buttonBase, background: '#fff', color: '#222', border: '1px solid rgba(255,255,255,0.18)', padding: '10px 14px', fontSize: 12 }}>
-          {text.open}
+        <button type="button" onClick={shareFile} disabled={sharing}
+          style={{ ...buttonBase, background: '#fff', color: '#222', border: '1px solid rgba(255,255,255,0.18)', padding: '10px 14px', fontSize: 12, cursor: sharing ? 'default' : 'pointer' }}>
+          {sharing ? (text.sharing || 'Partage...') : (text.share || 'Partager')}
         </button>
         {canDownload && (
           <a href={signedUrl} download={attachment.file_name}
@@ -477,10 +520,12 @@ function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
             {text.download}
           </a>
         )}
-        <button type="button" onClick={deleteFile} disabled={busy}
-          style={{ ...buttonBase, background: '#FFF5F5', color: '#E24B4A', border: '1px solid #FECACA', padding: '10px 14px', fontSize: 12 }}>
-          {busy ? text.deleting : text.delete}
-        </button>
+        {canDelete && (
+          <button type="button" onClick={deleteFile} disabled={busy}
+            style={{ ...buttonBase, background: '#FFF5F5', color: '#E24B4A', border: '1px solid #FECACA', padding: '10px 14px', fontSize: 12 }}>
+            {busy ? text.deleting : text.delete}
+          </button>
+        )}
       </div>
     </div>
   )
@@ -489,25 +534,45 @@ function NeedAttachmentPreview({ item, ui, canDownload, onClose, onDelete }) {
 }
 
 function NeedAttachmentList({ attachments, ui, canDelete = false, canDownload = false, onDelete, onReport, compact = false }) {
+  const [preview, setPreview] = useState(null)
+
+  const handleDelete = async attachment => {
+    await onDelete?.(attachment)
+    setPreview(null)
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 6 : 8 }}>
-      {attachments.map(attachment => (
-        <NeedAttachmentItem
-          key={attachment.id}
-          attachment={attachment}
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 6 : 8 }}>
+        {attachments.map(attachment => (
+          <NeedAttachmentItem
+            key={attachment.id}
+            attachment={attachment}
+            ui={ui}
+            canDelete={canDelete}
+            canDownload={canDownload}
+            onDelete={onDelete}
+            onReport={onReport}
+            onOpenPreview={setPreview}
+            compact={compact}
+          />
+        ))}
+      </div>
+      {preview && (
+        <NeedAttachmentPreview
+          item={preview}
           ui={ui}
-          canDelete={canDelete}
           canDownload={canDownload}
-          onDelete={onDelete}
-          onReport={onReport}
-          compact={compact}
+          canDelete={canDelete}
+          onClose={() => setPreview(null)}
+          onDelete={handleDelete}
         />
-      ))}
-    </div>
+      )}
+    </>
   )
 }
 
-function NeedAttachmentItem({ attachment, ui, canDelete, canDownload, onDelete, onReport, compact }) {
+function NeedAttachmentItem({ attachment, ui, canDelete, canDownload, onDelete, onReport, onOpenPreview, compact }) {
   const text = getNeedAttachmentText(ui)
   const [signedUrl, setSignedUrl] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -521,7 +586,7 @@ function NeedAttachmentItem({ attachment, ui, canDelete, canDownload, onDelete, 
   }, [attachment.storage_path])
 
   const openFile = () => {
-    if (signedUrl) window.open(signedUrl, '_blank', 'noopener,noreferrer')
+    if (signedUrl) onOpenPreview?.({ attachment, signedUrl })
   }
 
   const deleteFile = async () => {
@@ -566,10 +631,6 @@ function NeedAttachmentItem({ attachment, ui, canDelete, canDownload, onDelete, 
           {attachment.need_label ? ` · ${attachment.need_label}` : ''}
         </p>
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 5 }}>
-          <button onClick={openFile} disabled={!signedUrl}
-            style={{ ...buttonBase, padding: '5px 8px', fontSize: 10, background: '#f8fafc', color: '#4B5563', border: '1px solid #e5e7eb', cursor: signedUrl ? 'pointer' : 'default' }}>
-            {text.open}
-          </button>
           {canDownload && signedUrl && (
             <a href={signedUrl} download={attachment.file_name}
               style={{ ...buttonBase, padding: '5px 8px', fontSize: 10, background: '#ECFDF5', color: '#047857', border: '1px solid #BBF7D0', textDecoration: 'none' }}>

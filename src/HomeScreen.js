@@ -46,6 +46,38 @@ const stopWords = new Set([
   'partenaire', 'partenaires', 'suisse', 'local', 'locaux', 'faire', 'plus', 'aux', 'par',
 ])
 
+const sectorServiceKeywords = {
+  'Marketing & Publicité': [
+    'marketing', 'publicité', 'communication', 'campagne', 'réseaux sociaux', 'branding',
+    'identité visuelle', 'logo', 'graphisme', 'design', 'print', 'impression', 'flyer',
+    'affiche', 'signalétique', 'enseigne', 'site web', 'digital', 'publicitaire',
+  ],
+  'Marketing Digital': ['marketing', 'digital', 'réseaux sociaux', 'site web', 'campagne', 'seo', 'publicité', 'communication'],
+  'Design & Créatif': ['design', 'graphisme', 'logo', 'branding', 'identité visuelle', 'illustration', 'création', 'visuel'],
+  'Design & Communication': ['design', 'communication', 'graphisme', 'logo', 'branding', 'identité visuelle', 'supports', 'visuel'],
+  'Informatique & Tech': ['informatique', 'logiciel', 'application', 'site web', 'développement', 'tech', 'maintenance', 'automatisation'],
+  Informatique: ['informatique', 'logiciel', 'application', 'site web', 'développement', 'maintenance', 'support'],
+  'Fiduciaire & Comptabilité': ['fiduciaire', 'comptabilité', 'fiscalité', 'déclaration', 'salaires', 'bouclement', 'audit'],
+  Fiduciaire: ['fiduciaire', 'comptabilité', 'fiscalité', 'déclaration', 'salaires', 'bouclement'],
+  'BTP & Construction': ['chantier', 'construction', 'rénovation', 'maçonnerie', 'peinture', 'plomberie', 'électricité', 'architecture'],
+  Construction: ['chantier', 'construction', 'rénovation', 'maçonnerie', 'peinture', 'plomberie', 'électricité'],
+  'Ressources Humaines': ['recrutement', 'rh', 'formation', 'coaching', 'emploi', 'talent', 'salaire'],
+  'Transport & Logistique': ['transport', 'livraison', 'logistique', 'stockage', 'déménagement', 'expédition'],
+  'Commerce & Retail': ['commerce', 'vente', 'boutique', 'retail', 'distribution', 'fournisseur'],
+  Immobilier: ['immobilier', 'location', 'vente', 'gestion', 'courtage', 'estimation'],
+  'Finance & Assurance': ['finance', 'assurance', 'crédit', 'hypothèque', 'placement', 'prévoyance'],
+  'Santé & Bien-être': ['santé', 'bien-être', 'soins', 'thérapie', 'coaching', 'médical'],
+  'Éducation & Formation': ['formation', 'cours', 'éducation', 'atelier', 'apprentissage', 'coaching'],
+  Juridique: ['juridique', 'avocat', 'contrat', 'droit', 'conseil', 'litige'],
+  'Industrie & Production': ['industrie', 'production', 'usinage', 'fabrication', 'maintenance', 'atelier'],
+  'Tourisme & Hôtellerie': ['tourisme', 'hôtel', 'hébergement', 'voyage', 'accueil', 'événement'],
+  Restauration: ['restaurant', 'traiteur', 'cuisine', 'repas', 'événement', 'alimentation'],
+  'Nettoyage & Facility': ['nettoyage', 'facility', 'entretien', 'maintenance', 'désinfection'],
+  Sécurité: ['sécurité', 'surveillance', 'alarme', 'contrôle', 'protection'],
+  Événementiel: ['événement', 'animation', 'organisation', 'stand', 'sonorisation', 'location'],
+  Consulting: ['conseil', 'stratégie', 'organisation', 'audit', 'accompagnement', 'optimisation'],
+}
+
 const normalizePlan = (value) => {
   const normalized = String(value || 'starter').toLowerCase()
   if (normalized.includes('premium')) return 'premium'
@@ -81,22 +113,24 @@ const getTokenRoots = (token = '') => unique([
   token,
   token.length >= 6 ? token.slice(0, 6) : '',
   token.length >= 7 ? token.slice(0, 7) : '',
-].filter(part => part.length >= 5))
+].filter(part => part.length >= 4))
 
 const getCompanyNeedsText = (company) => [
   company?.needs_description,
   ...getActiveTags(company?.needs_tags).map(tag => tag.label),
 ].filter(Boolean).join(' ')
 
-const getCompanyProfileText = (company) => [
-  company?.name,
+const getSectorServiceText = (sector) => {
+  const normalizedSector = normalizeSearchText(sector)
+  const matchingKey = Object.keys(sectorServiceKeywords).find(key => normalizeSearchText(key) === normalizedSector)
+  return matchingKey ? sectorServiceKeywords[matchingKey].join(' ') : ''
+}
+
+const getCompanyOfferText = (company) => [
   company?.sector,
   company?.description,
   company?.services,
-  company?.city,
-  company?.canton,
-  company?.needs_description,
-  ...getActiveTags(company?.needs_tags).map(tag => tag.label),
+  getSectorServiceText(company?.sector),
 ].filter(Boolean).join(' ')
 
 const hasCompanyNeeds = (company) => normalizeSearchText(getCompanyNeedsText(company)).trim().length > 0
@@ -129,8 +163,8 @@ const getDistanceKm = (companyA, companyB) => {
 }
 
 const getKeywordMatches = (currentCompany, opportunityCompany) => {
-  const currentTokens = tokenize(getCompanyProfileText(currentCompany))
-  const currentRoots = new Set(currentTokens.flatMap(getTokenRoots))
+  const offerTokens = tokenize(getCompanyOfferText(currentCompany))
+  const currentRoots = new Set(offerTokens.flatMap(getTokenRoots))
   const needTokens = tokenize(getCompanyNeedsText(opportunityCompany))
   return unique(needTokens.filter(token => getTokenRoots(token).some(root => currentRoots.has(root)))).slice(0, 4)
 }
@@ -144,14 +178,15 @@ const getFreshnessScore = (company) => {
 const buildOpportunity = (company, currentCompany, attachmentCount = 0) => {
   const activeTags = getActiveTags(company?.needs_tags)
   const keywordMatches = getKeywordMatches(currentCompany, company)
+  if (!keywordMatches.length) return null
+
   const distanceKm = getDistanceKm(currentCompany, company)
   const matchReasons = []
   let score = 0
   let relevanceScore = 0
 
   if (company?.sector && company.sector === currentCompany?.sector) {
-    score += 8
-    relevanceScore += 8
+    score += 2
     matchReasons.push(company.sector)
   }
   if (company?.canton && company.canton === currentCompany?.canton) {
@@ -321,7 +356,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         .from('companies').select('*', { count: 'exact', head: true })
       if (totalCompaniesError) console.warn('Unable to load company count:', totalCompaniesError)
 
-      // Opportunités B2B: besoins actifs des autres entreprises, triés par pertinence locale/métier.
+      // Opportunités B2B: besoins actifs des autres entreprises qui correspondent aux services proposés par mon entreprise.
       const { data: opportunityRows, error: opportunitiesError } = await supabase
         .from('companies')
         .select('*')
@@ -355,6 +390,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
 
       const builtOpportunities = opportunityCompaniesWithSubscriptions
         .map(item => buildOpportunity(item, compWithSubscription, attachmentCountsByCompany[item.id] || 0))
+        .filter(Boolean)
         .filter(item => item.relevanceScore > 0)
         .sort((a, b) => (
           b.score - a.score

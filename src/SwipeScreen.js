@@ -825,7 +825,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
                     disabled={sharingProfileId === company.id}
                     style={{display:'inline-flex',alignItems:'center',gap:6,background:'#F8FAFC',color:'#334155',border:'1px solid #E2E8F0',borderRadius:999,padding:'7px 11px',fontSize:12,fontWeight:700,cursor:sharingProfileId === company.id ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans',opacity:sharingProfileId === company.id ? 0.7 : 1}}>
                     <Share2 size={14} strokeWidth={2.4} />
-                    {sharingProfileId === company.id ? (ui.profile?.shareProfileBusy || 'Préparation...') : (ui.profile?.shareProfile || 'Partager ce profil')}
+                    {sharingProfileId === company.id ? (ui.profile?.shareProfileBusy || 'Préparation...') : (ui.swipe?.shareProfile || 'Partager le profil')}
                   </button>
                 )}
               </div>

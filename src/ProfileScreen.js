@@ -773,7 +773,7 @@ notif_email: form.notif_email ?? true,
         <button onClick={handleShareProfile} disabled={sharingProfile}
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'1px solid #FECACA',borderRadius:12,fontSize:15,fontWeight:700,cursor:sharingProfile ? 'default' : 'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
           <HubbingIcon name="sparkles" size={17} color="#E24B4A" />
-          {sharingProfile ? (ui.profile.shareProfileBusy || 'Préparation du visuel...') : (ui.profile.shareProfile || 'Partager mon profil')}
+          {sharingProfile ? (ui.profile.shareProfileBusy || 'Préparation du visuel...') : (ui.profile.shareProfile || 'Partager le profil')}
         </button>
         <a href="mailto:contact@hubbing.ch"
   style={{padding:'14px',background:'white',color:'#666',border:'1px solid #eee',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',textDecoration:'none',display:'block'}}>

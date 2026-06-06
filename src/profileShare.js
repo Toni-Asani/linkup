@@ -61,6 +61,12 @@ export const createCompanyShareImage = async (company, ui) => {
   canvas.width = WIDTH
   canvas.height = HEIGHT
   const ctx = canvas.getContext('2d')
+  const centerX = WIDTH / 2
+  const cardX = 120
+  const cardY = 120
+  const cardWidth = WIDTH - cardX * 2
+  const cardHeight = HEIGHT - cardY * 2
+  const textWidth = cardWidth - 120
 
   const background = await loadImage(company?.background_url)
   if (background) {
@@ -80,23 +86,25 @@ export const createCompanyShareImage = async (company, ui) => {
   }
 
   ctx.fillStyle = 'rgba(255,255,255,0.12)'
-  roundRect(ctx, 70, 120, WIDTH - 140, HEIGHT - 240, 42)
+  roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 42)
   ctx.fill()
 
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = '#ffffff'
   ctx.font = '800 54px "Plus Jakarta Sans", Arial, sans-serif'
-  ctx.fillText('Hubbing', 94, 210)
+  ctx.fillText('Hubbing', centerX, cardY + 92)
   ctx.font = '500 30px "Plus Jakarta Sans", Arial, sans-serif'
   ctx.fillStyle = 'rgba(255,255,255,0.78)'
-  ctx.fillText(ui?.profile?.shareCardTagline || 'Le réseau B2B suisse', 94, 252)
+  ctx.fillText(ui?.profile?.shareCardTagline || 'Le réseau B2B suisse', centerX, cardY + 136)
 
   const logo = await loadImage(company?.logo_url)
   const logoSize = 250
-  const logoX = (WIDTH - logoSize) / 2
-  const logoY = 420
+  const logoX = centerX - logoSize / 2
+  const logoY = cardY + 310
   ctx.save()
   ctx.beginPath()
-  ctx.arc(WIDTH / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2)
+  ctx.arc(centerX, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2)
   ctx.clip()
   if (logo) {
     ctx.drawImage(logo, logoX, logoY, logoSize, logoSize)
@@ -107,42 +115,36 @@ export const createCompanyShareImage = async (company, ui) => {
     ctx.font = '800 82px "Plus Jakarta Sans", Arial, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(String(company?.name || 'HU').slice(0, 2).toUpperCase(), WIDTH / 2, logoY + logoSize / 2)
+    ctx.fillText(String(company?.name || 'HU').slice(0, 2).toUpperCase(), centerX, logoY + logoSize / 2)
   }
   ctx.restore()
   ctx.strokeStyle = 'rgba(255,255,255,0.92)'
   ctx.lineWidth = 8
   ctx.beginPath()
-  ctx.arc(WIDTH / 2, logoY + logoSize / 2, logoSize / 2 + 4, 0, Math.PI * 2)
+  ctx.arc(centerX, logoY + logoSize / 2, logoSize / 2 + 4, 0, Math.PI * 2)
   ctx.stroke()
 
   ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = '#ffffff'
   ctx.font = '800 66px "Plus Jakarta Sans", Arial, sans-serif'
-  drawWrappedText(ctx, company?.name || 'Entreprise Hubbing', 120, 820, WIDTH - 240, 78, 2)
+  drawWrappedText(ctx, company?.name || 'Entreprise Hubbing', centerX, cardY + 720, textWidth, 78, 2)
 
   ctx.font = '500 34px "Plus Jakarta Sans", Arial, sans-serif'
   ctx.fillStyle = 'rgba(255,255,255,0.82)'
   const subtitle = [company?.sector, company?.city].filter(Boolean).join(' · ')
-  if (subtitle) drawWrappedText(ctx, subtitle, 130, 1010, WIDTH - 260, 46, 2)
+  if (subtitle) drawWrappedText(ctx, subtitle, centerX, cardY + 905, textWidth, 46, 2)
 
-  const services = company?.description || company?.needs_description || ''
+  const services = company?.services || company?.description || ''
   if (services) {
     ctx.font = '500 36px "Plus Jakarta Sans", Arial, sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
-    drawWrappedText(ctx, services, 130, 1145, WIDTH - 260, 50, 5)
+    drawWrappedText(ctx, services, centerX, cardY + 1040, textWidth, 50, 5)
   }
-
-  ctx.fillStyle = '#ffffff'
-  roundRect(ctx, 150, 1520, WIDTH - 300, 112, 28)
-  ctx.fill()
-  ctx.fillStyle = '#E24B4A'
-  ctx.font = '800 38px "Plus Jakarta Sans", Arial, sans-serif'
-  ctx.fillText(ui?.profile?.shareCardCta || 'Voir le profil sur hubbing.ch', WIDTH / 2, 1590)
 
   ctx.font = '600 28px "Plus Jakarta Sans", Arial, sans-serif'
   ctx.fillStyle = 'rgba(255,255,255,0.72)'
-  ctx.fillText('hubbing.ch', WIDTH / 2, 1740)
+  ctx.fillText('app.hubbing.ch', centerX, cardY + cardHeight - 88)
 
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.95))
 }
