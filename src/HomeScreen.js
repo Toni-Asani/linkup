@@ -5,6 +5,7 @@ import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } fro
 import { HubbingIcon } from './icons'
 import LoadingIndicator from './LoadingIndicator'
 import { getCompanyCoordinates } from './geo'
+import { fetchSuccessfulCollaborationCount } from './needCompletions'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#2F7D32',
@@ -245,7 +246,7 @@ const matchesOpportunityFilters = (opportunity, filters) => {
 export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, plan = 'Starter', lang = 'fr' }) {
   const ui = getUiText(lang)
   const [company, setCompany] = useState(null)
-  const [stats, setStats] = useState({ matches: 0, messages: 0, followers: 0, totalCompanies: 0 })
+  const [stats, setStats] = useState({ matches: 0, messages: 0, followers: 0, totalCompanies: 0, collaborations: 0 })
   const [matchedCompanies, setMatchedCompanies] = useState([])
   const [followerCompanies, setFollowerCompanies] = useState([])
   const [opportunities, setOpportunities] = useState([])
@@ -269,7 +270,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         setMatchedCompanies([])
         setFollowerCompanies([])
         setOpportunities([])
-        setStats({ matches: 0, messages: 0, followers: 0, totalCompanies: 0 })
+        setStats({ matches: 0, messages: 0, followers: 0, totalCompanies: 0, collaborations: 0 })
         setLoadError(ui.common.companyNotFound)
         return
       }
@@ -356,6 +357,8 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         .from('companies').select('*', { count: 'exact', head: true })
       if (totalCompaniesError) console.warn('Unable to load company count:', totalCompaniesError)
 
+      const successfulCollaborations = await fetchSuccessfulCollaborationCount(comp.id, { includeHiddenProvider: true })
+
       // Opportunités B2B: besoins actifs des autres entreprises qui correspondent aux services proposés par mon entreprise.
       const { data: opportunityRows, error: opportunitiesError } = await supabase
         .from('companies')
@@ -404,7 +407,8 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         matches: enrichedFollowingMatches.length,
         messages: msgCount || 0,
         followers: enrichedFollowerMatches.length || followers || 0,
-        totalCompanies: totalCompanies || 0
+        totalCompanies: totalCompanies || 0,
+        collaborations: successfulCollaborations,
       })
     } catch (error) {
       console.warn('Unable to load home screen:', error)
@@ -583,7 +587,7 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
       </div>
 
       {/* Stats cards */}
-      <div style={{display:'flex',gap:10,padding:'0 1rem',marginTop:'-1.25rem',position:'relative',zIndex:1}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3, minmax(0, 1fr))',gap:10,padding:'0 1rem',marginTop:'-1.25rem',position:'relative',zIndex:1}}>
         <div onClick={() => setShowFollowing(true)} style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}>
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.matches}</p>
           <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.followingLabel}</p>
@@ -591,6 +595,10 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
         <div onClick={() => setShowFollowers(true)} style={{flex:1,background:'white',borderRadius:12,padding:'0.875rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}>
           <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.followers}</p>
           <p style={{fontSize:11,color:'#999',marginTop:3}}>{ui.home.followersLabel}</p>
+        </div>
+        <div style={{background:'white',borderRadius:12,padding:'0.875rem 0.65rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)'}}>
+          <p style={{fontSize:24,fontWeight:700,color:'#E24B4A',margin:0}}>{stats.collaborations}</p>
+          <p style={{fontSize:11,color:'#999',marginTop:3,lineHeight:1.2}}>{ui.home.collaborationsLabel || 'Collabs réussies'}</p>
         </div>
       </div>
 

@@ -8,7 +8,7 @@ import LoadingIndicator from './LoadingIndicator'
 import { NeedAttachmentGallery } from './NeedAttachmentComponents'
 import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag, reportNeedAttachment } from './needAttachments'
 import { NeedCompletionsPanel } from './NeedCompletionComponents'
-import { fetchNeedCompletionsForCompany } from './needCompletions'
+import { countSuccessfulCollaborationsForCompany, fetchNeedCompletionsForCompany } from './needCompletions'
 import { shareCompanyProfileCard } from './profileShare'
 
 const sectorColors = {
@@ -242,6 +242,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const isBasic = plan === 'Basic' || plan === 'Premium'
   const isPremium = plan === 'Premium'
   const companyBadgeVariant = getCompanyBadgeVariant(company)
+  const successfulCollaborations = countSuccessfulCollaborationsForCompany(company.id, needCompletions)
   const isStarter = !isBasic
   const goToPricing = () => {
     setCompanyProfileReturn && setCompanyProfileReturn(null)
@@ -344,7 +345,14 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         )}
       </div>
 
-      <div style={{padding:'1.5rem 1rem',display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:'-1rem'}}>
+      <div style={{padding:'0 1rem',marginTop:'-1.5rem',position:'relative',zIndex:1}}>
+        <div style={{background:'white',borderRadius:12,padding:'0.95rem 1rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',border:'1px solid #F1F5F9'}}>
+          <p style={{fontSize:24,fontWeight:800,color:'#E24B4A',margin:0}}>{successfulCollaborations}</p>
+          <p style={{fontSize:11,color:'#999',fontWeight:700,marginTop:3}}>{ui.companyProfile.collaborations || 'Collaborations réussies'}</p>
+        </div>
+      </div>
+
+      <div style={{padding:'1.5rem 1rem',display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:0}}>
 
         {/* Description */}
         {company.description && (

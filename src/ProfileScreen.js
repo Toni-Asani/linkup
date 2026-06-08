@@ -9,7 +9,7 @@ import { HubbingIcon } from './icons'
 import { NeedAttachmentCloud, NeedAttachmentGallery, NeedAttachmentUploader } from './NeedAttachmentComponents'
 import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag } from './needAttachments'
 import { NeedCompletionCloseButton, NeedCompletionCloseModal, NeedCompletionsPanel } from './NeedCompletionComponents'
-import { fetchNeedCompletionsForCompany } from './needCompletions'
+import { countSuccessfulCollaborationsForCompany, fetchNeedCompletionsForCompany } from './needCompletions'
 import { shareCompanyProfileCard } from './profileShare'
 import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
@@ -686,6 +686,7 @@ notif_email: form.notif_email ?? true,
     const expires = typeof t === 'string' ? null : t.expires
     return getTagStatus(expires) !== 'expired'
   })
+  const successfulCollaborations = countSuccessfulCollaborationsForCompany(company.id, needCompletions, { includeHiddenProvider: true })
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>
@@ -736,9 +737,10 @@ notif_email: form.notif_email ?? true,
   </div>
 
       {/* Stats */}
-      <div style={{display:'flex',margin:'-1.25rem 1rem 0',gap:12,position:'relative',zIndex:1}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2, minmax(0, 1fr))',margin:'-1.25rem 1rem 0',gap:12,position:'relative',zIndex:1}}>
         <StatCard value={stats.matches} label={ui.profile.matches} color="#E24B4A" onClick={() => setActiveTab && setActiveTab('messages')} />
         <StatCard value="0" label={ui.profile.messages} color="#E24B4A" onClick={() => setActiveTab && setActiveTab('messages')} />
+        <StatCard value={successfulCollaborations} label={ui.profile.collaborations || 'Collaborations'} color="#E24B4A" />
         <div style={{flex:1,background:'white',borderRadius:12,padding:'1rem',textAlign:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.08)',cursor:'pointer'}}
           onClick={() => setActiveTab && setActiveTab('pricing')}>
           <p style={{fontSize:13,fontWeight:700,color:'#3B6D11',margin:0}}>{currentPlan}</p>

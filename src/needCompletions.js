@@ -192,6 +192,37 @@ export const fetchPendingNeedCompletionCount = async providerCompanyId => {
   return count || 0
 }
 
+const isSuccessfulCompletionForCompany = (completion, companyId, { includeHiddenProvider = false } = {}) => {
+  if (!completion?.id || !companyId) return false
+  const status = String(completion.status || '').toLowerCase()
+  if (completion.client_company_id === companyId) {
+    return status === 'confirmed' || status === 'external_declared'
+  }
+  if (completion.provider_company_id === companyId) {
+    return status === 'confirmed' && (includeHiddenProvider || completion.show_on_provider_profile)
+  }
+  return false
+}
+
+export const countSuccessfulCollaborationsForCompany = (companyId, completions = [], options = {}) => (
+  (completions || []).filter(completion => isSuccessfulCompletionForCompany(completion, companyId, options)).length
+)
+
+export const fetchSuccessfulCollaborationCount = async (companyId, options = {}) => {
+  if (!companyId) return 0
+  const { data, error } = await supabase
+    .from('need_completions')
+    .select('id,client_company_id,provider_company_id,status,show_on_provider_profile')
+    .or(`client_company_id.eq.${companyId},provider_company_id.eq.${companyId}`)
+
+  if (error) {
+    console.warn('Unable to load successful collaboration count:', error.message)
+    return 0
+  }
+
+  return countSuccessfulCollaborationsForCompany(companyId, data || [], options)
+}
+
 export const uploadNeedCompletionPhoto = async ({ completion, company, file }) => {
   const ext = safeFileName(file.name).split('.').pop() || 'jpg'
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
