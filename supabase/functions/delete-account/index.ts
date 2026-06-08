@@ -217,6 +217,7 @@ serve(async (req) => {
     let attachmentUrls: string[] = []
     let needAttachmentStoragePaths: string[] = []
     let needCompletionStoragePaths: string[] = []
+    let companyRealizationStoragePaths: string[] = []
     let needCompletionIds: string[] = []
     if (companyId) {
       const messageFilter = matchIds.length
@@ -250,6 +251,14 @@ serve(async (req) => {
           .map(photo => photo.storage_path)
           .filter(Boolean) as string[]
       }
+
+      const companyRealizations = await readRows<{ storage_path?: string | null }>('company_realizations', {
+        select: 'storage_path',
+        company_id: `eq.${companyId}`,
+      })
+      companyRealizationStoragePaths = companyRealizations
+        .map(realization => realization.storage_path)
+        .filter(Boolean) as string[]
     }
 
     const emailSent = await sendEmail({
@@ -298,6 +307,7 @@ serve(async (req) => {
       await deleteRows('reports', { reported_company_id: `eq.${companyId}` })
       await deleteRows('need_attachment_reports', { or: `(reporter_company_id.eq.${companyId},reported_company_id.eq.${companyId})` })
       await deleteRows('need_attachments', { company_id: `eq.${companyId}` })
+      await deleteRows('company_realizations', { company_id: `eq.${companyId}` })
       await deleteRows('swipe_history', { user_id: `eq.${user.id}` })
       await deleteRows('swipe_history', { company_id: `eq.${companyId}` })
       await deleteRows('matches', { company_a: `eq.${companyId}` })
@@ -325,6 +335,7 @@ serve(async (req) => {
     )
     await Promise.all(needAttachmentStoragePaths.map(path => deleteStorageObject('need-attachments', path)))
     await Promise.all(needCompletionStoragePaths.map(path => deleteStorageObject('need-completion-photos', path)))
+    await Promise.all(companyRealizationStoragePaths.map(path => deleteStorageObject('company-realizations', path)))
 
     await deleteUser(user.id)
 

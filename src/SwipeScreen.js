@@ -6,6 +6,8 @@ import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant, isDe
 import { HubbingIcon } from './icons'
 import { createNotificationAndPush } from './pushDelivery'
 import { shareCompanyProfileCard } from './profileShare'
+import { CompanyRealizationsGallery } from './CompanyRealizationsComponents'
+import { fetchCompanyRealizationsForCompanies } from './companyRealizations'
 import LoadingIndicator from './LoadingIndicator'
 
 const sectorColors = {
@@ -256,7 +258,20 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
       return
     }
     const companiesWithSubscriptions = await attachCompanySubscriptions(supabase, data || [])
-    const orderedCompanies = sortCompaniesForSwipe(companiesWithSubscriptions)
+    let realizationMap = {}
+    try {
+      realizationMap = await fetchCompanyRealizationsForCompanies(
+        companiesWithSubscriptions.map(company => company.id),
+        { limitPerCompany: 3 },
+      )
+    } catch (realizationError) {
+      console.warn('Swipe realizations load failed:', realizationError?.message || realizationError)
+    }
+    const companiesWithRealizations = companiesWithSubscriptions.map(company => ({
+      ...company,
+      realizations: realizationMap[company.id] || [],
+    }))
+    const orderedCompanies = sortCompaniesForSwipe(companiesWithRealizations)
     if (!data || data.length === 0) {
       setAllSeen(true)
       setCompanies([])
@@ -830,6 +845,13 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
                 )}
               </div>
             )}
+
+            <CompanyRealizationsGallery
+              realizations={company.realizations || []}
+              ui={ui}
+              compact
+              previewCount={3}
+            />
 
             {isPremium && company.contact_name && (
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:'0.5rem',background:'#f9f9f9',borderRadius:10,padding:'6px 8px'}}>

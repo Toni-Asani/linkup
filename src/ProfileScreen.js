@@ -10,6 +10,8 @@ import { NeedAttachmentCloud, NeedAttachmentGallery, NeedAttachmentUploader } fr
 import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag } from './needAttachments'
 import { NeedCompletionCloseButton, NeedCompletionCloseModal, NeedCompletionsPanel } from './NeedCompletionComponents'
 import { countSuccessfulCollaborationsForCompany, fetchNeedCompletionsForCompany } from './needCompletions'
+import { CompanyRealizationsGallery, CompanyRealizationsManager } from './CompanyRealizationsComponents'
+import { fetchCompanyRealizations } from './companyRealizations'
 import { shareCompanyProfileCard } from './profileShare'
 import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
@@ -86,6 +88,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [showUsageGuide, setShowUsageGuide] = useState(false)
   const [needAttachments, setNeedAttachments] = useState([])
   const [needCompletions, setNeedCompletions] = useState([])
+  const [realizations, setRealizations] = useState([])
   const [closingNeed, setClosingNeed] = useState(null)
   const [sharingProfile, setSharingProfile] = useState(false)
   const fileInputRef = useRef(null)
@@ -102,6 +105,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       loadStats(data.id)
       loadNeedAttachments(data.id)
       loadNeedCompletions(data.id)
+      loadRealizations(data.id)
       const { data: sub } = await supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
       if (sub) setCurrentPlan(sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1))
       try {
@@ -134,6 +138,15 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       setNeedCompletions(await fetchNeedCompletionsForCompany(companyId))
     } catch (error) {
       console.warn('Need completions load failed:', error?.message || error)
+    }
+  }
+
+  const loadRealizations = async (companyId = company?.id) => {
+    if (!companyId) return
+    try {
+      setRealizations(await fetchCompanyRealizations(companyId))
+    } catch (error) {
+      console.warn('Company realizations load failed:', error?.message || error)
     }
   }
 
@@ -512,6 +525,18 @@ notif_email: form.notif_email ?? true,
     <input type="file" accept="image/*" style={{display:'none'}} onChange={handleContactPhotoUpload} />
   </label>
 </div>
+      {company?.id && (
+        <>
+          <Label>{ui.realizations?.title || 'Réalisations'}</Label>
+          <CompanyRealizationsManager
+            company={company}
+            plan={currentPlan}
+            realizations={realizations}
+            onChange={() => loadRealizations(company.id)}
+            ui={ui}
+          />
+        </>
+      )}
       <Label>{ui.profile.needs}</Label>
       <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
 	style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
@@ -762,6 +787,11 @@ notif_email: form.notif_email ?? true,
           ui={ui}
           showPendingActions
           onChanged={refreshNeedCompletions}
+        />
+
+        <CompanyRealizationsGallery
+          realizations={realizations}
+          ui={ui}
         />
 
         {/* Nos besoins */}

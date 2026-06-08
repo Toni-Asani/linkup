@@ -9,6 +9,8 @@ import { NeedAttachmentGallery } from './NeedAttachmentComponents'
 import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag, reportNeedAttachment } from './needAttachments'
 import { NeedCompletionsPanel } from './NeedCompletionComponents'
 import { countSuccessfulCollaborationsForCompany, fetchNeedCompletionsForCompany } from './needCompletions'
+import { CompanyRealizationsGallery } from './CompanyRealizationsComponents'
+import { fetchCompanyRealizations } from './companyRealizations'
 import { shareCompanyProfileCard } from './profileShare'
 
 const sectorColors = {
@@ -70,6 +72,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const [zoomImage, setZoomImage] = useState(null)
   const [needAttachments, setNeedAttachments] = useState([])
   const [needCompletions, setNeedCompletions] = useState([])
+  const [realizations, setRealizations] = useState([])
   const [reportingAttachment, setReportingAttachment] = useState(null)
   const [attachmentReportReason, setAttachmentReportReason] = useState('')
   const [attachmentReportComment, setAttachmentReportComment] = useState('')
@@ -102,8 +105,14 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     setCompany(companyWithSubscription)
     if (companyWithSubscription?.id) {
       try {
-        setNeedAttachments(await fetchNeedAttachments(companyWithSubscription.id))
-        setNeedCompletions(await fetchNeedCompletionsForCompany(companyWithSubscription.id))
+        const [attachments, completions, companyRealizations] = await Promise.all([
+          fetchNeedAttachments(companyWithSubscription.id),
+          fetchNeedCompletionsForCompany(companyWithSubscription.id),
+          fetchCompanyRealizations(companyWithSubscription.id),
+        ])
+        setNeedAttachments(attachments)
+        setNeedCompletions(completions)
+        setRealizations(companyRealizations)
       } catch (error) {
         console.warn('Need profile data load failed:', error?.message || error)
       }
@@ -361,6 +370,11 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             <p style={{fontSize:14,color:'#444',lineHeight:1.6}}>{company.description}</p>
           </div>
         )}
+
+        <CompanyRealizationsGallery
+          realizations={realizations}
+          ui={ui}
+        />
 
         <NeedCompletionsPanel
           companyId={company.id}
