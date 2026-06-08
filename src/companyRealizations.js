@@ -1,7 +1,8 @@
 import { supabase } from './supabaseClient'
 import { moderateImageFile } from './moderation'
 
-export const COMPANY_REALIZATION_BUCKET = 'company-realizations'
+export const COMPANY_REALIZATION_BUCKET = 'need-attachments'
+export const LEGACY_COMPANY_REALIZATION_BUCKET = 'company-realizations'
 
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024
 const PLAN_LIMITS = { starter: 5, basic: 20, premium: 50 }
@@ -64,15 +65,25 @@ export const validateCompanyRealizationFile = async ({ file, ui = {} }) => {
   }
 }
 
-const signRealizations = async rows => Promise.all((rows || []).map(async item => {
-  if (!item.storage_path) return item
+const createRealizationSignedUrl = async storagePath => {
   const { data, error } = await supabase.storage
     .from(COMPANY_REALIZATION_BUCKET)
-    .createSignedUrl(item.storage_path, 3600)
-  if (error) return item
+    .createSignedUrl(storagePath, 3600)
+  if (!error) return data?.signedUrl || data?.signedURL || null
+
+  const legacyResult = await supabase.storage
+    .from(LEGACY_COMPANY_REALIZATION_BUCKET)
+    .createSignedUrl(storagePath, 3600)
+  if (legacyResult.error) return null
+  return legacyResult.data?.signedUrl || legacyResult.data?.signedURL || null
+}
+
+const signRealizations = async rows => Promise.all((rows || []).map(async item => {
+  if (!item.storage_path) return item
+  const signedUrl = await createRealizationSignedUrl(item.storage_path)
   return {
     ...item,
-    signedUrl: data?.signedUrl || data?.signedURL || null,
+    signedUrl,
   }
 }))
 
@@ -127,7 +138,7 @@ export const uploadCompanyRealization = async ({ company, file, position = 0, ui
   const ext = extensionForFile(file) || 'jpg'
   const contentType = contentTypeForFile(file) || 'image/jpeg'
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-  const storagePath = `${company.id}/${fileName}`
+  const storagePath = `${company.id}/realizations/${fileName}`
 
   const { error: uploadError } = await supabase.storage
     .from(COMPANY_REALIZATION_BUCKET)
@@ -172,5 +183,6 @@ export const deleteCompanyRealization = async realization => {
 
   if (realization.storage_path) {
     await supabase.storage.from(COMPANY_REALIZATION_BUCKET).remove([realization.storage_path]).catch(() => null)
+    await supabase.storage.from(LEGACY_COMPANY_REALIZATION_BUCKET).remove([realization.storage_path]).catch(() => null)
   }
 }

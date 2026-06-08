@@ -335,6 +335,7 @@ serve(async (req) => {
     )
     await Promise.all(needAttachmentStoragePaths.map(path => deleteStorageObject('need-attachments', path)))
     await Promise.all(needCompletionStoragePaths.map(path => deleteStorageObject('need-completion-photos', path)))
+    await Promise.all(companyRealizationStoragePaths.map(path => deleteStorageObject('need-attachments', path)))
     await Promise.all(companyRealizationStoragePaths.map(path => deleteStorageObject('company-realizations', path)))
 
     await deleteUser(user.id)

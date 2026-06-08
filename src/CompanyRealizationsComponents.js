@@ -83,43 +83,42 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
     await onChange?.()
   }
 
-  const uploadFiles = async files => {
-    const selectedFiles = [...files]
-    if (!selectedFiles.length || busy) return
+  const refreshAfterUpload = async () => {
+    await refresh()
+    window.setTimeout(() => refresh(), 700)
+  }
+
+  const uploadFile = async file => {
+    if (!file || busy) return
     setNotice(null)
-    const slots = Math.max(0, limit - count)
-    const acceptedFiles = selectedFiles.slice(0, slots)
-    if (!acceptedFiles.length) {
+    if (count >= limit) {
       window.alert(text.limitReached(limit))
       return
-    }
-    if (selectedFiles.length > acceptedFiles.length) {
-      window.alert(text.limitReached(limit))
     }
     setBusy(true)
     setNotice({ type: 'info', message: text.uploading })
     try {
-      for (let index = 0; index < acceptedFiles.length; index += 1) {
-        await uploadCompanyRealization({
-          company,
-          file: acceptedFiles[index],
-          position: count + index,
-          ui,
-        })
-      }
-      await refresh()
+      await uploadCompanyRealization({
+        company,
+        file,
+        position: count,
+        ui,
+      })
+      await refreshAfterUpload()
       setNotice({ type: 'success', message: text.uploaded })
     } catch (error) {
-      setNotice({ type: 'error', message: error?.message || text.uploadError })
+      const message = error?.message || text.uploadError
+      setNotice({ type: 'error', message })
+      window.alert(message)
     } finally {
       setBusy(false)
     }
   }
 
   const handleAdd = async event => {
-    const files = event.target.files || []
+    const file = event.target.files?.[0]
     event.target.value = ''
-    await uploadFiles(files)
+    await uploadFile(file)
   }
 
   const handleReplace = async (event, item, index) => {
@@ -136,10 +135,12 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
         ui,
       })
       await deleteCompanyRealization(item)
-      await refresh()
+      await refreshAfterUpload()
       setNotice({ type: 'success', message: text.uploaded })
     } catch (error) {
-      setNotice({ type: 'error', message: error?.message || text.uploadError })
+      const message = error?.message || text.uploadError
+      setNotice({ type: 'error', message })
+      window.alert(message)
     } finally {
       setBusyId(null)
     }
@@ -153,7 +154,9 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
       await deleteCompanyRealization(item)
       await refresh()
     } catch (error) {
-      setNotice({ type: 'error', message: error?.message || text.deleteError })
+      const message = error?.message || text.deleteError
+      setNotice({ type: 'error', message })
+      window.alert(message)
     } finally {
       setBusyId(null)
     }
@@ -172,17 +175,17 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-        <label style={{ ...buttonBase, position: 'relative', overflow: 'hidden', background: canAdd && !busy ? '#FFF5F5' : '#F3F4F6', color: canAdd && !busy ? '#E24B4A' : '#9CA3AF', border: `1px solid ${canAdd && !busy ? '#FECACA' : '#E5E7EB'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
+        <label style={{ ...buttonBase, background: canAdd && !busy ? '#FFF5F5' : '#F3F4F6', color: canAdd && !busy ? '#E24B4A' : '#9CA3AF', border: `1px solid ${canAdd && !busy ? '#FECACA' : '#E5E7EB'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
           <HubbingIcon name="camera" size={16} color={canAdd && !busy ? '#E24B4A' : '#9CA3AF'} />
           {busy ? text.uploading : text.takePhoto}
           <input type="file" accept="image/*,.heic,.heif" capture="environment" onChange={handleAdd} disabled={!canAdd || busy}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: canAdd && !busy ? 'pointer' : 'default' }} />
+            style={{ display: 'none' }} />
         </label>
-        <label style={{ ...buttonBase, position: 'relative', overflow: 'hidden', background: canAdd && !busy ? 'white' : '#F3F4F6', color: canAdd && !busy ? '#374151' : '#9CA3AF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
+        <label style={{ ...buttonBase, background: canAdd && !busy ? 'white' : '#F3F4F6', color: canAdd && !busy ? '#374151' : '#9CA3AF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
           <HubbingIcon name="paperclip" size={16} color={canAdd && !busy ? '#374151' : '#9CA3AF'} />
           {text.importPhoto}
-          <input type="file" accept="image/*,.heic,.heif" multiple onChange={handleAdd} disabled={!canAdd || busy}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: canAdd && !busy ? 'pointer' : 'default' }} />
+          <input type="file" accept="image/*,.heic,.heif" onChange={handleAdd} disabled={!canAdd || busy}
+            style={{ display: 'none' }} />
         </label>
       </div>
 
