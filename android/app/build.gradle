@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 def getAppVersionCode = { ->
-    return project.hasProperty('versionCode') ? versionCode.toInteger() : 77
+    return project.hasProperty('versionCode') ? versionCode.toInteger() : 78
 }
 
 def getAppVersionName = { ->
-    return project.hasProperty('versionName') ? versionName : "1.0.5"
+    return project.hasProperty('versionName') ? versionName : "1.0.6"
 }
 
 android {
