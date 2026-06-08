@@ -807,7 +807,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
             <div style={{position:'absolute',top:12,right:12,opacity:passOpacity,transform:'rotate(15deg)',background:'#E24B4A',color:'white',padding:'4px 10px',borderRadius:8,fontWeight:700,fontSize:14,border:'2px solid white'}}>PASS ✗</div>
           </div>
 
-          <div style={{padding:'0.75rem 1rem',overflowY:'auto',height:'calc(100% - 100px)'}}>
+          <div style={{padding:'0.75rem 1rem',overflowY:'auto',height:'calc(100% - 100px)',display:'flex',flexDirection:'column'}}>
             <h3 style={{fontSize:17,fontWeight:700,marginBottom:4,display:'flex',alignItems:'center',gap:6}}>
               <span>{company.name}</span>
               {badgeVariant && <VerifiedBadge size={18} variant={badgeVariant} />}
@@ -904,6 +904,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               compact
               previewCount={3}
               showEmpty
+              style={{ marginTop: 'auto', marginBottom: 0 }}
             />
           </div>
         </div>

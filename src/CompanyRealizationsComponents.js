@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { HubbingIcon } from './icons'
 import {
@@ -75,8 +75,6 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
   const [busyId, setBusyId] = useState(null)
   const [viewerIndex, setViewerIndex] = useState(null)
   const [notice, setNotice] = useState(null)
-  const cameraInputRef = useRef(null)
-  const importInputRef = useRef(null)
   const limit = getCompanyRealizationLimit(plan)
   const count = realizations.length
   const canAdd = count < limit
@@ -174,18 +172,18 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-        <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={!canAdd || busy}
-          style={{ ...buttonBase, background: canAdd && !busy ? '#FFF5F5' : '#F3F4F6', color: canAdd && !busy ? '#E24B4A' : '#9CA3AF', border: `1px solid ${canAdd && !busy ? '#FECACA' : '#E5E7EB'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
+        <label style={{ ...buttonBase, position: 'relative', overflow: 'hidden', background: canAdd && !busy ? '#FFF5F5' : '#F3F4F6', color: canAdd && !busy ? '#E24B4A' : '#9CA3AF', border: `1px solid ${canAdd && !busy ? '#FECACA' : '#E5E7EB'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
           <HubbingIcon name="camera" size={16} color={canAdd && !busy ? '#E24B4A' : '#9CA3AF'} />
           {busy ? text.uploading : text.takePhoto}
-        </button>
-        <button type="button" onClick={() => importInputRef.current?.click()} disabled={!canAdd || busy}
-          style={{ ...buttonBase, background: canAdd && !busy ? 'white' : '#F3F4F6', color: canAdd && !busy ? '#374151' : '#9CA3AF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
+          <input type="file" accept="image/*,.heic,.heif" capture="environment" onChange={handleAdd} disabled={!canAdd || busy}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: canAdd && !busy ? 'pointer' : 'default' }} />
+        </label>
+        <label style={{ ...buttonBase, position: 'relative', overflow: 'hidden', background: canAdd && !busy ? 'white' : '#F3F4F6', color: canAdd && !busy ? '#374151' : '#9CA3AF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
           <HubbingIcon name="paperclip" size={16} color={canAdd && !busy ? '#374151' : '#9CA3AF'} />
           {text.importPhoto}
-        </button>
-        <input ref={cameraInputRef} type="file" accept="image/*,.heic,.heif" capture="environment" style={{ display: 'none' }} onChange={handleAdd} disabled={!canAdd || busy} />
-        <input ref={importInputRef} type="file" accept="image/*,.heic,.heif" multiple style={{ display: 'none' }} onChange={handleAdd} disabled={!canAdd || busy} />
+          <input type="file" accept="image/*,.heic,.heif" multiple onChange={handleAdd} disabled={!canAdd || busy}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: canAdd && !busy ? 'pointer' : 'default' }} />
+        </label>
       </div>
 
       {notice && (
@@ -215,9 +213,10 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
                   )}
                 </button>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  <label style={{ ...buttonBase, padding: '8px 6px', fontSize: 11, textAlign: 'center', background: '#F8FAFC', color: '#334155', border: '1px solid #E2E8F0', pointerEvents: itemBusy ? 'none' : 'auto' }}>
+                  <label style={{ ...buttonBase, position: 'relative', overflow: 'hidden', padding: '8px 6px', fontSize: 11, textAlign: 'center', background: '#F8FAFC', color: '#334155', border: '1px solid #E2E8F0', pointerEvents: itemBusy ? 'none' : 'auto' }}>
                     {itemBusy ? text.replacing : text.replace}
-                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={event => handleReplace(event, item, index)} disabled={itemBusy} />
+                    <input type="file" accept="image/*,.heic,.heif" onChange={event => handleReplace(event, item, index)} disabled={itemBusy}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: itemBusy ? 'default' : 'pointer' }} />
                   </label>
                   <button type="button" onClick={() => handleDelete(item)} disabled={itemBusy}
                     style={{ ...buttonBase, padding: '8px 6px', fontSize: 11, background: '#FFF5F5', color: '#E24B4A', border: '1px solid #FECACA', opacity: itemBusy ? 0.65 : 1 }}>
@@ -242,7 +241,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
   )
 }
 
-export function CompanyRealizationsGallery({ realizations = [], ui, compact = false, previewCount = 6, showEmpty = false }) {
+export function CompanyRealizationsGallery({ realizations = [], ui, compact = false, previewCount = 6, showEmpty = false, style }) {
   const text = getText(ui)
   const [viewerIndex, setViewerIndex] = useState(null)
   const photos = useMemo(() => realizations.filter(item => imageFor(item)), [realizations])
@@ -260,7 +259,7 @@ export function CompanyRealizationsGallery({ realizations = [], ui, compact = fa
     : { background: 'white', border: '1px solid #E5E7EB', borderRadius: 12, padding: '1rem', boxShadow: '0 1px 8px rgba(15,23,42,0.04)' }
 
   return (
-    <section onPointerDown={stopSwipeGesture} onTouchStart={stopSwipeGesture} style={wrapperStyle}>
+    <section onPointerDown={stopSwipeGesture} onTouchStart={stopSwipeGesture} style={{ ...wrapperStyle, ...style }}>
       <button type="button" onClick={event => openViewer(0, event)}
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, border: 'none', background: 'transparent', padding: 0, cursor: photos.length ? 'pointer' : 'default', textAlign: 'left', fontFamily: 'Plus Jakarta Sans' }}>
         <div style={{ minWidth: 0 }}>

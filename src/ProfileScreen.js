@@ -781,18 +781,18 @@ notif_email: form.notif_email ?? true,
           </div>
         )}
 
+        <CompanyRealizationsGallery
+          realizations={realizations}
+          ui={ui}
+          showEmpty
+        />
+
         <NeedCompletionsPanel
           companyId={company.id}
           completions={needCompletions}
           ui={ui}
           showPendingActions
           onChanged={refreshNeedCompletions}
-        />
-
-        <CompanyRealizationsGallery
-          realizations={realizations}
-          ui={ui}
-          showEmpty
         />
 
         {/* Nos besoins */}
