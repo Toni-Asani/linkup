@@ -19,6 +19,8 @@ const getText = ui => ui?.needCompletions || {
   externalCity: 'Ville (optionnel)',
   notePlaceholder: 'Note courte sur la réalisation (optionnel)',
   finalPhotos: 'Photos de la réalisation finale',
+  beforePhotos: 'Avant',
+  afterPhotos: 'Après travaux',
   addPhotos: 'Ajouter des photos',
   confirmClose: 'Clôturer',
   closing: 'Clôture...',
@@ -422,6 +424,8 @@ function CompletionCard({ completion, ui, perspective, actionSlot }) {
   const text = getText(ui)
   const providerName = completion.providerCompany?.name || completion.provider_name
   const clientName = completion.clientCompany?.name
+  const beforePhotos = completion.beforeAttachments || []
+  const afterPhotos = completion.photos || []
   const isPending = completion.status === 'pending'
   const isExternal = completion.provider_external
   const badge = isPending
@@ -449,16 +453,8 @@ function CompletionCard({ completion, ui, perspective, actionSlot }) {
         <span style={{ ...pillStyle, background: badge.bg, color: badge.color }}>{badge.label}</span>
       </div>
 
-      {completion.photos?.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginTop: 10 }}>
-          {completion.photos.slice(0, 6).map(photo => (
-            <a key={photo.id} href={photo.signedUrl || '#'} target="_blank" rel="noreferrer"
-              style={{ aspectRatio: '1', borderRadius: 9, overflow: 'hidden', background: '#E5E7EB', display: 'block' }}>
-              {photo.signedUrl && <img src={photo.signedUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
-            </a>
-          ))}
-        </div>
-      )}
+      <CompletionPhotoStrip title={text.beforePhotos || 'Avant'} photos={beforePhotos} />
+      <CompletionPhotoStrip title={text.afterPhotos || 'Après travaux'} photos={afterPhotos} />
 
       {completion.status === 'confirmed' && !completion.show_on_provider_profile && perspective === 'client' && !completion.provider_external && (
         <p style={{ fontSize: 11, color: '#9CA3AF', margin: '8px 0 0' }}>{text.hiddenOnProvider}</p>
@@ -466,5 +462,29 @@ function CompletionCard({ completion, ui, perspective, actionSlot }) {
 
       {actionSlot}
     </article>
+  )
+}
+
+function CompletionPhotoStrip({ title, photos = [] }) {
+  if (!photos.length) return null
+  return (
+    <div style={{ marginTop: 10 }}>
+      <p style={{ fontSize: 11, color: '#6B7280', fontWeight: 900, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0 }}>
+        {title}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
+        {photos.slice(0, 6).map(photo => (
+          <a key={photo.id} href={photo.signedUrl || undefined} target="_blank" rel="noreferrer"
+            onClick={event => { if (!photo.signedUrl) event.preventDefault() }}
+            style={{ aspectRatio: '1', borderRadius: 9, overflow: 'hidden', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280', fontSize: 11, fontWeight: 900, textDecoration: 'none' }}>
+            {photo.signedUrl ? (
+              <img src={photo.signedUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              'IMG'
+            )}
+          </a>
+        ))}
+      </div>
+    </div>
   )
 }

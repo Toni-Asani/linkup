@@ -5,6 +5,7 @@ import { makeSlug } from './needAttachments'
 
 export const NEED_COMPLETION_NOTIFICATION_TYPE = 'need_completion_confirmation'
 export const NEED_COMPLETION_BUCKET = 'need-completion-photos'
+const NEED_ATTACHMENT_BUCKET = 'need-attachments'
 
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024
 
@@ -53,19 +54,42 @@ export const searchCompletionProviderCompanies = async ({ query, excludeCompanyI
   return data || []
 }
 
-const createCompletionPhotoSignedUrls = async photos => {
-  const signed = await Promise.all((photos || []).map(async photo => {
-    if (!photo.storage_path) return photo
+const completionNeedKey = (companyId, needKey) => `${companyId || ''}::${makeSlug(needKey || 'general')}`
+
+const createStorageSignedUrls = async (bucket, items) => {
+  const signed = await Promise.all((items || []).map(async item => {
+    if (!item.storage_path) return item
     const { data, error } = await supabase.storage
-      .from(NEED_COMPLETION_BUCKET)
-      .createSignedUrl(photo.storage_path, 3600)
-    if (error) return photo
+      .from(bucket)
+      .createSignedUrl(item.storage_path, 3600)
+    if (error) return item
     return {
-      ...photo,
+      ...item,
       signedUrl: data?.signedUrl || data?.signedURL || null,
     }
   }))
   return signed
+}
+
+const createCompletionPhotoSignedUrls = photos => createStorageSignedUrls(NEED_COMPLETION_BUCKET, photos)
+const createNeedAttachmentSignedUrls = attachments => createStorageSignedUrls(NEED_ATTACHMENT_BUCKET, attachments)
+
+const fetchBeforeNeedAttachmentIds = async ({ clientCompanyId, needKey }) => {
+  if (!clientCompanyId) return []
+  const { data, error } = await supabase
+    .from('need_attachments')
+    .select('id')
+    .eq('company_id', clientCompanyId)
+    .eq('need_key', makeSlug(needKey || 'general'))
+    .eq('status', 'active')
+    .eq('moderation_status', 'approved')
+    .eq('file_type', 'image')
+    .order('created_at', { ascending: true })
+  if (error) {
+    console.warn('Unable to snapshot before attachments:', error.message)
+    return []
+  }
+  return (data || []).map(attachment => attachment.id).filter(Boolean)
 }
 
 export const fetchNeedCompletionsForCompany = async companyId => {
@@ -87,6 +111,40 @@ export const fetchNeedCompletionsForCompany = async companyId => {
     .order('created_at', { ascending: true })
   if (photoError) throw photoError
 
+  const snapshotAttachmentIds = [...new Set(rows.flatMap(row => (
+    Array.isArray(row.before_attachment_ids) ? row.before_attachment_ids : []
+  )).filter(Boolean))]
+  let signedSnapshotBeforeAttachments = []
+  if (snapshotAttachmentIds.length > 0) {
+    const { data: beforeAttachments, error: beforeAttachmentError } = await supabase
+      .from('need_attachments')
+      .select('*')
+      .in('id', snapshotAttachmentIds)
+      .eq('status', 'active')
+      .eq('moderation_status', 'approved')
+      .eq('file_type', 'image')
+    if (beforeAttachmentError) throw beforeAttachmentError
+    signedSnapshotBeforeAttachments = await createNeedAttachmentSignedUrls(beforeAttachments || [])
+  }
+
+  const rowsWithoutSnapshot = rows.filter(row => !Array.isArray(row.before_attachment_ids) || row.before_attachment_ids.length === 0)
+  const clientCompanyIds = [...new Set(rowsWithoutSnapshot.map(row => row.client_company_id).filter(Boolean))]
+  const needKeys = [...new Set(rowsWithoutSnapshot.map(row => makeSlug(row.need_key || 'general')).filter(Boolean))]
+  let signedFallbackBeforeAttachments = []
+  if (clientCompanyIds.length > 0 && needKeys.length > 0) {
+    const { data: beforeAttachments, error: beforeAttachmentError } = await supabase
+      .from('need_attachments')
+      .select('*')
+      .in('company_id', clientCompanyIds)
+      .in('need_key', needKeys)
+      .eq('status', 'active')
+      .eq('moderation_status', 'approved')
+      .eq('file_type', 'image')
+      .order('created_at', { ascending: true })
+    if (beforeAttachmentError) throw beforeAttachmentError
+    signedFallbackBeforeAttachments = await createNeedAttachmentSignedUrls(beforeAttachments || [])
+  }
+
   const companyIds = uniqueCompanyIds(rows)
   const { data: companies, error: companyError } = await supabase
     .from('companies')
@@ -101,11 +159,21 @@ export const fetchNeedCompletionsForCompany = async companyId => {
     groups[photo.completion_id].push(photo)
     return groups
   }, {})
+  const beforeAttachmentsById = new Map(signedSnapshotBeforeAttachments.map(attachment => [attachment.id, attachment]))
+  const fallbackBeforeAttachmentsByNeed = signedFallbackBeforeAttachments.reduce((groups, attachment) => {
+    const key = completionNeedKey(attachment.company_id, attachment.need_key)
+    if (!groups[key]) groups[key] = []
+    groups[key].push(attachment)
+    return groups
+  }, {})
 
   return rows.map(row => ({
     ...row,
     clientCompany: companiesById.get(row.client_company_id) || null,
     providerCompany: row.provider_company_id ? companiesById.get(row.provider_company_id) || null : null,
+    beforeAttachments: Array.isArray(row.before_attachment_ids) && row.before_attachment_ids.length > 0
+      ? row.before_attachment_ids.map(id => beforeAttachmentsById.get(id)).filter(Boolean)
+      : fallbackBeforeAttachmentsByNeed[completionNeedKey(row.client_company_id, row.need_key)] || [],
     photos: photosByCompletion[row.id] || [],
   }))
 }
@@ -176,6 +244,10 @@ export const createNeedCompletion = async ({
   const title = String(needTitle || needLabel || text.defaultNeedTitle || 'Besoin clôturé').trim()
   const providerName = providerExternal ? String(externalProviderName || '').trim() : null
   if (providerExternal && !providerName) throw new Error(text.providerRequired || 'Indiquez le prestataire.')
+  const beforeAttachmentIds = await fetchBeforeNeedAttachmentIds({
+    clientCompanyId: clientCompany.id,
+    needKey,
+  })
 
   const { data: completion, error } = await supabase
     .from('need_completions')
@@ -189,6 +261,7 @@ export const createNeedCompletion = async ({
       need_label: needLabel || null,
       need_title: title,
       client_note: clientNote || null,
+      before_attachment_ids: beforeAttachmentIds,
       status: providerExternal ? 'external_declared' : 'pending',
       show_on_provider_profile: false,
       created_by: user.id,
