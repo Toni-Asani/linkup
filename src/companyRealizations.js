@@ -5,6 +5,16 @@ export const COMPANY_REALIZATION_BUCKET = 'company-realizations'
 
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024
 const PLAN_LIMITS = { starter: 5, basic: 20, premium: 50 }
+const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'])
+const MIME_BY_EXTENSION = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  heic: 'image/heic',
+  heif: 'image/heif',
+}
 
 const safeFileName = name => String(name || 'realisation')
   .replace(/[^\w.\- ]+/g, '')
@@ -18,11 +28,31 @@ const normalizePlan = plan => {
   return 'starter'
 }
 
+const extensionForFile = file => {
+  const extension = safeFileName(file?.name || '').split('.').pop()?.toLowerCase()
+  if (IMAGE_EXTENSIONS.has(extension)) return extension
+  const mime = String(file?.type || '').toLowerCase()
+  if (mime.includes('jpeg') || mime.includes('jpg')) return 'jpg'
+  if (mime.includes('png')) return 'png'
+  if (mime.includes('webp')) return 'webp'
+  if (mime.includes('gif')) return 'gif'
+  if (mime.includes('heic')) return 'heic'
+  if (mime.includes('heif')) return 'heif'
+  return ''
+}
+
+const contentTypeForFile = file => {
+  const mime = String(file?.type || '').toLowerCase()
+  if (mime === 'image/jpg') return 'image/jpeg'
+  if (mime.startsWith('image/')) return mime
+  return MIME_BY_EXTENSION[extensionForFile(file)] || ''
+}
+
 export const getCompanyRealizationLimit = plan => PLAN_LIMITS[normalizePlan(plan)] || PLAN_LIMITS.starter
 
 export const validateCompanyRealizationFile = async ({ file, ui = {} }) => {
   const text = ui?.realizations || {}
-  if (!file?.type?.startsWith('image/')) {
+  if (!contentTypeForFile(file)) {
     throw new Error(text.invalidType || 'Ajoutez uniquement des images.')
   }
   if (file.size > IMAGE_MAX_BYTES) {
@@ -94,13 +124,14 @@ export const uploadCompanyRealization = async ({ company, file, position = 0, ui
 
   await validateCompanyRealizationFile({ file, ui })
 
-  const ext = safeFileName(file.name).split('.').pop() || 'jpg'
+  const ext = extensionForFile(file) || 'jpg'
+  const contentType = contentTypeForFile(file) || 'image/jpeg'
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
   const storagePath = `${company.id}/${fileName}`
 
   const { error: uploadError } = await supabase.storage
     .from(COMPANY_REALIZATION_BUCKET)
-    .upload(storagePath, file, { upsert: false, contentType: file.type || undefined })
+    .upload(storagePath, file, { upsert: false, contentType })
   if (uploadError) throw uploadError
 
   const { data, error } = await supabase
@@ -110,7 +141,7 @@ export const uploadCompanyRealization = async ({ company, file, position = 0, ui
       uploader_user_id: user.id,
       storage_path: storagePath,
       file_name: safeFileName(file.name),
-      mime_type: file.type || null,
+      mime_type: contentType,
       file_size: file.size || 0,
       position,
       status: 'active',

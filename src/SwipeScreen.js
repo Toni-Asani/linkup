@@ -846,13 +846,6 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               </div>
             )}
 
-            <CompanyRealizationsGallery
-              realizations={company.realizations || []}
-              ui={ui}
-              compact
-              previewCount={3}
-            />
-
             {isPremium && company.contact_name && (
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:'0.5rem',background:'#f9f9f9',borderRadius:10,padding:'6px 8px'}}>
                 {company.contact_photo_url ? (
@@ -904,6 +897,14 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
                 )}
               </div>
             )}
+
+            <CompanyRealizationsGallery
+              realizations={company.realizations || []}
+              ui={ui}
+              compact
+              previewCount={3}
+              showEmpty
+            />
           </div>
         </div>
       </div>

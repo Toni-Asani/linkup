@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { HubbingIcon } from './icons'
 import {
@@ -19,8 +19,10 @@ const getText = ui => ui?.realizations || {
   uploading: 'Envoi...',
   replacing: 'Remplacement...',
   empty: 'Aucune réalisation ajoutée pour le moment.',
+  emptyPublic: 'Rien à afficher pour le moment.',
   count: (count, max) => `${count}/${max} photos`,
   limitReached: max => `Limite atteinte : ${max} photos.`,
+  uploaded: 'Photo ajoutée.',
   confirmDelete: 'Supprimer cette réalisation ?',
   uploadError: "Erreur lors de l'envoi de l'image.",
   deleteError: 'Suppression impossible.',
@@ -72,6 +74,9 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
   const [busy, setBusy] = useState(false)
   const [busyId, setBusyId] = useState(null)
   const [viewerIndex, setViewerIndex] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const cameraInputRef = useRef(null)
+  const importInputRef = useRef(null)
   const limit = getCompanyRealizationLimit(plan)
   const count = realizations.length
   const canAdd = count < limit
@@ -83,6 +88,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
   const uploadFiles = async files => {
     const selectedFiles = [...files]
     if (!selectedFiles.length || busy) return
+    setNotice(null)
     const slots = Math.max(0, limit - count)
     const acceptedFiles = selectedFiles.slice(0, slots)
     if (!acceptedFiles.length) {
@@ -93,6 +99,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
       window.alert(text.limitReached(limit))
     }
     setBusy(true)
+    setNotice({ type: 'info', message: text.uploading })
     try {
       for (let index = 0; index < acceptedFiles.length; index += 1) {
         await uploadCompanyRealization({
@@ -103,8 +110,9 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
         })
       }
       await refresh()
+      setNotice({ type: 'success', message: text.uploaded })
     } catch (error) {
-      window.alert(error?.message || text.uploadError)
+      setNotice({ type: 'error', message: error?.message || text.uploadError })
     } finally {
       setBusy(false)
     }
@@ -120,6 +128,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file || busyId) return
+    setNotice(null)
     setBusyId(item.id)
     try {
       await uploadCompanyRealization({
@@ -130,8 +139,9 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
       })
       await deleteCompanyRealization(item)
       await refresh()
+      setNotice({ type: 'success', message: text.uploaded })
     } catch (error) {
-      window.alert(error?.message || text.uploadError)
+      setNotice({ type: 'error', message: error?.message || text.uploadError })
     } finally {
       setBusyId(null)
     }
@@ -139,12 +149,13 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
 
   const handleDelete = async item => {
     if (busyId || !window.confirm(text.confirmDelete)) return
+    setNotice(null)
     setBusyId(item.id)
     try {
       await deleteCompanyRealization(item)
       await refresh()
     } catch (error) {
-      window.alert(error?.message || text.deleteError)
+      setNotice({ type: 'error', message: error?.message || text.deleteError })
     } finally {
       setBusyId(null)
     }
@@ -163,17 +174,25 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-        <label style={{ ...buttonBase, background: canAdd && !busy ? '#FFF5F5' : '#F3F4F6', color: canAdd && !busy ? '#E24B4A' : '#9CA3AF', border: `1px solid ${canAdd && !busy ? '#FECACA' : '#E5E7EB'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, pointerEvents: canAdd && !busy ? 'auto' : 'none' }}>
+        <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={!canAdd || busy}
+          style={{ ...buttonBase, background: canAdd && !busy ? '#FFF5F5' : '#F3F4F6', color: canAdd && !busy ? '#E24B4A' : '#9CA3AF', border: `1px solid ${canAdd && !busy ? '#FECACA' : '#E5E7EB'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
           <HubbingIcon name="camera" size={16} color={canAdd && !busy ? '#E24B4A' : '#9CA3AF'} />
           {busy ? text.uploading : text.takePhoto}
-          <input type="file" accept="image/*" capture="environment" multiple style={{ display: 'none' }} onChange={handleAdd} disabled={!canAdd || busy} />
-        </label>
-        <label style={{ ...buttonBase, background: canAdd && !busy ? 'white' : '#F3F4F6', color: canAdd && !busy ? '#374151' : '#9CA3AF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, pointerEvents: canAdd && !busy ? 'auto' : 'none' }}>
+        </button>
+        <button type="button" onClick={() => importInputRef.current?.click()} disabled={!canAdd || busy}
+          style={{ ...buttonBase, background: canAdd && !busy ? 'white' : '#F3F4F6', color: canAdd && !busy ? '#374151' : '#9CA3AF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
           <HubbingIcon name="paperclip" size={16} color={canAdd && !busy ? '#374151' : '#9CA3AF'} />
           {text.importPhoto}
-          <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleAdd} disabled={!canAdd || busy} />
-        </label>
+        </button>
+        <input ref={cameraInputRef} type="file" accept="image/*,.heic,.heif" capture="environment" style={{ display: 'none' }} onChange={handleAdd} disabled={!canAdd || busy} />
+        <input ref={importInputRef} type="file" accept="image/*,.heic,.heif" multiple style={{ display: 'none' }} onChange={handleAdd} disabled={!canAdd || busy} />
       </div>
+
+      {notice && (
+        <p style={{ fontSize: 12, fontWeight: 800, margin: 0, color: notice.type === 'error' ? '#E24B4A' : notice.type === 'success' ? '#047857' : '#6B7280' }}>
+          {notice.message}
+        </p>
+      )}
 
       {count === 0 ? (
         <div style={{ border: '1px dashed #D1D5DB', borderRadius: 12, padding: '1rem', textAlign: 'center', color: '#9CA3AF', fontSize: 13, fontWeight: 700 }}>
@@ -223,15 +242,16 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
   )
 }
 
-export function CompanyRealizationsGallery({ realizations = [], ui, compact = false, previewCount = 6 }) {
+export function CompanyRealizationsGallery({ realizations = [], ui, compact = false, previewCount = 6, showEmpty = false }) {
   const text = getText(ui)
   const [viewerIndex, setViewerIndex] = useState(null)
   const photos = useMemo(() => realizations.filter(item => imageFor(item)), [realizations])
-  if (!photos.length) return null
+  if (!photos.length && !showEmpty) return null
 
   const openViewer = (index, event) => {
     event?.preventDefault()
     event?.stopPropagation()
+    if (!photos.length) return
     setViewerIndex(index)
   }
 
@@ -242,19 +262,19 @@ export function CompanyRealizationsGallery({ realizations = [], ui, compact = fa
   return (
     <section onPointerDown={stopSwipeGesture} onTouchStart={stopSwipeGesture} style={wrapperStyle}>
       <button type="button" onClick={event => openViewer(0, event)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'Plus Jakarta Sans' }}>
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, border: 'none', background: 'transparent', padding: 0, cursor: photos.length ? 'pointer' : 'default', textAlign: 'left', fontFamily: 'Plus Jakarta Sans' }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ fontSize: compact ? 12 : 14, color: compact ? '#334155' : '#111827', fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
             <HubbingIcon name="sparkles" size={compact ? 14 : 16} color="#E24B4A" />
             {text.title}
           </p>
           <p style={{ fontSize: compact ? 10 : 12, color: '#6B7280', margin: '3px 0 0' }}>
-            {photos.length} photo{photos.length > 1 ? 's' : ''} · {text.open}
+            {photos.length ? `${photos.length} photo${photos.length > 1 ? 's' : ''} · ${text.open}` : (text.emptyPublic || 'Rien à afficher pour le moment.')}
           </p>
         </div>
-        <span aria-hidden="true" style={{ color: '#E24B4A', fontSize: 18, fontWeight: 900 }}>›</span>
+        {photos.length > 0 && <span aria-hidden="true" style={{ color: '#E24B4A', fontSize: 18, fontWeight: 900 }}>›</span>}
       </button>
-      <div style={{ display: 'grid', gridTemplateColumns: compact ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: compact ? 5 : 7, marginTop: compact ? 8 : 12 }}>
+      {photos.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: compact ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: compact ? 5 : 7, marginTop: compact ? 8 : 12 }}>
         {photos.slice(0, previewCount).map((item, index) => (
           <button key={item.id} type="button" onClick={event => openViewer(index, event)}
             style={{ position: 'relative', aspectRatio: '1', border: 'none', borderRadius: compact ? 8 : 10, overflow: 'hidden', background: '#E5E7EB', padding: 0, cursor: 'zoom-in' }}>
@@ -267,7 +287,7 @@ export function CompanyRealizationsGallery({ realizations = [], ui, compact = fa
             )}
           </button>
         ))}
-      </div>
+      </div>}
       {viewerIndex !== null && (
         <CompanyRealizationsModal
           realizations={photos}

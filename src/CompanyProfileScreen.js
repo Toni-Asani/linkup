@@ -374,6 +374,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         <CompanyRealizationsGallery
           realizations={realizations}
           ui={ui}
+          showEmpty
         />
 
         <NeedCompletionsPanel

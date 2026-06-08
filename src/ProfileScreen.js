@@ -792,6 +792,7 @@ notif_email: form.notif_email ?? true,
         <CompanyRealizationsGallery
           realizations={realizations}
           ui={ui}
+          showEmpty
         />
 
         {/* Nos besoins */}
