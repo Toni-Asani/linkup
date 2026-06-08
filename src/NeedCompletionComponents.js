@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { HubbingIcon } from './icons'
 import {
   confirmNeedCompletion,
@@ -65,6 +66,28 @@ const buttonBase = {
   fontWeight: 800,
   cursor: 'pointer',
   fontFamily: 'Plus Jakarta Sans',
+}
+
+let bodyScrollLocks = 0
+let previousBodyOverflow = ''
+let previousHtmlOverflow = ''
+
+const lockBodyScroll = () => {
+  if (typeof document === 'undefined') return () => {}
+  if (bodyScrollLocks === 0) {
+    previousBodyOverflow = document.body.style.overflow
+    previousHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+  }
+  bodyScrollLocks += 1
+  return () => {
+    bodyScrollLocks = Math.max(0, bodyScrollLocks - 1)
+    if (bodyScrollLocks === 0) {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+    }
+  }
 }
 
 export function NeedCompletionCloseButton({ need, onClick, ui }) {
@@ -153,11 +176,33 @@ export function NeedCompletionCloseModal({ company, need, ui, onClose, onCreated
     }
   }
 
-  return (
+  const photoPreviews = useMemo(() => photos.map((file, index) => ({
+    file,
+    index,
+    url: URL.createObjectURL(file),
+  })), [photos])
+
+  useEffect(() => () => {
+    photoPreviews.forEach(photo => URL.revokeObjectURL(photo.url))
+  }, [photoPreviews])
+
+  useEffect(() => {
+    const unlock = lockBodyScroll()
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') onClose?.()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      unlock()
+    }
+  }, [onClose])
+
+  const dialog = (
     <div role="dialog" aria-modal="true" onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(15,23,42,0.62)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '1rem' }}>
+      style={{ position: 'fixed', inset: 0, zIndex: 2147483647, background: 'rgba(15,23,42,0.62)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 'calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px)' }}>
       <div onClick={event => event.stopPropagation()}
-        style={{ width: '100%', maxWidth: 430, background: 'white', borderRadius: 18, padding: '1rem', maxHeight: '88dvh', overflowY: 'auto', boxShadow: '0 -20px 60px rgba(0,0,0,0.25)' }}>
+        style={{ width: '100%', maxWidth: 430, background: 'white', borderRadius: 18, padding: '1rem 1rem 0', maxHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px)', overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', boxShadow: '0 -20px 60px rgba(0,0,0,0.25)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
           <div>
             <p style={{ fontSize: 12, color: '#E24B4A', fontWeight: 800, margin: 0 }}>{text.modalTitle}</p>
@@ -228,11 +273,11 @@ export function NeedCompletionCloseModal({ company, need, ui, onClose, onCreated
             {text.addPhotos}
             <input type="file" accept="image/*" multiple onChange={handleFiles} style={{ display: 'none' }} />
           </label>
-          {photos.length > 0 && (
+          {photoPreviews.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 10 }}>
-              {photos.map((file, index) => (
+              {photoPreviews.map(({ file, index, url }) => (
                 <div key={`${file.name}-${index}`} style={{ position: 'relative', aspectRatio: '1', borderRadius: 10, overflow: 'hidden', background: '#F3F4F6' }}>
-                  <img src={URL.createObjectURL(file)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <button type="button" onClick={() => setPhotos(current => current.filter((_, i) => i !== index))}
                     style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.55)', color: 'white', cursor: 'pointer' }}>
                     x
@@ -243,15 +288,18 @@ export function NeedCompletionCloseModal({ company, need, ui, onClose, onCreated
           )}
         </div>
 
-        {error && <p style={{ fontSize: 13, color: '#E24B4A', fontWeight: 700, margin: '12px 0 0' }}>{error}</p>}
-
-        <button type="button" onClick={submit} disabled={saving}
-          style={{ ...buttonBase, width: '100%', marginTop: 14, padding: '13px', background: saving ? '#F3F4F6' : '#E24B4A', color: saving ? '#9CA3AF' : 'white' }}>
-          {saving ? text.closing : text.confirmClose}
-        </button>
+        <div style={{ position: 'sticky', bottom: 0, margin: '14px -1rem 0', padding: '12px 1rem calc(env(safe-area-inset-bottom) + 12px)', background: 'white', borderTop: '1px solid #F1F5F9', boxShadow: '0 -10px 24px rgba(15,23,42,0.06)' }}>
+          {error && <p style={{ fontSize: 13, color: '#E24B4A', fontWeight: 700, margin: '0 0 10px' }}>{error}</p>}
+          <button type="button" onClick={submit} disabled={saving}
+            style={{ ...buttonBase, width: '100%', padding: '13px', background: saving ? '#F3F4F6' : '#E24B4A', color: saving ? '#9CA3AF' : 'white' }}>
+            {saving ? text.closing : text.confirmClose}
+          </button>
+        </div>
       </div>
     </div>
   )
+
+  return typeof document === 'undefined' ? dialog : createPortal(dialog, document.body)
 }
 
 function SelectedCompany({ company, onClear }) {
