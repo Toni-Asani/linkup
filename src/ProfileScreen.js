@@ -8,6 +8,8 @@ import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } fro
 import { HubbingIcon } from './icons'
 import { NeedAttachmentCloud, NeedAttachmentGallery, NeedAttachmentUploader } from './NeedAttachmentComponents'
 import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag } from './needAttachments'
+import { NeedCompletionCloseButton, NeedCompletionCloseModal, NeedCompletionsPanel } from './NeedCompletionComponents'
+import { fetchNeedCompletionsForCompany } from './needCompletions'
 import { shareCompanyProfileCard } from './profileShare'
 import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
@@ -64,7 +66,7 @@ const cantons = [
   'TI','UR','VD','VS','ZG','ZH'
 ]
 
-export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', lang = 'fr' }) {
+export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', lang = 'fr', onPendingCompletionChange }) {
   const ui = getUiText(lang)
   const [uploadingContact, setUploadingContact] = useState(false)
   const [company, setCompany] = useState(null)
@@ -83,6 +85,8 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [passwordNotice, setPasswordNotice] = useState(null)
   const [showUsageGuide, setShowUsageGuide] = useState(false)
   const [needAttachments, setNeedAttachments] = useState([])
+  const [needCompletions, setNeedCompletions] = useState([])
+  const [closingNeed, setClosingNeed] = useState(null)
   const [sharingProfile, setSharingProfile] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -97,6 +101,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       setForm(companyWithSubscription)
       loadStats(data.id)
       loadNeedAttachments(data.id)
+      loadNeedCompletions(data.id)
       const { data: sub } = await supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
       if (sub) setCurrentPlan(sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1))
       try {
@@ -121,6 +126,48 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
     } catch (error) {
       console.warn('Need attachments load failed:', error?.message || error)
     }
+  }
+
+  const loadNeedCompletions = async (companyId = company?.id) => {
+    if (!companyId) return
+    try {
+      setNeedCompletions(await fetchNeedCompletionsForCompany(companyId))
+    } catch (error) {
+      console.warn('Need completions load failed:', error?.message || error)
+    }
+  }
+
+  const refreshNeedCompletions = async () => {
+    await loadNeedCompletions(company?.id)
+    onPendingCompletionChange?.()
+  }
+
+  const handleNeedCompletionCreated = async () => {
+    const closedNeed = closingNeed
+    const now = new Date().toISOString()
+    try {
+      if (closedNeed?.needKey === GENERAL_NEED_KEY) {
+        await supabase
+          .from('companies')
+          .update({ needs_description: null, needs_updated_at: now })
+          .eq('id', company.id)
+        setForm(current => ({ ...current, needs_description: '' }))
+        setCompany(current => ({ ...current, needs_description: '', needs_updated_at: now }))
+      } else if (closedNeed?.needKey) {
+        const nextTags = tags.filter(tag => needKeyForTag(tag) !== closedNeed.needKey)
+        const serializedTags = JSON.stringify(nextTags)
+        await supabase
+          .from('companies')
+          .update({ needs_tags: serializedTags, needs_updated_at: now })
+          .eq('id', company.id)
+        setTags(nextTags)
+        setForm(current => ({ ...current, needs_tags: serializedTags }))
+        setCompany(current => ({ ...current, needs_tags: serializedTags, needs_updated_at: now }))
+      }
+    } catch (error) {
+      console.warn('Unable to remove closed need:', error?.message || error)
+    }
+    await refreshNeedCompletions()
   }
 
   const validateAndModerateProfileImage = async (file, context) => {
@@ -284,6 +331,10 @@ const handleContactPhotoUpload = async (e) => {
   }
 
   const handleSave = async () => {
+  if (!String(form.contact_phone || '').trim()) {
+    alert(ui.profile.phoneRequired || 'Le téléphone direct du décideur est obligatoire.')
+    return
+  }
   setSaving(true)
 
   // Géocodage de l'adresse
@@ -476,6 +527,17 @@ notif_email: form.notif_email ?? true,
           ui={ui}
         />
       )}
+      {String(form.needs_description || '').trim() && (
+        <NeedCompletionCloseButton
+          ui={ui}
+          need={{
+            needKey: GENERAL_NEED_KEY,
+            needLabel: ui.profile.needs,
+            needTitle: String(form.needs_description || '').trim().slice(0, 120),
+          }}
+          onClick={setClosingNeed}
+        />
+      )}
 
       {/* Tags existants */}
       {tags.length > 0 && (
@@ -511,6 +573,15 @@ notif_email: form.notif_email ?? true,
                   ui={ui}
                 />
               )}
+              <NeedCompletionCloseButton
+                ui={ui}
+                need={{
+                  needKey: tagKey,
+                  needLabel: label,
+                  needTitle: label,
+                }}
+                onClick={setClosingNeed}
+              />
             </div>
           )})}
         </div>
@@ -596,6 +667,15 @@ notif_email: form.notif_email ?? true,
         style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer',marginTop:'0.5rem'}}>
         {saving ? ui.common.saving : ui.common.save}
       </button>
+      {closingNeed && (
+        <NeedCompletionCloseModal
+          company={company}
+          need={closingNeed}
+          ui={ui}
+          onClose={() => setClosingNeed(null)}
+          onCreated={handleNeedCompletionCreated}
+        />
+      )}
     </div>
   )
 
@@ -674,6 +754,14 @@ notif_email: form.notif_email ?? true,
           </div>
         )}
 
+        <NeedCompletionsPanel
+          companyId={company.id}
+          completions={needCompletions}
+          ui={ui}
+          showPendingActions
+          onChanged={refreshNeedCompletions}
+        />
+
         {/* Nos besoins */}
         {(company.needs_description || activeTags.length > 0 || needAttachments.length > 0) && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
@@ -741,7 +829,7 @@ notif_email: form.notif_email ?? true,
         {company.contact_title && <p style={{fontSize:13,color:'#666',margin:0}}>{company.contact_title}</p>}
       </div>
     </div>
-    {company.contact_phone && <InfoRow label={ui.profile.contactPhone.replace(' direct', '')} value={company.contact_phone} />}
+    {company.contact_phone && <InfoRow label={ui.profile.contactPhone.replace(' direct', '').replace(' *', '')} value={company.contact_phone} />}
     {company.contact_linkedin && (
       <InfoRow label="LinkedIn" value={ui.common.viewProfile} color="#0A66C2" />
     )}

@@ -17,6 +17,7 @@ import { HubbingIcon } from './icons'
 import { VerifiedBadge } from './VerifiedBadge'
 import { clearAppBadge, showNativeNotification, syncUnreadAppBadge } from './appBadge'
 import { registerPushNotifications } from './pushNotifications'
+import { fetchPendingNeedCompletionCount, NEED_COMPLETION_NOTIFICATION_TYPE } from './needCompletions'
 import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
 
@@ -37,6 +38,7 @@ const PUBLIC_SCREENS = ['home', 'login', 'register', 'visitor', 'legal', 'privac
 const URL_SCREEN_SCREENS = ['login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
 const sessionTokenFallbacks = new Map()
 const REGISTRATION_DRAFT_KEY = 'hubbing_registration_draft'
+const MESSAGE_NOTIFICATION_TYPES = ['new_message', 'new_match']
 
 const parseVersionParts = (version) => (
   String(version || '0')
@@ -300,6 +302,7 @@ const translations = {
     contactInfo: 'DÉCIDEUR / CONTACT PRINCIPAL',
     contactName: 'Nom et prénom du décideur *',
     contactTitle: 'Titre du poste (CEO, Directeur...) *',
+    contactPhone: 'Téléphone direct du décideur *',
     access: 'ACCÈS',
     email: 'Email professionnel *',
     password: 'Mot de passe (min. 6 caractères) *',
@@ -361,6 +364,8 @@ const translations = {
     notificationNewMessageBody: 'Vous avez reçu un nouveau message.',
     notificationNewMatchTitle: 'Nouveau match Hubbing',
     notificationNewMatchBody: 'Une entreprise vient de matcher avec vous.',
+    notificationNeedCompletionTitle: 'Réalisation à confirmer',
+    notificationNeedCompletionBody: 'Une entreprise indique que vous avez réalisé un besoin.',
     demoMode: 'Mode visiteur',
     demoSwipe: 'Mode visiteur — connectez-vous pour matcher',
     demoMap: 'Mode visiteur — connectez-vous pour voir toutes les entreprises',
@@ -413,6 +418,7 @@ const translations = {
     contactInfo: 'ENTSCHEIDUNGSTRÄGER / HAUPTKONTAKT',
     contactName: 'Vor- und Nachname *',
     contactTitle: 'Berufsbezeichnung (CEO, Direktor...) *',
+    contactPhone: 'Direkte Telefonnummer *',
     access: 'ZUGANG',
     email: 'Geschäftliche E-Mail *',
     password: 'Passwort (mind. 6 Zeichen) *',
@@ -474,6 +480,8 @@ const translations = {
     notificationNewMessageBody: 'Sie haben eine neue Nachricht erhalten.',
     notificationNewMatchTitle: 'Neues Hubbing-Match',
     notificationNewMatchBody: 'Ein Unternehmen hat gerade mit Ihnen gematcht.',
+    notificationNeedCompletionTitle: 'Leistung bestätigen',
+    notificationNeedCompletionBody: 'Ein Unternehmen gibt an, dass Sie einen Bedarf erfüllt haben.',
     demoMode: 'Besucher-Modus',
     demoSwipe: 'Besucher-Modus — anmelden zum Matchen',
     demoMap: 'Besucher-Modus — anmelden für alle Unternehmen',
@@ -526,6 +534,7 @@ const translations = {
     contactInfo: 'RESPONSABILE / CONTATTO PRINCIPALE',
     contactName: 'Nome e cognome *',
     contactTitle: 'Titolo (CEO, Direttore...) *',
+    contactPhone: 'Telefono diretto *',
     access: 'ACCESSO',
     email: 'Email professionale *',
     password: 'Password (min. 6 caratteri) *',
@@ -587,6 +596,8 @@ const translations = {
     notificationNewMessageBody: 'Hai ricevuto un nuovo messaggio.',
     notificationNewMatchTitle: 'Nuovo match Hubbing',
     notificationNewMatchBody: "Un'azienda ha appena fatto match con te.",
+    notificationNeedCompletionTitle: 'Realizzazione da confermare',
+    notificationNeedCompletionBody: "Un'azienda indica che hai realizzato un bisogno.",
     demoMode: 'Modalità visitatore',
     demoSwipe: 'Modalità visitatore — accedi per fare match',
     demoMap: 'Modalità visitatore — accedi per vedere tutte le aziende',
@@ -639,6 +650,7 @@ const translations = {
     contactInfo: 'DECISION MAKER / MAIN CONTACT',
     contactName: 'Full name *',
     contactTitle: 'Job title (CEO, Director...) *',
+    contactPhone: 'Direct phone number *',
     access: 'ACCESS',
     email: 'Professional email *',
     password: 'Password (min. 6 characters) *',
@@ -700,6 +712,8 @@ const translations = {
     notificationNewMessageBody: 'You received a new message.',
     notificationNewMatchTitle: 'New Hubbing match',
     notificationNewMatchBody: 'A company just matched with you.',
+    notificationNeedCompletionTitle: 'Work completion to confirm',
+    notificationNeedCompletionBody: 'A company says you completed a need.',
     demoMode: 'Visitor mode',
     demoSwipe: 'Visitor mode — log in to match',
     demoMap: 'Visitor mode — log in to see all companies',
@@ -1686,7 +1700,7 @@ function ResetPasswordScreen({ setScreen, t }) {
       {error && <p style={{color:'#E24B4A',fontSize:13,lineHeight:1.4}}>{error}</p>}
       {success && <p style={{color:'#3BA75C',fontSize:13,lineHeight:1.5,background:'#f0fff4',border:'1px solid #bce7c7',borderRadius:10,padding:'12px'}}>{t.passwordUpdated}</p>}
       {!success ? (
-        <button onClick={handlePasswordUpdate} disabled={loading || checkingSession || !!error && error === t.resetLinkInvalid}
+        <button onClick={handlePasswordUpdate} disabled={loading || checkingSession || (!!error && error === t.resetLinkInvalid)}
           style={{padding:'14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
           {loading || checkingSession ? t.updatingPassword : t.updatePassword}
         </button>
@@ -1714,6 +1728,7 @@ function RegisterScreen({ setScreen, t }) {
   const [zefix, setZefix] = useState(registrationDraft.zefix || '')
   const [contactName, setContactName] = useState(registrationDraft.contactName || '')
   const [contactTitle, setContactTitle] = useState(registrationDraft.contactTitle || '')
+  const [contactPhone, setContactPhone] = useState(registrationDraft.contactPhone || '')
   const [address, setAddress] = useState(registrationDraft.address || '')
   const [city, setCity] = useState(registrationDraft.city || '')
   const [canton, setCanton] = useState(registrationDraft.canton || '')
@@ -1735,6 +1750,7 @@ useEffect(() => {
       zefix,
       contactName,
       contactTitle,
+      contactPhone,
       address,
       city,
       canton,
@@ -1744,7 +1760,7 @@ useEffect(() => {
   } catch {
     // Safari private windows can block sessionStorage; the form still works without draft restore.
   }
-}, [email, company, sector, zefix, contactName, contactTitle, address, city, canton, npa, accepted])
+}, [email, company, sector, zefix, contactName, contactTitle, contactPhone, address, city, canton, npa, accepted])
 
 const handleZefixLookup = (ideNumber) => {
   setZefix(ideNumber)
@@ -1874,7 +1890,7 @@ const handleRegister = async () => {
       return
     }
 
-if (!normalizedEmail || !password || !company || !sector || !zefix || !contactName || !contactTitle || !address || !city || !canton || !npa) {      setError(t.errorFields)
+if (!normalizedEmail || !password || !company || !sector || !zefix || !contactName || !contactTitle || !contactPhone || !address || !city || !canton || !npa) {      setError(t.errorFields)
       setLoading(false)
       return
     }
@@ -1952,6 +1968,7 @@ if (zefixStatus === 'invalid') {
       zefix_uid: clean,
       contact_name: contactName,
       contact_title: contactTitle,
+      contact_phone: contactPhone,
       address: `${address}, ${npa} ${city}`,
      city: city,
      canton: canton,
@@ -1985,6 +2002,7 @@ if (zefixStatus === 'invalid') {
           zefix: clean,
           contactName,
           contactTitle,
+          contactPhone,
           address: `${address}, ${npa} ${city}`,
           city,
           canton,
@@ -2103,6 +2121,8 @@ if (zefixStatus === 'invalid') {
       <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder={t.contactName}
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
       <input value={contactTitle} onChange={e => setContactTitle(e.target.value)} placeholder={t.contactTitle}
+        style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
+      <input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder={t.contactPhone} type="tel" inputMode="tel" autoComplete="tel"
         style={{padding:'14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none'}} />
 
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{t.access}</p>
@@ -2341,6 +2361,7 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [companyProfileReturn, setCompanyProfileReturn] = useState(null)
   const [userPlan, setUserPlan] = useState('Starter')
   const [unreadCount, setUnreadCount] = useState(0)
+  const [pendingCompletionCount, setPendingCompletionCount] = useState(0)
   const [sessionReady, setSessionReady] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [directMessageCompanyId, setDirectMessageCompanyId] = useState(null)
@@ -2469,7 +2490,7 @@ useEffect(() => {
   let active = true
   const refreshAfterPush = () => {
     window.setTimeout(() => {
-      loadUnreadCount()
+      loadNotificationCounts()
     }, 500)
   }
   registerPushNotifications({ onNotification: refreshAfterPush }).then(cleanup => {
@@ -2487,7 +2508,7 @@ useEffect(() => {
 
 useEffect(() => {
   if (!sessionReady) return undefined
-  loadUnreadCount()
+  loadNotificationCounts()
   const sub = supabase
     .channel('notifications-' + user.id)
     .on('postgres_changes', {
@@ -2495,42 +2516,72 @@ useEffect(() => {
       filter: `user_id=eq.${user.id}`
     }, async (payload) => {
       const notification = payload.new || payload.old || {}
-      if (!['new_message', 'new_match'].includes(notification.type)) return
+      if (![...MESSAGE_NOTIFICATION_TYPES, NEED_COMPLETION_NOTIFICATION_TYPE].includes(notification.type)) return
 
-      const nextUnreadCount = await loadUnreadCount()
+      const nextBadgeCount = await loadNotificationCounts()
       if (payload.eventType !== 'INSERT' || notification.read) return
 
       if (notification.type === 'new_message') {
         await showNativeNotification({
           title: t.notificationNewMessageTitle,
           body: t.notificationNewMessageBody,
-          count: nextUnreadCount,
+          count: nextBadgeCount,
           id: `message-${notification.id || Date.now()}`,
         })
       } else if (notification.type === 'new_match') {
         await showNativeNotification({
           title: t.notificationNewMatchTitle,
           body: t.notificationNewMatchBody,
-          count: nextUnreadCount,
+          count: nextBadgeCount,
           id: `match-${notification.id || Date.now()}`,
+        })
+      } else if (notification.type === NEED_COMPLETION_NOTIFICATION_TYPE) {
+        await showNativeNotification({
+          title: t.notificationNeedCompletionTitle,
+          body: t.notificationNeedCompletionBody,
+          count: nextBadgeCount,
+          id: `need-completion-${notification.id || Date.now()}`,
         })
       }
     })
     .subscribe()
   return () => supabase.removeChannel(sub)
-}, [sessionReady, user.id, t.notificationNewMessageTitle, t.notificationNewMessageBody, t.notificationNewMatchTitle, t.notificationNewMatchBody])
+}, [sessionReady, user.id, t.notificationNewMessageTitle, t.notificationNewMessageBody, t.notificationNewMatchTitle, t.notificationNewMatchBody, t.notificationNeedCompletionTitle, t.notificationNeedCompletionBody])
 
 const loadUnreadCount = async () => {
   const { count } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .in('type', ['new_message', 'new_match'])
+    .in('type', MESSAGE_NOTIFICATION_TYPES)
     .eq('read', false)
   const nextCount = count || 0
   unreadCountRef.current = nextCount
   setUnreadCount(nextCount)
   return nextCount
+}
+
+const loadPendingCompletionCount = async () => {
+  const { data: myCompany, error } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (error || !myCompany?.id) {
+    setPendingCompletionCount(0)
+    return 0
+  }
+  const nextCount = await fetchPendingNeedCompletionCount(myCompany.id)
+  setPendingCompletionCount(nextCount)
+  return nextCount
+}
+
+const loadNotificationCounts = async () => {
+  const [messageCount, completionCount] = await Promise.all([
+    loadUnreadCount(),
+    loadPendingCompletionCount(),
+  ])
+  return (messageCount || 0) + (completionCount || 0)
 }
 
   useEffect(() => {
@@ -2541,7 +2592,7 @@ const loadUnreadCount = async () => {
       if (document.hidden || signingOutRef.current) return
       window.clearTimeout(refreshTimer)
       refreshTimer = window.setTimeout(() => {
-        loadUnreadCount()
+        loadNotificationCounts()
       }, 250)
     }
 
@@ -2559,12 +2610,13 @@ const loadUnreadCount = async () => {
   }, [sessionReady, user.id])
 
   useEffect(() => {
-    if (unreadCount > 0) {
-      syncUnreadAppBadge(unreadCount)
+    const totalBadgeCount = unreadCount + pendingCompletionCount
+    if (totalBadgeCount > 0) {
+      syncUnreadAppBadge(totalBadgeCount)
     } else {
       clearAppBadge()
     }
-  }, [unreadCount])
+  }, [unreadCount, pendingCompletionCount])
 
   useEffect(() => {
   supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
@@ -2704,9 +2756,9 @@ const handleCompanyProfileBack = () => {
         />
       )}
       {activeTab === 'map' && <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadUnreadCount} lang={lang} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} lang={lang} />}
       {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
-      {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} />}
+      {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} onPendingCompletionChange={loadNotificationCounts} />}
     </>
   )}
 </div>
@@ -2738,6 +2790,11 @@ const handleCompanyProfileBack = () => {
         {tab.id === 'messages' && unreadCount > 0 && (
           <div style={{position:'absolute',top:-7,right:'calc(50% - 28px)',background:'#E24B4A',color:'white',borderRadius:999,minWidth:20,height:18,padding:'0 5px',fontSize:10,lineHeight:1,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white',boxShadow:'0 2px 5px rgba(0,0,0,0.18)',boxSizing:'border-box'}}>
             {unreadCount > 9 ? '9+' : unreadCount}
+          </div>
+        )}
+        {tab.id === 'profile' && pendingCompletionCount > 0 && (
+          <div style={{position:'absolute',top:-7,right:'calc(50% - 28px)',background:'#E24B4A',color:'white',borderRadius:999,minWidth:20,height:18,padding:'0 5px',fontSize:10,lineHeight:1,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white',boxShadow:'0 2px 5px rgba(0,0,0,0.18)',boxSizing:'border-box'}}>
+            {pendingCompletionCount > 9 ? '9+' : pendingCompletionCount}
           </div>
         )}
       </div>

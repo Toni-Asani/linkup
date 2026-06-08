@@ -216,6 +216,8 @@ serve(async (req) => {
 
     let attachmentUrls: string[] = []
     let needAttachmentStoragePaths: string[] = []
+    let needCompletionStoragePaths: string[] = []
+    let needCompletionIds: string[] = []
     if (companyId) {
       const messageFilter = matchIds.length
         ? `(sender_id.eq.${companyId},match_id.${inFilter(matchIds)})`
@@ -233,6 +235,21 @@ serve(async (req) => {
       needAttachmentStoragePaths = needAttachments
         .map(attachment => attachment.storage_path)
         .filter(Boolean) as string[]
+
+      const needCompletions = await readRows<{ id: string }>('need_completions', {
+        select: 'id',
+        or: `(client_company_id.eq.${companyId},provider_company_id.eq.${companyId})`,
+      })
+      needCompletionIds = needCompletions.map(completion => completion.id)
+      if (needCompletionIds.length) {
+        const completionPhotos = await readRows<{ storage_path?: string | null }>('need_completion_photos', {
+          select: 'storage_path',
+          completion_id: inFilter(needCompletionIds),
+        })
+        needCompletionStoragePaths = completionPhotos
+          .map(photo => photo.storage_path)
+          .filter(Boolean) as string[]
+      }
     }
 
     const emailSent = await sendEmail({
@@ -268,6 +285,11 @@ serve(async (req) => {
         await deleteRows('reviews', { match_id: inFilter(matchIds) })
         await deleteRows('messages', { match_id: inFilter(matchIds) })
       }
+      if (needCompletionIds.length) {
+        await deleteRows('notifications', { need_completion_id: inFilter(needCompletionIds) })
+        await deleteRows('need_completion_photos', { completion_id: inFilter(needCompletionIds) })
+        await deleteRows('need_completions', { id: inFilter(needCompletionIds) })
+      }
       await deleteRows('notifications', { user_id: `eq.${user.id}` })
       await deleteRows('messages', { sender_id: `eq.${companyId}` })
       await deleteRows('reviews', { reviewer_company_id: `eq.${companyId}` })
@@ -302,6 +324,7 @@ serve(async (req) => {
         .map(path => deleteStorageObject('attachments', path as string))
     )
     await Promise.all(needAttachmentStoragePaths.map(path => deleteStorageObject('need-attachments', path)))
+    await Promise.all(needCompletionStoragePaths.map(path => deleteStorageObject('need-completion-photos', path)))
 
     await deleteUser(user.id)
 

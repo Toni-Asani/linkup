@@ -170,30 +170,56 @@ serve(async (req) => {
     const { notificationId } = await req.json()
     if (!notificationId) return json({ error: 'Missing notificationId' }, 400)
 
-    const notifications = await restGet(`notifications?id=eq.${encodeURIComponent(notificationId)}&select=id,user_id,type,match_id`)
+    const notifications = await restGet(`notifications?id=eq.${encodeURIComponent(notificationId)}&select=id,user_id,type,match_id,need_completion_id`)
     const notification = notifications?.[0]
-    if (!notification?.user_id || !notification?.match_id) return json({ error: 'Notification not found' }, 404)
-    if (!['new_message', 'new_match'].includes(notification.type)) return json({ ok: true, skipped: 'unsupported_type' })
+    if (!notification?.user_id) return json({ error: 'Notification not found' }, 404)
+    if (!['new_message', 'new_match', 'need_completion_confirmation'].includes(notification.type)) return json({ ok: true, skipped: 'unsupported_type' })
 
-    const matches = await restGet(`matches?id=eq.${encodeURIComponent(notification.match_id)}&select=id,company_a,company_b`)
-    const match = matches?.[0]
-    if (!match?.company_a || !match?.company_b) return json({ error: 'Match not found' }, 404)
+    let callerCompany: Record<string, unknown> | undefined
+    let recipientCompany: Record<string, unknown> | undefined
+    let title = ''
+    let body = ''
+    const extraPayload: Record<string, unknown> = {}
 
-    const companies = await restGet(`companies?id=in.(${encodeURIComponent(match.company_a)},${encodeURIComponent(match.company_b)})&select=id,user_id,name,notif_app`)
-    const callerCompany = companies.find((company: Record<string, unknown>) => company.user_id === caller.id)
-    const recipientCompany = companies.find((company: Record<string, unknown>) => company.user_id === notification.user_id)
-    if (!callerCompany || !recipientCompany) return json({ error: 'Forbidden' }, 403)
+    if (['new_message', 'new_match'].includes(String(notification.type))) {
+      if (!notification.match_id) return json({ error: 'Notification not found' }, 404)
+      const matches = await restGet(`matches?id=eq.${encodeURIComponent(notification.match_id)}&select=id,company_a,company_b`)
+      const match = matches?.[0]
+      if (!match?.company_a || !match?.company_b) return json({ error: 'Match not found' }, 404)
+
+      const companies = await restGet(`companies?id=in.(${encodeURIComponent(match.company_a)},${encodeURIComponent(match.company_b)})&select=id,user_id,name,notif_app`)
+      callerCompany = companies.find((company: Record<string, unknown>) => company.user_id === caller.id)
+      recipientCompany = companies.find((company: Record<string, unknown>) => company.user_id === notification.user_id)
+      if (!callerCompany || !recipientCompany) return json({ error: 'Forbidden' }, 403)
+
+      const senderName = String(callerCompany.name || 'Une entreprise')
+      title = notification.type === 'new_match'
+        ? 'Nouveau match Hubbing'
+        : 'Nouveau message Hubbing'
+      body = notification.type === 'new_match'
+        ? `${senderName} vient de matcher avec votre entreprise.`
+        : `${senderName} vous a envoyé un message.`
+      extraPayload.matchId = notification.match_id
+    } else if (notification.type === 'need_completion_confirmation') {
+      if (!notification.need_completion_id) return json({ error: 'Notification not found' }, 404)
+      const completions = await restGet(`need_completions?id=eq.${encodeURIComponent(notification.need_completion_id)}&select=id,client_company_id,provider_company_id,need_title,status`)
+      const completion = completions?.[0]
+      if (!completion?.client_company_id || !completion?.provider_company_id) return json({ error: 'Completion not found' }, 404)
+
+      const companies = await restGet(`companies?id=in.(${encodeURIComponent(completion.client_company_id)},${encodeURIComponent(completion.provider_company_id)})&select=id,user_id,name,notif_app`)
+      callerCompany = companies.find((company: Record<string, unknown>) => company.id === completion.client_company_id && company.user_id === caller.id)
+      recipientCompany = companies.find((company: Record<string, unknown>) => company.id === completion.provider_company_id && company.user_id === notification.user_id)
+      if (!callerCompany || !recipientCompany) return json({ error: 'Forbidden' }, 403)
+
+      const clientName = String(callerCompany.name || 'Une entreprise')
+      title = 'Réalisation à confirmer'
+      body = `${clientName} indique que vous avez réalisé un besoin. Confirmation requise.`
+      extraPayload.needCompletionId = notification.need_completion_id
+    }
+
     if (recipientCompany.notif_app === false) return json({ ok: true, skipped: 'disabled_by_user' })
 
-    const senderName = String(callerCompany.name || 'Une entreprise')
-    const title = notification.type === 'new_match'
-      ? 'Nouveau match Hubbing'
-      : 'Nouveau message Hubbing'
-    const body = notification.type === 'new_match'
-      ? `${senderName} vient de matcher avec votre entreprise.`
-      : `${senderName} vous a envoyé un message.`
-
-    const unreadRows = await restGet(`notifications?user_id=eq.${encodeURIComponent(notification.user_id)}&type=in.(new_message,new_match)&read=eq.false&select=id`)
+    const unreadRows = await restGet(`notifications?user_id=eq.${encodeURIComponent(notification.user_id)}&type=in.(new_message,new_match,need_completion_confirmation)&read=eq.false&select=id`)
     const badge = unreadRows?.length || 1
     const tokens = await restGet(`push_device_tokens?user_id=eq.${encodeURIComponent(notification.user_id)}&enabled=eq.true&select=id,token`)
     if (!tokens?.length) return json({ ok: true, sent: 0, skipped: 'no_tokens' })
@@ -209,7 +235,7 @@ serve(async (req) => {
           badge,
         },
         type: notification.type,
-        matchId: notification.match_id,
+        ...extraPayload,
       }, jwt)
 
       if (response.ok) {

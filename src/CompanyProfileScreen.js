@@ -7,6 +7,8 @@ import { createNotificationAndPush } from './pushDelivery'
 import LoadingIndicator from './LoadingIndicator'
 import { NeedAttachmentGallery } from './NeedAttachmentComponents'
 import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag, reportNeedAttachment } from './needAttachments'
+import { NeedCompletionsPanel } from './NeedCompletionComponents'
+import { fetchNeedCompletionsForCompany } from './needCompletions'
 import { shareCompanyProfileCard } from './profileShare'
 
 const sectorColors = {
@@ -67,6 +69,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const [submittingReport, setSubmittingReport] = useState(false)
   const [zoomImage, setZoomImage] = useState(null)
   const [needAttachments, setNeedAttachments] = useState([])
+  const [needCompletions, setNeedCompletions] = useState([])
   const [reportingAttachment, setReportingAttachment] = useState(null)
   const [attachmentReportReason, setAttachmentReportReason] = useState('')
   const [attachmentReportComment, setAttachmentReportComment] = useState('')
@@ -100,8 +103,9 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     if (companyWithSubscription?.id) {
       try {
         setNeedAttachments(await fetchNeedAttachments(companyWithSubscription.id))
+        setNeedCompletions(await fetchNeedCompletionsForCompany(companyWithSubscription.id))
       } catch (error) {
-        console.warn('Need attachments load failed:', error?.message || error)
+        console.warn('Need profile data load failed:', error?.message || error)
       }
     }
     setLoading(false)
@@ -349,6 +353,12 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             <p style={{fontSize:14,color:'#444',lineHeight:1.6}}>{company.description}</p>
           </div>
         )}
+
+        <NeedCompletionsPanel
+          companyId={company.id}
+          completions={needCompletions}
+          ui={ui}
+        />
 
         {/* Besoins — visibles par tous, réponse limitée par le plan dans la messagerie */}
         {hasNeeds && (
