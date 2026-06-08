@@ -88,24 +88,37 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
     window.setTimeout(() => refresh(), 700)
   }
 
-  const uploadFile = async file => {
-    if (!file || busy) return
+  const uploadFiles = async files => {
+    const selectedFiles = Array.from(files || []).filter(Boolean)
+    if (!selectedFiles.length || busy) return
     setNotice(null)
-    if (count >= limit) {
+    const availableSlots = Math.max(0, limit - count)
+    if (availableSlots <= 0) {
       window.alert(text.limitReached(limit))
       return
+    }
+    const filesToUpload = selectedFiles.slice(0, availableSlots)
+    if (selectedFiles.length > filesToUpload.length) {
+      window.alert(text.limitReached(limit))
     }
     setBusy(true)
     setNotice({ type: 'info', message: text.uploading })
     try {
-      await uploadCompanyRealization({
-        company,
-        file,
-        position: count,
-        ui,
-      })
+      for (let index = 0; index < filesToUpload.length; index += 1) {
+        await uploadCompanyRealization({
+          company,
+          file: filesToUpload[index],
+          position: count + index,
+          ui,
+        })
+      }
       await refreshAfterUpload()
-      setNotice({ type: 'success', message: text.uploaded })
+      setNotice({
+        type: 'success',
+        message: filesToUpload.length > 1
+          ? `${filesToUpload.length} photos ajoutées.`
+          : text.uploaded,
+      })
     } catch (error) {
       const message = error?.message || text.uploadError
       setNotice({ type: 'error', message })
@@ -116,9 +129,9 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
   }
 
   const handleAdd = async event => {
-    const file = event.target.files?.[0]
+    const files = Array.from(event.target.files || [])
     event.target.value = ''
-    await uploadFile(file)
+    await uploadFiles(files)
   }
 
   const handleReplace = async (event, item, index) => {
@@ -184,7 +197,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
         <label style={{ ...buttonBase, background: canAdd && !busy ? 'white' : '#F3F4F6', color: canAdd && !busy ? '#374151' : '#9CA3AF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: canAdd && !busy ? 'pointer' : 'default' }}>
           <HubbingIcon name="paperclip" size={16} color={canAdd && !busy ? '#374151' : '#9CA3AF'} />
           {text.importPhoto}
-          <input type="file" accept="image/*,.heic,.heif" onChange={handleAdd} disabled={!canAdd || busy}
+          <input type="file" accept="image/*,.heic,.heif" multiple onChange={handleAdd} disabled={!canAdd || busy}
             style={{ display: 'none' }} />
         </label>
       </div>

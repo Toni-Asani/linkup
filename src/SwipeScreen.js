@@ -262,7 +262,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
     try {
       realizationMap = await fetchCompanyRealizationsForCompanies(
         companiesWithSubscriptions.map(company => company.id),
-        { limitPerCompany: 3 },
+        { limitPerCompany: 50 },
       )
     } catch (realizationError) {
       console.warn('Swipe realizations load failed:', realizationError?.message || realizationError)
@@ -705,6 +705,13 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const company = filteredCompanies[current]
   const nextCompany = filteredCompanies[current + 1]
   const color = sectorColors[company.sector] || '#E24B4A'
+  const cardHeaderBackground = company.background_url
+    ? {
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.16), rgba(15, 23, 42, 0.42)), url(${company.background_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : { background: color }
   const badgeVariant = getCompanyBadgeVariant(company)
   const activeTags = getActiveTags(company.needs_tags)
   const hasNeeds = company.needs_description || activeTags.length > 0
@@ -795,11 +802,11 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
           willChange:'transform',
           backfaceVisibility:'hidden',
         }}>
-          <div style={{height:100,background:color,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',flexShrink:0}}>
+          <div style={{height:100,...cardHeaderBackground,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',flexShrink:0}}>
             {company.logo_url ? (
-              <img src={company.logo_url} alt="logo" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover',border:'3px solid white'}} />
+              <img src={company.logo_url} alt="logo" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover',border:'3px solid white',boxShadow:'0 8px 24px rgba(15,23,42,0.22)'}} />
             ) : (
-              <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(255,255,255,0.22)',display:'flex',alignItems:'center',justifyContent:'center',border:'3px solid rgba(255,255,255,0.9)',boxShadow:'0 8px 24px rgba(15,23,42,0.22)'}}>
                 <span style={{color:'white',fontWeight:700,fontSize:22}}>{company.name.substring(0,2).toUpperCase()}</span>
               </div>
             )}
