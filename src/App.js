@@ -2366,7 +2366,10 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [directMessageCompanyId, setDirectMessageCompanyId] = useState(null)
   const [directMessageDraft, setDirectMessageDraft] = useState(null)
+  const [activeMessageMatchId, setActiveMessageMatchId] = useState(null)
   const unreadCountRef = useRef(0)
+  const activeTabRef = useRef(activeTab)
+  const activeMessageMatchIdRef = useRef(null)
   const sessionTokenRef = useRef(null)
   const signingOutRef = useRef(false)
   const inactivityTimerRef = useRef(null)
@@ -2394,6 +2397,16 @@ const forceSignOut = async (message) => {
 useEffect(() => {
   unreadCountRef.current = unreadCount
 }, [unreadCount])
+
+useEffect(() => {
+  activeTabRef.current = activeTab
+  if (activeTab !== 'messages') setActiveMessageMatchId(null)
+}, [activeTab])
+
+useEffect(() => {
+  activeMessageMatchIdRef.current = activeMessageMatchId
+  if (sessionReady) loadNotificationCounts()
+}, [activeMessageMatchId, sessionReady])
 
 useEffect(() => {
   let cancelled = false
@@ -2521,6 +2534,14 @@ useEffect(() => {
       const nextBadgeCount = await loadNotificationCounts()
       if (payload.eventType !== 'INSERT' || notification.read) return
 
+      const activeMatchId = activeMessageMatchIdRef.current
+      const isOpenConversationMessage =
+        notification.type === 'new_message' &&
+        activeTabRef.current === 'messages' &&
+        activeMatchId &&
+        notification.match_id === activeMatchId
+      if (isOpenConversationMessage) return
+
       if (notification.type === 'new_message') {
         await showNativeNotification({
           title: t.notificationNewMessageTitle,
@@ -2549,12 +2570,19 @@ useEffect(() => {
 }, [sessionReady, user.id, t.notificationNewMessageTitle, t.notificationNewMessageBody, t.notificationNewMatchTitle, t.notificationNewMatchBody, t.notificationNeedCompletionTitle, t.notificationNeedCompletionBody])
 
 const loadUnreadCount = async () => {
-  const { count } = await supabase
+  let query = supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
     .in('type', MESSAGE_NOTIFICATION_TYPES)
     .eq('read', false)
+
+  const activeMatchId = activeMessageMatchIdRef.current
+  if (activeTabRef.current === 'messages' && activeMatchId) {
+    query = query.neq('match_id', activeMatchId)
+  }
+
+  const { count } = await query
   const nextCount = count || 0
   unreadCountRef.current = nextCount
   setUnreadCount(nextCount)
@@ -2636,6 +2664,7 @@ const handleTabChange = (tab) => {
   setSelectedCompanyId(null)
   setCompanyProfileReturn(null)
   if (tab !== 'messages') {
+    setActiveMessageMatchId(null)
     setDirectMessageCompanyId(null)
     setDirectMessageDraft(null)
   }
@@ -2756,7 +2785,7 @@ const handleCompanyProfileBack = () => {
         />
       )}
       {activeTab === 'map' && <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} lang={lang} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} onActiveMatchChange={setActiveMessageMatchId} lang={lang} />}
       {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
       {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} onPendingCompletionChange={loadNotificationCounts} />}
     </>

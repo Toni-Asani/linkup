@@ -64,7 +64,7 @@ function MessageStatus({ read, ui }) {
   )
 }
 
-export default function MessagesScreen({ user, plan, setSelectedCompanyId, setCompanyProfileReturn, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, onUnreadChange, lang = 'fr' }) {
+export default function MessagesScreen({ user, plan, setSelectedCompanyId, setCompanyProfileReturn, setActiveTab, openMatchWithCompanyId, openMessageDraft, onDirectOpenHandled, onUnreadChange, onActiveMatchChange, lang = 'fr' }) {
   const ui = getUiText(lang)
   const [matches, setMatches] = useState([])
   const [selectedMatch, setSelectedMatch] = useState(null)
@@ -98,7 +98,9 @@ export default function MessagesScreen({ user, plan, setSelectedCompanyId, setCo
 
   useEffect(() => {
     selectedMatchRef.current = selectedMatch
-  }, [selectedMatch])
+    onActiveMatchChange?.(selectedMatch?.id || null)
+    return () => onActiveMatchChange?.(null)
+  }, [selectedMatch, onActiveMatchChange])
 
   useEffect(() => {
     onUnreadChangeRef.current = onUnreadChange
@@ -159,11 +161,11 @@ useEffect(() => {
         .on('postgres_changes', {
           event: 'INSERT', schema: 'public', table: 'messages',
           filter: `match_id=eq.${selectedMatch.id}`
-        }, payload => {
+        }, async payload => {
           addMessageIfMissing(payload.new)
           if (myCompany?.id && payload.new.sender_id !== myCompany.id) {
-            markMessagesRead(selectedMatch.id, [payload.new])
-            markNotificationsRead(selectedMatch.id)
+            await markMessagesRead(selectedMatch.id, [payload.new])
+            await markNotificationsRead(selectedMatch.id)
           }
         })
         .on('postgres_changes', {
@@ -280,7 +282,7 @@ useEffect(() => {
           notification.match_id &&
           selectedMatchRef.current?.id === notification.match_id
         ) {
-          await markNotificationsRead(notification.match_id)
+          await loadMessages(notification.match_id)
           return
         }
 
@@ -391,10 +393,18 @@ useEffect(() => {
         schema: 'public',
         table: 'messages',
         filter: `match_id=eq.${matchId}`,
-      }, payload => {
+      }, async payload => {
         const message = payload.new
         updateMatchLastMessage(message)
-        if (message.sender_id !== myCompany.id && selectedMatchRef.current?.id !== message.match_id) {
+        if (selectedMatchRef.current?.id === message.match_id) {
+          addMessageIfMissing(message)
+          if (message.sender_id !== myCompany.id) {
+            await markMessagesRead(message.match_id, [message])
+            await markNotificationsRead(message.match_id)
+          }
+          return
+        }
+        if (message.sender_id !== myCompany.id) {
           setUnreadByMatch(current => ({
             ...current,
             [message.match_id]: (current[message.match_id] || 0) + 1,
@@ -474,9 +484,14 @@ const loadMyCompanyAndMatches = async () => {
     const { data } = await supabase
       .from('messages').select('*').eq('match_id', matchId)
       .order('created_at', { ascending: true })
-    setMessages(data || [])
+    const loadedMessages = data || []
+    setMessages(loadedMessages)
+    const latestVisibleMessage = [...loadedMessages]
+      .reverse()
+      .find(message => isMessageVisibleForCompany(message, myCompany?.id))
+    if (latestVisibleMessage) updateMatchLastMessage(latestVisibleMessage)
     await markNotificationsRead(matchId)
-    await markMessagesRead(matchId, data || [])
+    await markMessagesRead(matchId, loadedMessages)
   }
 
   const checkExistingReview = async () => {
