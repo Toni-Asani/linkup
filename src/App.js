@@ -18,6 +18,7 @@ import { VerifiedBadge } from './VerifiedBadge'
 import { clearAppBadge, showNativeNotification, syncUnreadAppBadge } from './appBadge'
 import { registerPushNotifications } from './pushNotifications'
 import { fetchPendingNeedCompletionCount, NEED_COMPLETION_NOTIFICATION_TYPE } from './needCompletions'
+import { NEED_OPPORTUNITY_NOTIFICATION_TYPE } from './needOpportunityNotifications'
 import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
 
@@ -39,6 +40,7 @@ const URL_SCREEN_SCREENS = ['login', 'register', 'visitor', 'legal', 'privacy', 
 const sessionTokenFallbacks = new Map()
 const REGISTRATION_DRAFT_KEY = 'hubbing_registration_draft'
 const MESSAGE_NOTIFICATION_TYPES = ['new_message', 'new_match']
+const APP_NOTIFICATION_TYPES = [...MESSAGE_NOTIFICATION_TYPES, NEED_COMPLETION_NOTIFICATION_TYPE, NEED_OPPORTUNITY_NOTIFICATION_TYPE]
 
 const parseVersionParts = (version) => (
   String(version || '0')
@@ -366,6 +368,8 @@ const translations = {
     notificationNewMatchBody: 'Une entreprise vient de matcher avec vous.',
     notificationNeedCompletionTitle: 'Réalisation à confirmer',
     notificationNeedCompletionBody: 'Une entreprise indique que vous avez réalisé un besoin.',
+    notificationNeedOpportunityTitle: 'Nouvelle opportunité B2B',
+    notificationNeedOpportunityBody: 'Une entreprise recherche un service que vous proposez.',
     demoMode: 'Mode visiteur',
     demoSwipe: 'Mode visiteur — connectez-vous pour matcher',
     demoMap: 'Mode visiteur — connectez-vous pour voir toutes les entreprises',
@@ -482,6 +486,8 @@ const translations = {
     notificationNewMatchBody: 'Ein Unternehmen hat gerade mit Ihnen gematcht.',
     notificationNeedCompletionTitle: 'Leistung bestätigen',
     notificationNeedCompletionBody: 'Ein Unternehmen gibt an, dass Sie einen Bedarf erfüllt haben.',
+    notificationNeedOpportunityTitle: 'Neue B2B-Chance',
+    notificationNeedOpportunityBody: 'Ein Unternehmen sucht eine Dienstleistung, die Sie anbieten.',
     demoMode: 'Besucher-Modus',
     demoSwipe: 'Besucher-Modus — anmelden zum Matchen',
     demoMap: 'Besucher-Modus — anmelden für alle Unternehmen',
@@ -598,6 +604,8 @@ const translations = {
     notificationNewMatchBody: "Un'azienda ha appena fatto match con te.",
     notificationNeedCompletionTitle: 'Realizzazione da confermare',
     notificationNeedCompletionBody: "Un'azienda indica che hai realizzato un bisogno.",
+    notificationNeedOpportunityTitle: 'Nuova opportunità B2B',
+    notificationNeedOpportunityBody: "Un'azienda cerca un servizio che offri.",
     demoMode: 'Modalità visitatore',
     demoSwipe: 'Modalità visitatore — accedi per fare match',
     demoMap: 'Modalità visitatore — accedi per vedere tutte le aziende',
@@ -714,6 +722,8 @@ const translations = {
     notificationNewMatchBody: 'A company just matched with you.',
     notificationNeedCompletionTitle: 'Work completion to confirm',
     notificationNeedCompletionBody: 'A company says you completed a need.',
+    notificationNeedOpportunityTitle: 'New B2B opportunity',
+    notificationNeedOpportunityBody: 'A company is looking for a service you offer.',
     demoMode: 'Visitor mode',
     demoSwipe: 'Visitor mode — log in to match',
     demoMap: 'Visitor mode — log in to see all companies',
@@ -2501,7 +2511,25 @@ useEffect(() => {
   if (!sessionReady) return undefined
   let cleanupPush = null
   let active = true
-  const refreshAfterPush = () => {
+  const refreshAfterPush = (notification, meta = {}) => {
+    const data = notification?.data || {}
+    const notificationType = data.type || notification?.type
+    const opportunityCompanyId = data.companyId || data.opportunityCompanyId || notification?.companyId || notification?.opportunityCompanyId
+    if (meta.action === 'performed' && notificationType === NEED_OPPORTUNITY_NOTIFICATION_TYPE && opportunityCompanyId) {
+      setActiveTab('home')
+      setCompanyProfileReturn({ tab: 'home' })
+      setSelectedCompanyId(opportunityCompanyId)
+      supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('type', NEED_OPPORTUNITY_NOTIFICATION_TYPE)
+        .eq('opportunity_company_id', opportunityCompanyId)
+        .eq('read', false)
+        .then(({ error }) => {
+          if (error) console.warn('Unable to mark opportunity notification as read:', error.message)
+        })
+    }
     window.setTimeout(() => {
       loadNotificationCounts()
     }, 500)
@@ -2529,7 +2557,7 @@ useEffect(() => {
       filter: `user_id=eq.${user.id}`
     }, async (payload) => {
       const notification = payload.new || payload.old || {}
-      if (![...MESSAGE_NOTIFICATION_TYPES, NEED_COMPLETION_NOTIFICATION_TYPE].includes(notification.type)) return
+      if (!APP_NOTIFICATION_TYPES.includes(notification.type)) return
 
       const nextBadgeCount = await loadNotificationCounts()
       if (payload.eventType !== 'INSERT' || notification.read) return
@@ -2563,11 +2591,18 @@ useEffect(() => {
           count: nextBadgeCount,
           id: `need-completion-${notification.id || Date.now()}`,
         })
+      } else if (notification.type === NEED_OPPORTUNITY_NOTIFICATION_TYPE) {
+        await showNativeNotification({
+          title: t.notificationNeedOpportunityTitle,
+          body: t.notificationNeedOpportunityBody,
+          count: nextBadgeCount,
+          id: `need-opportunity-${notification.id || Date.now()}`,
+        })
       }
     })
     .subscribe()
   return () => supabase.removeChannel(sub)
-}, [sessionReady, user.id, t.notificationNewMessageTitle, t.notificationNewMessageBody, t.notificationNewMatchTitle, t.notificationNewMatchBody, t.notificationNeedCompletionTitle, t.notificationNeedCompletionBody])
+}, [sessionReady, user.id, t.notificationNewMessageTitle, t.notificationNewMessageBody, t.notificationNewMatchTitle, t.notificationNewMatchBody, t.notificationNeedCompletionTitle, t.notificationNeedCompletionBody, t.notificationNeedOpportunityTitle, t.notificationNeedOpportunityBody])
 
 const loadUnreadCount = async () => {
   let query = supabase

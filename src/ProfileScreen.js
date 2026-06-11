@@ -10,6 +10,7 @@ import { NeedAttachmentCloud, NeedAttachmentGallery, NeedAttachmentUploader } fr
 import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag } from './needAttachments'
 import { NeedCompletionCloseButton, NeedCompletionCloseModal, NeedCompletionsPanel } from './NeedCompletionComponents'
 import { countSuccessfulCollaborationsForCompany, fetchNeedCompletionsForCompany } from './needCompletions'
+import { notifyNeedOpportunities } from './needOpportunityNotifications'
 import { CompanyRealizationsGallery, CompanyRealizationsManager } from './CompanyRealizationsComponents'
 import { fetchCompanyRealizations } from './companyRealizations'
 import { shareCompanyProfileCard } from './profileShare'
@@ -398,6 +399,11 @@ notif_email: form.notif_email ?? true,
     setCompany({ ...company, ...form, needs_tags: serializedNeedsTags, lat, lng, needs_updated_at: needsUpdatedAt })
     setEditing(false)
     setSuccess(true)
+    if (needsChanged && company?.id) {
+      notifyNeedOpportunities({ companyId: company.id }).catch(notificationError => {
+        console.warn('Unable to notify need opportunities:', notificationError?.message || notificationError)
+      })
+    }
     setTimeout(() => setSuccess(false), 3000)
   }
   setSaving(false)

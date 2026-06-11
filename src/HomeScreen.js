@@ -73,7 +73,7 @@ const sectorServiceKeywords = {
   'Industrie & Production': ['industrie', 'production', 'usinage', 'fabrication', 'maintenance', 'atelier'],
   'Tourisme & Hôtellerie': ['tourisme', 'hôtel', 'hébergement', 'voyage', 'accueil', 'événement'],
   Restauration: ['restaurant', 'traiteur', 'cuisine', 'repas', 'événement', 'alimentation'],
-  'Nettoyage & Facility': ['nettoyage', 'facility', 'entretien', 'maintenance', 'désinfection'],
+  'Nettoyage & Facility': ['nettoyage', 'facility', 'entretien', 'maintenance', 'désinfection', 'jardin', 'jardinier', 'paysagiste', 'espaces verts', 'conciergerie'],
   Sécurité: ['sécurité', 'surveillance', 'alarme', 'contrôle', 'protection'],
   Événementiel: ['événement', 'animation', 'organisation', 'stand', 'sonorisation', 'location'],
   Consulting: ['conseil', 'stratégie', 'organisation', 'audit', 'accompagnement', 'optimisation'],

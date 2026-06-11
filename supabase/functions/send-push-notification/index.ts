@@ -170,10 +170,10 @@ serve(async (req) => {
     const { notificationId } = await req.json()
     if (!notificationId) return json({ error: 'Missing notificationId' }, 400)
 
-    const notifications = await restGet(`notifications?id=eq.${encodeURIComponent(notificationId)}&select=id,user_id,type,match_id,need_completion_id`)
+    const notifications = await restGet(`notifications?id=eq.${encodeURIComponent(notificationId)}&select=id,user_id,type,match_id,need_completion_id,opportunity_company_id,opportunity_need_key,opportunity_need_title`)
     const notification = notifications?.[0]
     if (!notification?.user_id) return json({ error: 'Notification not found' }, 404)
-    if (!['new_message', 'new_match', 'need_completion_confirmation'].includes(notification.type)) return json({ ok: true, skipped: 'unsupported_type' })
+    if (!['new_message', 'new_match', 'need_completion_confirmation', 'new_need_opportunity'].includes(notification.type)) return json({ ok: true, skipped: 'unsupported_type' })
 
     let callerCompany: Record<string, unknown> | undefined
     let recipientCompany: Record<string, unknown> | undefined
@@ -215,6 +215,24 @@ serve(async (req) => {
       title = 'Réalisation à confirmer'
       body = `${clientName} indique que vous avez réalisé un besoin. Confirmation requise.`
       extraPayload.needCompletionId = notification.need_completion_id
+    } else if (notification.type === 'new_need_opportunity') {
+      if (!notification.opportunity_company_id) return json({ error: 'Notification not found' }, 404)
+      const companies = await restGet(`companies?id=in.(${encodeURIComponent(notification.opportunity_company_id)})&select=id,user_id,name,notif_app`)
+      callerCompany = companies.find((company: Record<string, unknown>) => company.id === notification.opportunity_company_id && company.user_id === caller.id)
+      if (!callerCompany) return json({ error: 'Forbidden' }, 403)
+
+      const recipientCompanies = await restGet(`companies?user_id=eq.${encodeURIComponent(notification.user_id)}&select=id,user_id,name,notif_app&limit=1`)
+      recipientCompany = recipientCompanies?.[0]
+      if (!recipientCompany) return json({ error: 'Recipient company not found' }, 404)
+
+      const sourceName = String(callerCompany.name || 'Une entreprise')
+      const needTitle = String(notification.opportunity_need_title || 'un besoin B2B')
+      title = 'Nouvelle opportunité B2B'
+      body = `${sourceName} recherche un prestataire : ${needTitle}`
+      extraPayload.companyId = notification.opportunity_company_id
+      extraPayload.opportunityCompanyId = notification.opportunity_company_id
+      extraPayload.needKey = notification.opportunity_need_key
+      extraPayload.needTitle = notification.opportunity_need_title
     }
 
     if (recipientCompany.notif_app === false) return json({ ok: true, skipped: 'disabled_by_user' })

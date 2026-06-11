@@ -27,10 +27,10 @@ export async function registerPushNotifications({ onNotification } = {}) {
     }))
 
     handles.push(await PushNotifications.addListener('pushNotificationReceived', notification => {
-      onNotification?.(notification)
+      onNotification?.(notification, { action: 'received' })
     }))
     handles.push(await PushNotifications.addListener('pushNotificationActionPerformed', action => {
-      onNotification?.(action?.notification)
+      onNotification?.(action?.notification, { action: 'performed' })
     }))
 
     let permission = await PushNotifications.checkPermissions()
