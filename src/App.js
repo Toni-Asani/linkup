@@ -35,8 +35,8 @@ const SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000
 const SESSION_LOCK_TTL_MINUTES = 35
 const ENFORCE_SINGLE_DEVICE_LOCK = false
 const ENABLE_INACTIVITY_SIGNOUT = false
-const PUBLIC_SCREENS = ['home', 'login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
-const URL_SCREEN_SCREENS = ['login', 'register', 'visitor', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
+const PUBLIC_SCREENS = ['home', 'login', 'register', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
+const URL_SCREEN_SCREENS = ['login', 'register', 'legal', 'privacy', 'forgot-password', 'reset-password', 'verification-result']
 const sessionTokenFallbacks = new Map()
 const REGISTRATION_DRAFT_KEY = 'hubbing_registration_draft'
 const MESSAGE_NOTIFICATION_TYPES = ['new_message', 'new_match']
@@ -749,9 +749,9 @@ export default function App() {
     const requestedScreen = new URLSearchParams(window.location.search).get('screen')
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     if (hashParams.get('type') === 'recovery') return 'reset-password'
+    if (requestedScreen === 'visitor') return 'register'
     return PUBLIC_SCREENS.includes(requestedScreen) ? requestedScreen : 'home'
   })
-  const [visitorInitialTab, setVisitorInitialTab] = useState('swipe')
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
@@ -762,9 +762,10 @@ export default function App() {
   const t = translations[lang]
   const setScreen = (nextScreenOrUpdater) => {
     setScreenState(currentScreen => {
-      const nextScreen = typeof nextScreenOrUpdater === 'function'
+      let nextScreen = typeof nextScreenOrUpdater === 'function'
         ? nextScreenOrUpdater(currentScreen)
         : nextScreenOrUpdater
+      if (nextScreen === 'visitor') nextScreen = 'register'
 
       if (PUBLIC_SCREENS.includes(nextScreen)) {
         const url = new URL(window.location.href)
@@ -910,13 +911,13 @@ if (isMarketingSite) return (
 ) : user ? (
   <Dashboard user={user} setUser={setUser} t={t} lang={lang} setLang={setLang} />
 ) : screen === 'home' ? (
-          <LandingScreen setScreen={setScreen} setVisitorInitialTab={setVisitorInitialTab} t={t} lang={lang} setLang={setLang} />
+          <LandingScreen setScreen={setScreen} t={t} lang={lang} setLang={setLang} />
         ) : screen === 'login' ? (
           <LoginScreen setScreen={setScreen} setUser={setUser} t={t} />
         ) : screen === 'register' ? (
           <RegisterScreen setScreen={setScreen} t={t} />
         ) : screen === 'visitor' ? (
-          <VisitorMode setScreen={setScreen} initialTab={visitorInitialTab} t={t} lang={lang} setLang={setLang} />
+          <RegisterScreen setScreen={setScreen} t={t} />
         ) : screen === 'legal' ? (
           <LegalScreen setScreen={setScreen} lang={lang} />
           ) : screen === 'privacy' ? (
@@ -1070,112 +1071,151 @@ function InstallAppButton({ compact = false }) {
   )
 }
 
+const MARKETING_LANGUAGES = [
+  { code: 'fr', word: 'Bienvenue' },
+  { code: 'de', word: 'Willkommen' },
+  { code: 'it', word: 'Benvenuti' },
+  { code: 'en', word: 'Welcome' },
+]
+
+const MARKETING_COPY = {
+  fr: {
+    status: 'Application ouverte aux entreprises suisses',
+    appStore: "Télécharger sur l'App Store",
+    googlePlay: 'Télécharger sur Google Play',
+    openApp: "Ouvrir l'application",
+    headlineLines: ['Le réseau B2B suisse', 'pour trouver les bons'],
+    headlineHighlight: 'partenaires locaux',
+    description: 'Hubbing met en relation les entreprises suisses pour trouver des partenaires, répondre à des besoins concrets et développer des collaborations locales.',
+    needEyebrow: 'Appels d’offres ciblés',
+    needTitle: "Recevez les opportunités qui correspondent à vos services",
+    needDesc: "Publiez vos besoins ou répondez aux appels d’offres des entreprises qui recherchent exactement ce que vous proposez. Les notifications vous préviennent quand une opportunité pertinente apparaît.",
+    needPills: ['Besoins ciblés', 'Notifications', 'Services proposés'],
+    matchText: 'TechSoft Zürich AG vous a matché !',
+    contactLabel: 'Contacter',
+    mapCount: '9 entreprises',
+    mapNearby: 'près de vous',
+    plansEyebrow: 'Abonnements',
+    plansTitle: 'Choisissez le plan adapté',
+    planCta: 'Voir le plan',
+    planFeatures: {
+      starter: ['Profil entreprise', '5 swipes par jour', '5 messages/jour'],
+      basic: ['Swipes illimités', 'Messages illimités', 'Adresse visible'],
+      premium: ['Tout Basic inclus', 'Coordonnées complètes', 'Pièces jointes'],
+    },
+    features: [
+      { icon: 'briefcase', title: 'Swipe B2B', desc: 'Découvrez des entreprises locales et matchez avec celles qui correspondent à vos besoins.' },
+      { icon: 'map', title: 'Carte interactive', desc: 'Visualisez les entreprises autour de vous, filtrez par secteur, canton ou rayon.' },
+      { icon: 'message', title: 'Messagerie pro', desc: 'Échangez avec vos connexions B2B et partagez des documents en toute sécurité.' },
+    ],
+    questions: 'Des questions ?',
+    made: 'Made in Switzerland',
+    rights: 'Tous droits réservés',
+  },
+  de: {
+    status: 'App offen für Schweizer Unternehmen',
+    appStore: 'Im App Store laden',
+    googlePlay: 'Bei Google Play laden',
+    openApp: 'App öffnen',
+    headlineLines: ['Das Schweizer B2B-Netzwerk', 'für die richtigen'],
+    headlineHighlight: 'lokalen Partner',
+    description: 'Hubbing verbindet Schweizer Unternehmen, damit sie Partner finden, auf konkrete Bedürfnisse reagieren und lokale Kooperationen entwickeln können.',
+    needEyebrow: 'Gezielte Ausschreibungen',
+    needTitle: 'Erhalten Sie Chancen, die zu Ihren Leistungen passen',
+    needDesc: 'Veröffentlichen Sie Ihren Bedarf oder antworten Sie auf Ausschreibungen von Unternehmen, die genau Ihre Leistungen suchen. Benachrichtigungen informieren Sie bei passenden Chancen.',
+    needPills: ['Gezielter Bedarf', 'Benachrichtigungen', 'Ihre Leistungen'],
+    matchText: 'TechSoft Zürich AG hat mit Ihnen gematcht!',
+    contactLabel: 'Kontaktieren',
+    mapCount: '9 Unternehmen',
+    mapNearby: 'in Ihrer Nähe',
+    plansEyebrow: 'Abonnements',
+    plansTitle: 'Wählen Sie den passenden Plan',
+    planCta: 'Plan ansehen',
+    planFeatures: {
+      starter: ['Unternehmensprofil', '5 Swipes pro Tag', '5 Nachrichten/Tag'],
+      basic: ['Unbegrenzte Swipes', 'Unbegrenzte Nachrichten', 'Adresse sichtbar'],
+      premium: ['Alles aus Basic', 'Vollständige Kontaktdaten', 'Anhänge'],
+    },
+    features: [
+      { icon: 'briefcase', title: 'B2B-Swipe', desc: 'Entdecken Sie lokale Unternehmen und matchen Sie passende Partner.' },
+      { icon: 'map', title: 'Interaktive Karte', desc: 'Finden Sie Unternehmen in Ihrer Nähe und filtern Sie nach Branche, Kanton oder Radius.' },
+      { icon: 'message', title: 'Business-Nachrichten', desc: 'Tauschen Sie sich mit B2B-Kontakten aus und teilen Sie Dokumente sicher.' },
+    ],
+    questions: 'Fragen?',
+    made: 'Made in Switzerland',
+    rights: 'Alle Rechte vorbehalten',
+  },
+  it: {
+    status: 'Applicazione aperta alle aziende svizzere',
+    appStore: "Scarica dall'App Store",
+    googlePlay: 'Scarica da Google Play',
+    openApp: "Apri l'app",
+    headlineLines: ['La rete B2B svizzera', 'per trovare i giusti'],
+    headlineHighlight: 'partner locali',
+    description: 'Hubbing mette in contatto aziende svizzere per trovare partner, rispondere a bisogni concreti e sviluppare collaborazioni locali.',
+    needEyebrow: 'Richieste mirate',
+    needTitle: 'Ricevi opportunità in linea con i tuoi servizi',
+    needDesc: 'Pubblica i tuoi bisogni o rispondi alle richieste delle aziende che cercano esattamente ciò che offri. Le notifiche ti avvisano quando appare un’opportunità pertinente.',
+    needPills: ['Bisogni mirati', 'Notifiche', 'Servizi offerti'],
+    matchText: 'TechSoft Zürich AG ha fatto match con te!',
+    contactLabel: 'Contattare',
+    mapCount: '9 aziende',
+    mapNearby: 'vicino a te',
+    plansEyebrow: 'Abbonamenti',
+    plansTitle: 'Scegli il piano adatto',
+    planCta: 'Vedi piano',
+    planFeatures: {
+      starter: ['Profilo aziendale', '5 swipe al giorno', '5 messaggi/giorno'],
+      basic: ['Swipe illimitati', 'Messaggi illimitati', 'Indirizzo visibile'],
+      premium: ['Tutto Basic incluso', 'Contatti completi', 'Allegati'],
+    },
+    features: [
+      { icon: 'briefcase', title: 'Swipe B2B', desc: 'Scopri aziende locali e crea match con partner pertinenti.' },
+      { icon: 'map', title: 'Mappa interattiva', desc: 'Visualizza le aziende intorno a te e filtra per settore, cantone o raggio.' },
+      { icon: 'message', title: 'Messaggistica pro', desc: 'Scambia messaggi con i tuoi contatti B2B e condividi documenti in sicurezza.' },
+    ],
+    questions: 'Domande?',
+    made: 'Made in Switzerland',
+    rights: 'Tutti i diritti riservati',
+  },
+  en: {
+    status: 'Open to Swiss companies',
+    appStore: 'Download on the App Store',
+    googlePlay: 'Get it on Google Play',
+    openApp: 'Open the app',
+    headlineLines: ['The Swiss B2B network', 'to find the right'],
+    headlineHighlight: 'local partners',
+    description: 'Hubbing connects Swiss companies so they can find partners, respond to concrete needs and build local business collaborations.',
+    needEyebrow: 'Targeted tenders',
+    needTitle: 'Receive opportunities that match your services',
+    needDesc: 'Publish your needs or respond to tenders from companies looking for exactly what you offer. Notifications alert you when a relevant opportunity appears.',
+    needPills: ['Targeted needs', 'Notifications', 'Offered services'],
+    matchText: 'TechSoft Zürich AG matched with you!',
+    contactLabel: 'Contact',
+    mapCount: '9 companies',
+    mapNearby: 'near you',
+    plansEyebrow: 'Subscriptions',
+    plansTitle: 'Choose the right plan',
+    planCta: 'View plan',
+    planFeatures: {
+      starter: ['Company profile', '5 swipes per day', '5 messages/day'],
+      basic: ['Unlimited swipes', 'Unlimited messages', 'Visible address'],
+      premium: ['Everything in Basic', 'Full contact details', 'Attachments'],
+    },
+    features: [
+      { icon: 'briefcase', title: 'B2B Swipe', desc: 'Discover local companies and match with relevant business partners.' },
+      { icon: 'map', title: 'Interactive map', desc: 'See companies around you and filter by sector, canton or distance.' },
+      { icon: 'message', title: 'Business messaging', desc: 'Chat with your B2B connections and share documents securely.' },
+    ],
+    questions: 'Questions?',
+    made: 'Made in Switzerland',
+    rights: 'All rights reserved',
+  },
+}
+
 function WaitlistScreen() {
-  const [email, setEmail] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [timeLeft, setTimeLeft] = useState({})
-  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null)
-  const [showInstallHelp, setShowInstallHelp] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(false)
-
-  useEffect(() => {
-    const target = new Date('2026-05-01T00:00:00')
-    const interval = setInterval(() => {
-      const now = new Date()
-      const diff = target - now
-      if (diff <= 0) {
-        clearInterval(interval)
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-        return
-      }
-      setTimeLeft({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((diff / (1000 * 60)) % 60),
-        seconds: Math.floor((diff / 1000) % 60)
-      })
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    const updateStandalone = () => {
-      setIsStandalone(window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true)
-    }
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault()
-      setDeferredInstallPrompt(event)
-    }
-    const handleInstalled = () => {
-      setIsStandalone(true)
-      setDeferredInstallPrompt(null)
-      setShowInstallHelp(false)
-    }
-
-    updateStandalone()
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    window.addEventListener('appinstalled', handleInstalled)
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      window.removeEventListener('appinstalled', handleInstalled)
-    }
-  }, [])
-
-  const handleInstallApp = async () => {
-    if (deferredInstallPrompt) {
-      deferredInstallPrompt.prompt()
-      const choice = await deferredInstallPrompt.userChoice
-      setDeferredInstallPrompt(null)
-      if (choice?.outcome !== 'accepted') setShowInstallHelp(true)
-      return
-    }
-    setShowInstallHelp(value => !value)
-  }
-
-const handleWaitlist = async () => { 
-     setLoading(true)
-    setError('')
-    if (!email || !email.includes('@')) {
-      setError('Veuillez entrer un email valide')
-      setLoading(false)
-      return
-    }
-    const { error } = await supabase.from('waitlist').insert({ email })
-    if (error) {
-      if (error.code === '23505') {
-        setError('Cet email est déjà inscrit sur la liste !')
-      } else {
-        setError('Une erreur est survenue. Réessayez.')
-      }
-      setLoading(false)
-      return
-    }
-    // Envoi email en arrière-plan sans bloquer
-    fetch('https://rxjrcbdeyouafhtizneh.supabase.co/functions/v1/waitlist-email', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify({ email })
-    }).catch(e => console.log('Email error:', e))
-
-    setSuccess(true)
-    setLoading(false)
-  }
-
-  const CountBox = ({ value, label }) => (
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',background:'#1a1a1a',borderRadius:12,padding:'12px 16px',minWidth:64}}>
-      <span style={{fontSize:28,fontWeight:800,color:'white',letterSpacing:'-1px',fontFamily:'Plus Jakarta Sans'}}>
-        {String(value).padStart(2, '0')}
-      </span>
-      <span style={{fontSize:10,color:'#999',fontWeight:500,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>
-        {label}
-      </span>
-    </div>
-  )
+  const [marketingLang, setMarketingLang] = useState('fr')
+  const copy = MARKETING_COPY[marketingLang] || MARKETING_COPY.fr
 
   const Feature = ({ icon, title, desc }) => (
     <div style={{background:'#f9f9f9',borderRadius:16,padding:'1.25rem',textAlign:'left',width:'100%',maxWidth:340}}>
@@ -1187,22 +1227,7 @@ const handleWaitlist = async () => {
     </div>
   )
 
-  const MockupCard = ({ emoji, title, subtitle, badge, badgeColor }) => (
-    <div style={{background:'white',borderRadius:20,padding:'1rem',boxShadow:'0 8px 30px rgba(0,0,0,0.1)',width:140,flexShrink:0}}>
-      <div style={{width:48,height:48,borderRadius:'50%',background:badgeColor||'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 8px'}}>
-        <span style={{fontSize:22}}>{emoji}</span>
-      </div>
-      <p style={{fontSize:12,fontWeight:700,margin:'0 0 2px',textAlign:'center'}}>{title}</p>
-      <p style={{fontSize:10,color:'#999',margin:'0 0 8px',textAlign:'center'}}>{subtitle}</p>
-      {badge && (
-        <div style={{background:'#FFF5F5',borderRadius:20,padding:'3px 8px',textAlign:'center'}}>
-          <span style={{fontSize:10,color:'#E24B4A',fontWeight:600}}>{badge}</span>
-        </div>
-      )}
-    </div>
-  )
-
-  const PlanPhone = ({ name, price, variant, color, features, recommended }) => (
+  const PlanPhone = ({ name, price, variant, color, features, recommended, cta }) => (
     <div style={{background:'white',borderRadius:20,padding:'0.75rem',boxShadow:'0 8px 30px rgba(0,0,0,0.12)',width:104,minHeight:172,flexShrink:0,border:`1px solid ${color}33`,display:'flex',flexDirection:'column',gap:7,textAlign:'left'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:4}}>
         <span style={{fontSize:11,fontWeight:800,color,display:'inline-flex',alignItems:'center',gap:3}}>
@@ -1225,7 +1250,7 @@ const handleWaitlist = async () => {
         ))}
       </div>
       <div style={{background:color,borderRadius:8,padding:'6px 5px',textAlign:'center',marginTop:'auto'}}>
-        <span style={{fontSize:8,fontWeight:800,color:'white'}}>Voir le plan</span>
+        <span style={{fontSize:8,fontWeight:800,color:'white'}}>{cta}</span>
       </div>
     </div>
   )
@@ -1240,52 +1265,58 @@ const handleWaitlist = async () => {
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.25s both'}}>
-        {['Bienvenue', 'Willkommen', 'Benvenuti', 'Welcome'].map((word, index) => (
-          <div key={word} style={{background:index === 0 ? '#E24B4A' : '#f9f9f9',color:index === 0 ? 'white' : '#1a1a1a',border:index === 0 ? 'none' : '1px solid #eee',borderRadius:14,padding:'0.8rem 0.65rem',fontSize:13,fontWeight:800}}>
-            {word}
-          </div>
+        {MARKETING_LANGUAGES.map((item) => (
+          <button
+            key={item.code}
+            type="button"
+            onClick={() => setMarketingLang(item.code)}
+            aria-pressed={marketingLang === item.code}
+            style={{background:marketingLang === item.code ? '#E24B4A' : '#f9f9f9',color:marketingLang === item.code ? 'white' : '#1a1a1a',border:marketingLang === item.code ? 'none' : '1px solid #eee',borderRadius:14,padding:'0.8rem 0.65rem',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>
+            {item.word}
+          </button>
         ))}
       </div>
 
       <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:100,padding:'8px 18px',animation:'fadeUp 0.6s ease 0.3s both'}}>
         <div style={{width:7,height:7,borderRadius:'50%',background:'#16a34a',animation:'pulse 2s ease infinite'}}></div>
-        <span style={{fontSize:13,fontWeight:700,color:'#15803d'}}>Application ouverte aux entreprises suisses</span>
+        <span style={{fontSize:13,fontWeight:700,color:'#15803d'}}>{copy.status}</span>
       </div>
 
       <div style={{width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.35s both'}}>
-        <button
-          onClick={handleInstallApp}
-          disabled={isStandalone}
-          style={{width:'100%',padding:'13px 16px',background:isStandalone ? '#f0fdf4' : '#1a1a1a',color:isStandalone ? '#15803d' : 'white',border:isStandalone ? '1px solid #bbf7d0' : 'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:isStandalone ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:isStandalone ? 'none' : '0 8px 24px rgba(0,0,0,0.12)'}}>
-          {isStandalone ? 'Application installée' : "Installer l'application sur mon téléphone"}
-        </button>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{minHeight:50,padding:'12px 10px',background:'#111827',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(17,24,39,0.14)',display:'flex',alignItems:'center',justifyContent:'center',gap:7,textDecoration:'none',lineHeight:1.2}}>
+            <HubbingIcon name="apple" size={18} color="white" />
+            <span>{copy.appStore}</span>
+          </a>
+          <a
+            href={ANDROID_PLAY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{minHeight:50,padding:'12px 10px',background:'#16A34A',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(22,163,74,0.16)',display:'flex',alignItems:'center',justifyContent:'center',gap:7,textDecoration:'none',lineHeight:1.2}}>
+            <HubbingIcon name="smartphone" size={18} color="white" />
+            <span>{copy.googlePlay}</span>
+          </a>
+        </div>
         <a
-          href={APP_STORE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+          href="https://app.hubbing.ch"
           style={{width:'100%',marginTop:10,padding:'13px 16px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(226,75,74,0.18)',display:'flex',alignItems:'center',justifyContent:'center',gap:8,textDecoration:'none'}}>
-          <HubbingIcon name="apple" size={18} color="white" />
-          Télécharger l'app sur App Store
+          {copy.openApp}
         </a>
-        {showInstallHelp && !isStandalone && (
-          <div style={{marginTop:10,background:'#f9f9f9',border:'1px solid #eee',borderRadius:12,padding:'0.85rem',textAlign:'left'}}>
-            <p style={{fontSize:12,color:'#1a1a1a',fontWeight:700,margin:'0 0 6px'}}>Installation sur téléphone</p>
-            <p style={{fontSize:12,color:'#666',lineHeight:1.5,margin:0}}>
-              Sur iPhone : ouvrez cette page dans Safari, touchez le bouton Partager, puis "Ajouter à l'écran d'accueil".
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Headline forte */}
       <div style={{animation:'fadeUp 0.6s ease 0.4s both'}}>
         <h2 style={{fontSize:26,fontWeight:800,letterSpacing:'-0.5px',lineHeight:1.2,marginBottom:'0.75rem'}}>
-          Le réseau B2B suisse<br />
-          pour trouver les bons<br />
-          <span style={{color:'#E24B4A'}}>partenaires locaux</span>
+          {copy.headlineLines[0]}<br />
+          {copy.headlineLines[1]}<br />
+          <span style={{color:'#E24B4A'}}>{copy.headlineHighlight}</span>
         </h2>
         <p style={{color:'#666',fontSize:14,lineHeight:1.7,maxWidth:300,margin:'0 auto'}}>
-          Hubbing est la première app de mise en relation B2B locale en Suisse. Swipez, matchez et collaborez avec les bonnes entreprises près de chez vous.
+          {copy.description}
         </p>
       </div>
 
@@ -1314,9 +1345,9 @@ const handleWaitlist = async () => {
             <div style={{width:20,height:20,borderRadius:'50%',background:'#185FA5',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'white',fontWeight:700}}>TE</div>
             <div style={{width:20,height:20,borderRadius:'50%',background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'white',fontWeight:700}}>HB</div>
           </div>
-          <p style={{fontSize:8,color:'#666',margin:'0 0 6px',lineHeight:1.4}}>TechSoft Zürich AG vous a matché !</p>
+          <p style={{fontSize:8,color:'#666',margin:'0 0 6px',lineHeight:1.4}}>{copy.matchText}</p>
           <div style={{background:'#E24B4A',borderRadius:8,padding:'4px',textAlign:'center'}}>
-            <p style={{color:'white',fontSize:8,fontWeight:600,margin:0}}>Contacter</p>
+            <p style={{color:'white',fontSize:8,fontWeight:600,margin:0}}>{copy.contactLabel}</p>
           </div>
           <p style={{fontSize:8,color:'#185FA5',fontWeight:600,marginTop:6,textAlign:'center'}}>MESSAGES</p>
         </div>
@@ -1331,8 +1362,8 @@ const handleWaitlist = async () => {
             <div style={{position:'absolute',top:25,left:20,width:5,height:5,borderRadius:'50%',background:'#F39C12'}}></div>
             <div style={{position:'absolute',top:8,left:60,width:6,height:6,borderRadius:'50%',background:'#E24B4A'}}></div>
           </div>
-          <p style={{fontSize:9,fontWeight:700,margin:'0 0 2px',color:'#1a1a1a'}}>9 entreprises</p>
-          <p style={{fontSize:8,color:'#999',margin:'0 0 4px'}}>près de vous</p>
+          <p style={{fontSize:9,fontWeight:700,margin:'0 0 2px',color:'#1a1a1a'}}>{copy.mapCount}</p>
+          <p style={{fontSize:8,color:'#999',margin:'0 0 4px'}}>{copy.mapNearby}</p>
           <div style={{background:'#f5f5f5',borderRadius:6,padding:'3px',textAlign:'center'}}>
             <p style={{fontSize:7,color:'#666',margin:0}}>VD · Informatique</p>
           </div>
@@ -1340,11 +1371,31 @@ const handleWaitlist = async () => {
         </div>
       </div>
 
+      <div style={{width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.56s both',background:'linear-gradient(135deg, #FFF7ED 0%, #FFF5F5 100%)',border:'1px solid #FED7AA',borderRadius:18,padding:'1rem',textAlign:'left',boxShadow:'0 12px 34px rgba(249,115,22,0.10)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+          <div style={{width:38,height:38,borderRadius:12,background:'#E24B4A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <HubbingIcon name="briefcase" size={21} color="white" />
+          </div>
+          <div>
+            <p style={{fontSize:11,color:'#EA580C',fontWeight:900,textTransform:'uppercase',letterSpacing:0.4,margin:'0 0 2px'}}>{copy.needEyebrow}</p>
+            <h3 style={{fontSize:18,fontWeight:900,color:'#111827',lineHeight:1.22,margin:0}}>{copy.needTitle}</h3>
+          </div>
+        </div>
+        <p style={{fontSize:13,color:'#64748B',lineHeight:1.55,margin:'0 0 12px'}}>{copy.needDesc}</p>
+        <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+          {copy.needPills.map((pill) => (
+            <span key={pill} style={{fontSize:11,fontWeight:800,color:'#9A3412',background:'rgba(255,255,255,0.78)',border:'1px solid #FDBA74',borderRadius:999,padding:'6px 9px'}}>
+              {pill}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Plans */}
       <div style={{width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.6s both'}}>
         <div style={{textAlign:'center',marginBottom:12}}>
-          <p style={{fontSize:12,color:'#E24B4A',fontWeight:800,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:0.4}}>Abonnements</p>
-          <h3 style={{fontSize:22,fontWeight:900,color:'#111827',letterSpacing:'-0.3px',lineHeight:1.2,margin:0}}>Choisissez le plan adapté</h3>
+          <p style={{fontSize:12,color:'#E24B4A',fontWeight:800,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:0.4}}>{copy.plansEyebrow}</p>
+          <h3 style={{fontSize:22,fontWeight:900,color:'#111827',letterSpacing:'-0.3px',lineHeight:1.2,margin:0}}>{copy.plansTitle}</h3>
         </div>
         <div style={{display:'flex',gap:10,justifyContent:'center',alignItems:'stretch',overflow:'visible',width:'100%',minHeight:178}}>
           <PlanPhone
@@ -1352,14 +1403,16 @@ const handleWaitlist = async () => {
             price="Gratuit"
             variant="starter"
             color="#A16207"
-            features={['Profil entreprise', '5 swipes par jour', '5 messages/jour']}
+            features={copy.planFeatures.starter}
+            cta={copy.planCta}
           />
           <PlanPhone
             name="Basic"
             price="CHF 19.-"
             variant="basic"
             color="#185FA5"
-            features={['Swipes illimités', 'Messages illimités', 'Adresse visible']}
+            features={copy.planFeatures.basic}
+            cta={copy.planCta}
           />
           <PlanPhone
             name="Premium"
@@ -1367,37 +1420,56 @@ const handleWaitlist = async () => {
             variant="premium"
             color="#E24B4A"
             recommended
-            features={['Tout Basic inclus', 'Coordonnées complètes', 'Pièces jointes']}
+            features={copy.planFeatures.premium}
+            cta={copy.planCta}
           />
         </div>
       </div>
 
       {/* Features */}
       <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:340,animation:'fadeUp 0.6s ease 0.75s both'}}>
-        <Feature icon="briefcase" title="Swipe B2B" desc="Découvrez des entreprises locales et matchez avec celles qui correspondent à vos besoins en un seul geste." />
-        <Feature icon="map" title="Carte interactive" desc="Visualisez toutes les entreprises autour de vous, filtrez par secteur et canton." />
-        <Feature icon="message" title="Messagerie pro" desc="Échangez directement avec vos connexions B2B et partagez des documents en toute sécurité." />
+        {copy.features.map((feature) => (
+          <Feature key={feature.title} icon={feature.icon} title={feature.title} desc={feature.desc} />
+        ))}
       </div>
 
       <p style={{fontSize:13,color:'#bbb',animation:'fadeUp 0.6s ease 1s both'}}>
-        Des questions ? <a href="mailto:contact@hubbing.ch" style={{color:'#E24B4A',textDecoration:'none',fontWeight:500}}>contact@hubbing.ch</a>
+        {copy.questions} <a href="mailto:contact@hubbing.ch" style={{color:'#E24B4A',textDecoration:'none',fontWeight:500}}>contact@hubbing.ch</a>
       </p>
-      <p style={{fontSize:12,color:'#ccc',textAlign:'center'}}>🇨🇭 Made in Switzerland</p>
-      <p style={{fontSize:11,color:'#ddd',textAlign:'center'}}>© {new Date().getFullYear()} Hubbing — Tous droits réservés</p>
+      <p style={{fontSize:12,color:'#ccc',textAlign:'center'}}>🇨🇭 {copy.made}</p>
+      <p style={{fontSize:11,color:'#ddd',textAlign:'center'}}>© {new Date().getFullYear()} Hubbing — {copy.rights}</p>
 
       <div style={{position:'fixed',left:'50%',bottom:0,transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'white',borderTop:'1px solid #f0f0f0',boxShadow:'0 -8px 30px rgba(0,0,0,0.08)',padding:'0.85rem 1rem calc(env(safe-area-inset-bottom) + 0.85rem)',zIndex:20}}>
         <div style={{display:'flex',flexDirection:'column',gap:'0.6rem'}}>
-          <button
-            onClick={() => { window.location.href = 'https://app.hubbing.ch' }}
-            style={{width:'100%',padding:'13px 14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(226,75,74,0.18)'}}>
-            Ouvrir l'application
-          </button>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <a
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{padding:'11px 10px',background:'#111827',color:'white',borderRadius:12,fontSize:12,fontWeight:800,textDecoration:'none',display:'flex',alignItems:'center',justifyContent:'center',gap:6,lineHeight:1.15}}>
+              <HubbingIcon name="apple" size={16} color="white" />
+              <span>{copy.appStore}</span>
+            </a>
+            <a
+              href={ANDROID_PLAY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{padding:'11px 10px',background:'#16A34A',color:'white',borderRadius:12,fontSize:12,fontWeight:800,textDecoration:'none',display:'flex',alignItems:'center',justifyContent:'center',gap:6,lineHeight:1.15}}>
+              <HubbingIcon name="smartphone" size={16} color="white" />
+              <span>{copy.googlePlay}</span>
+            </a>
+          </div>
+          <a
+            href="https://app.hubbing.ch"
+            style={{width:'100%',padding:'13px 14px',background:'#E24B4A',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 8px 24px rgba(226,75,74,0.18)',textDecoration:'none',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {copy.openApp}
+          </a>
         </div>
       </div>
     </div>
   )
 }
-function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
+function LandingScreen({ setScreen, t, lang, setLang }) {
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showUsageGuide, setShowUsageGuide] = useState(false)
   const usageGuideText = getUiText(lang).usageGuide
@@ -1408,8 +1480,7 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
     { code: 'en', label: '🇬🇧 English' },
   ]
   const openVisitorPricing = () => {
-    setVisitorInitialTab && setVisitorInitialTab('pricing')
-    setScreen('visitor')
+    setScreen('register')
   }
 
   return (
@@ -1442,10 +1513,6 @@ function LandingScreen({ setScreen, setVisitorInitialTab, t, lang, setLang }) {
       <button onClick={() => setScreen('login')}
         style={{width:'100%',padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:16,fontWeight:600,cursor:'pointer'}}>
         {t.login}
-      </button>
-      <button onClick={() => { setVisitorInitialTab && setVisitorInitialTab('swipe'); setScreen('visitor') }}
-        style={{width:'100%',padding:'14px',background:'#F8FAFC',color:'#475569',border:'1px solid #CBD5E1',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:'0 6px 18px rgba(71,85,105,0.08)'}}>
-        {t.visitorMode}
       </button>
       <button onClick={() => setShowUsageGuide(true)}
         style={{width:'100%',padding:'13px 14px',background:'white',color:'#185FA5',border:'1px solid #BFDBFE',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'Plus Jakarta Sans',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
