@@ -2452,6 +2452,16 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const inactivityTimerRef = useRef(null)
   const ui = getUiText(lang)
 
+const updateNativeAppBadge = async (count) => {
+  const nextCount = Math.max(0, Number(count) || 0)
+  if (nextCount > 0) {
+    await syncUnreadAppBadge(nextCount)
+  } else {
+    await clearAppBadge()
+  }
+  return nextCount
+}
+
 const releaseSessionLock = async () => {
   const token = sessionTokenRef.current
   if (!token) return
@@ -2711,7 +2721,9 @@ const loadNotificationCounts = async () => {
     loadUnreadCount(),
     loadPendingCompletionCount(),
   ])
-  return (messageCount || 0) + (completionCount || 0)
+  const totalCount = (messageCount || 0) + (completionCount || 0)
+  await updateNativeAppBadge(totalCount)
+  return totalCount
 }
 
   useEffect(() => {
@@ -2741,11 +2753,7 @@ const loadNotificationCounts = async () => {
 
   useEffect(() => {
     const totalBadgeCount = unreadCount + pendingCompletionCount
-    if (totalBadgeCount > 0) {
-      syncUnreadAppBadge(totalBadgeCount)
-    } else {
-      clearAppBadge()
-    }
+    updateNativeAppBadge(totalBadgeCount)
   }, [unreadCount, pendingCompletionCount])
 
   useEffect(() => {

@@ -283,11 +283,11 @@ useEffect(() => {
           selectedMatchRef.current?.id === notification.match_id
         ) {
           await loadMessages(notification.match_id)
+          await onUnreadChangeRef.current?.()
           return
         }
 
-        await loadUnreadNotifications()
-        await onUnreadChangeRef.current?.()
+        await refreshConversationList()
       })
       .subscribe()
 
@@ -465,6 +465,11 @@ const loadMyCompanyAndMatches = async () => {
   setMatches(sortMatchesByPriority(matchesWithActivity, unreadMap))
   setLoading(false)
 }
+
+  const refreshConversationList = async () => {
+    await loadMyCompanyAndMatches()
+    await onUnreadChangeRef.current?.()
+  }
 
   const loadDailyMessageCount = async (companyId) => {
     if (!companyId) return 0
@@ -835,6 +840,16 @@ const handleFileUpload = async (e) => {
     setSelectedMatch(match)
   }
 
+  const closeConversation = async () => {
+    const matchId = selectedMatchRef.current?.id
+    setSelectedMatch(null)
+    setConversationSubject('')
+    setNewMessage('')
+    if (matchId) {
+      await refreshConversationList()
+    }
+  }
+
   const normalizedConversationSearch = conversationSearch.trim().toLowerCase()
   const orderedMatches = sortMatchesByPriority(matches, unreadByMatch)
   const visibleMatches = normalizedConversationSearch
@@ -913,7 +928,7 @@ const handleFileUpload = async (e) => {
 
         {/* Header conversation */}
         <div style={{padding:'1rem',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',gap:12,background:'white'}}>
-          <button onClick={() => { setSelectedMatch(null); setConversationSubject(''); setNewMessage('') }}
+          <button onClick={closeConversation}
             style={{background:'none',border:'none',cursor:'pointer',color:'#666',fontSize:20,padding:0}}>
             ←
           </button>
