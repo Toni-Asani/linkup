@@ -871,8 +871,26 @@ export default function App() {
         return
       }
       if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-        setUser(null)
-        clearAppBadge()
+        if (isNativeApp()) {
+          setUser(null)
+          clearAppBadge()
+          return
+        }
+        window.setTimeout(async () => {
+          if (!active) return
+          try {
+            const { data: { session: currentSession } } = await supabase.auth.getSession()
+            if (currentSession?.user) {
+              setUser(currentSession.user)
+              return
+            }
+          } catch (error) {
+            console.warn('Unable to recheck auth session after sign-out event:', error)
+          }
+          if (!active) return
+          setUser(null)
+          clearAppBadge()
+        }, 250)
       }
     })
     return () => {
