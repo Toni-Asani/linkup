@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase, SUPABASE_URL } from './supabaseClient'
 import { getUiText, localeForLang } from './i18n'
-import { moderateImageFile } from './moderation'
+import { containsDirectContactInfo, moderateImageFile, sanitizeDirectContactInfo } from './moderation'
 import { geocodeSwissAddress } from './geo'
 import { isNativeIOS } from './platform'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
@@ -347,6 +347,10 @@ const handleContactPhotoUpload = async (e) => {
   const handleSave = async () => {
   if (!String(form.contact_phone || '').trim()) {
     alert(ui.profile.phoneRequired || 'Le téléphone direct du décideur est obligatoire.')
+    return
+  }
+  if (containsDirectContactInfo(form.description)) {
+    alert(ui.profile.descriptionContactBlocked || 'Les numéros de téléphone, emails, liens LinkedIn et sites web ne peuvent pas être ajoutés dans la description. Veuillez utiliser les champs prévus pour ces informations.')
     return
   }
   setSaving(true)
@@ -879,7 +883,7 @@ notif_email: form.notif_email ?? true,
         {company.description && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:6}}>{ui.profile.about}</p>
-            <p style={{fontSize:14,color:'#444',lineHeight:1.6}}>{company.description}</p>
+            <p style={{fontSize:14,color:'#444',lineHeight:1.6,whiteSpace:'pre-line',overflowWrap:'anywhere'}}>{sanitizeDirectContactInfo(company.description)}</p>
           </div>
         )}
 

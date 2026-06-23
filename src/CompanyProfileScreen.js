@@ -12,6 +12,7 @@ import { countSuccessfulCollaborationsForCompany, fetchNeedCompletionsForCompany
 import { CompanyRealizationsGallery } from './CompanyRealizationsComponents'
 import { fetchCompanyRealizations } from './companyRealizations'
 import { shareCompanyProfileCard } from './profileShare'
+import { sanitizeDirectContactInfo } from './moderation'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -367,7 +368,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
         {company.description && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#999',fontWeight:600,marginBottom:6}}>{ui.companyProfile.about}</p>
-            <p style={{fontSize:14,color:'#444',lineHeight:1.6}}>{company.description}</p>
+            <p style={{fontSize:14,color:'#444',lineHeight:1.6,whiteSpace:'pre-line',overflowWrap:'anywhere'}}>{sanitizeDirectContactInfo(company.description)}</p>
           </div>
         )}
 

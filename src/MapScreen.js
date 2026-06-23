@@ -6,6 +6,7 @@ import { getUiText } from './i18n'
 import { getCompanyCoordinates } from './geo'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
+import { sanitizeDirectContactInfo } from './moderation'
 import 'leaflet/dist/leaflet.css'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -492,7 +493,7 @@ const cantons = [
               </p>
               <p style={{fontSize:12,color:'#999',margin:'2px 0 0'}}>{selected.sector} · {selected.city}, {selected.canton}</p>
               {!selected.hasPreciseCoordinates && <p style={{fontSize:11,color:'#bbb',margin:'2px 0 0'}}>{ui.map.approximatePosition}</p>}
-              {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.35}}>{selected.description}</p>}
+              {selected.description && <p style={{fontSize:12,color:'#666',margin:'4px 0 0',lineHeight:1.35,whiteSpace:'pre-line',overflowWrap:'anywhere'}}>{sanitizeDirectContactInfo(selected.description)}</p>}
             </div>
             <button onClick={() => setSelected(null)}
               style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:20,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}><HubbingIcon name="x" size={20} color="#999" /></button>

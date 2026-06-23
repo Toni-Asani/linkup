@@ -21,6 +21,8 @@ export const containsForbiddenContent = (text = '') => {
 
 const emailPattern = /[a-z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|\sat\s)\s*[a-z0-9.-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*[a-z]{2,}/i
 const urlPattern = /\b(?:https?:\/\/|www\.|[a-z0-9-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*(?:ch|com|net|org|io|co|fr|de|it|li|me|app|dev|biz|info)\b)/i
+const emailPatternGlobal = /[a-z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|\sat\s)\s*[a-z0-9.-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*[a-z]{2,}/gi
+const urlPatternGlobal = /\b(?:https?:\/\/|www\.|[a-z0-9-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*(?:ch|com|net|org|io|co|fr|de|it|li|me|app|dev|biz|info)\b)/gi
 const phoneCandidatePattern = /(?:\+|00|0)\d[\d\s()./-]{6,}\d/g
 
 export const detectDirectContactInfo = (text = '') => {
@@ -39,6 +41,14 @@ export const detectDirectContactInfo = (text = '') => {
 }
 
 export const containsDirectContactInfo = (text = '') => Boolean(detectDirectContactInfo(text))
+
+export const sanitizeDirectContactInfo = (text = '') => String(text || '')
+  .replace(emailPatternGlobal, '[email masqué]')
+  .replace(urlPatternGlobal, '[lien masqué]')
+  .replace(phoneCandidatePattern, candidate => {
+    const digits = candidate.replace(/\D/g, '')
+    return digits.length >= 9 && digits.length <= 15 ? '[téléphone masqué]' : candidate
+  })
 
 const invokeModeration = async (payload) => {
   const { data, error } = await supabase.functions.invoke('moderate-content', {

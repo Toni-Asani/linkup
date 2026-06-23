@@ -9,6 +9,7 @@ import { shareCompanyProfileCard } from './profileShare'
 import { CompanyRealizationsGallery } from './CompanyRealizationsComponents'
 import { fetchCompanyRealizationsForCompanies } from './companyRealizations'
 import LoadingIndicator from './LoadingIndicator'
+import { sanitizeDirectContactInfo } from './moderation'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -872,7 +873,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               </div>
             )}
 
-            <p style={{color:'#666',fontSize:13,lineHeight:1.5,marginBottom: hasNeeds ? '0.5rem' : 0}}>{company.description}</p>
+            <p style={{color:'#666',fontSize:13,lineHeight:1.5,marginBottom: hasNeeds ? '0.5rem' : 0,whiteSpace:'pre-line',overflowWrap:'anywhere'}}>{sanitizeDirectContactInfo(company.description)}</p>
 
             {hasNeeds && (
               <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:10,padding:'8px 10px'}}>
