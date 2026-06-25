@@ -53,9 +53,21 @@ const normalizeText = (value = '') =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
 
+const escapeRegex = (value = '') =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const forbiddenWordPatterns = forbiddenWords.map((word) => {
+  const source = normalizeText(word)
+    .trim()
+    .split(/\s+/)
+    .map(escapeRegex)
+    .join('\\s+')
+  return new RegExp(`(^|[^a-z0-9])${source}([^a-z0-9]|$)`, 'i')
+})
+
 const hasLocalForbiddenContent = (text = '') => {
   const normalized = normalizeText(text)
-  return forbiddenWords.some((word) => normalized.includes(word))
+  return forbiddenWordPatterns.some((pattern) => pattern.test(normalized))
 }
 
 const emailPattern = /[a-z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|\sat\s)\s*[a-z0-9.-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*[a-z]{2,}/i
@@ -202,7 +214,20 @@ serve(async (req) => {
         }
       }
 
-      const moderation = await createModeration(openaiApiKey, text)
+      let moderation
+      try {
+        moderation = await createModeration(openaiApiKey, text)
+      } catch (moderationError) {
+        console.error('Text moderation skipped:', moderationError)
+        return jsonResponse({
+          allowed: true,
+          flagged: false,
+          skipped: true,
+          reason: 'text_moderation_unavailable',
+          categories: [],
+        })
+      }
+
       const result = moderation?.results?.[0] || {}
       const categories = result.categories || {}
       const scores = result.category_scores || {}

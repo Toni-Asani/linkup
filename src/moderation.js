@@ -14,9 +14,21 @@ export const normalizeForModeration = (value = '') =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
 
+const escapeRegex = (value = '') =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const forbiddenWordPatterns = forbiddenWords.map((word) => {
+  const source = normalizeForModeration(word)
+    .trim()
+    .split(/\s+/)
+    .map(escapeRegex)
+    .join('\\s+')
+  return new RegExp(`(^|[^a-z0-9])${source}([^a-z0-9]|$)`, 'i')
+})
+
 export const containsForbiddenContent = (text = '') => {
   const normalized = normalizeForModeration(text)
-  return forbiddenWords.some(word => normalized.includes(word))
+  return forbiddenWordPatterns.some(pattern => pattern.test(normalized))
 }
 
 const emailPattern = /[a-z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|\sat\s)\s*[a-z0-9.-]+\s*(?:\.|\sdot\s|\[dot\]|\(dot\))\s*[a-z]{2,}/i
