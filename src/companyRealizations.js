@@ -87,6 +87,13 @@ const signRealizations = async rows => Promise.all((rows || []).map(async item =
   }
 }))
 
+export const sortCompanyRealizationsNewestFirst = realizations => [...(realizations || [])].sort((a, b) => {
+  const dateA = Date.parse(a?.created_at || a?.updated_at || '') || 0
+  const dateB = Date.parse(b?.created_at || b?.updated_at || '') || 0
+  if (dateA !== dateB) return dateB - dateA
+  return (Number(b?.position) || 0) - (Number(a?.position) || 0)
+})
+
 export const fetchCompanyRealizations = async companyId => {
   if (!companyId) return []
   const { data, error } = await supabase
@@ -95,10 +102,10 @@ export const fetchCompanyRealizations = async companyId => {
     .eq('company_id', companyId)
     .eq('status', 'active')
     .eq('moderation_status', 'approved')
-    .order('position', { ascending: true })
     .order('created_at', { ascending: false })
+    .order('position', { ascending: false })
   if (error) throw error
-  return signRealizations(data || [])
+  return signRealizations(sortCompanyRealizationsNewestFirst(data || []))
 }
 
 export const fetchCompanyRealizationsForCompanies = async (companyIds = [], { limitPerCompany = 3 } = {}) => {
@@ -110,11 +117,11 @@ export const fetchCompanyRealizationsForCompanies = async (companyIds = [], { li
     .in('company_id', ids)
     .eq('status', 'active')
     .eq('moderation_status', 'approved')
-    .order('position', { ascending: true })
     .order('created_at', { ascending: false })
+    .order('position', { ascending: false })
   if (error) throw error
 
-  const grouped = (data || []).reduce((groups, item) => {
+  const grouped = sortCompanyRealizationsNewestFirst(data || []).reduce((groups, item) => {
     if (!groups[item.company_id]) groups[item.company_id] = []
     if (groups[item.company_id].length < limitPerCompany) groups[item.company_id].push(item)
     return groups

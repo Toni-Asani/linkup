@@ -4,6 +4,7 @@ import { HubbingIcon } from './icons'
 import {
   deleteCompanyRealization,
   getCompanyRealizationLimit,
+  sortCompanyRealizationsNewestFirst,
   uploadCompanyRealization,
 } from './companyRealizations'
 
@@ -78,6 +79,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
   const limit = getCompanyRealizationLimit(plan)
   const count = realizations.length
   const canAdd = count < limit
+  const orderedRealizations = useMemo(() => sortCompanyRealizationsNewestFirst(realizations), [realizations])
 
   const refresh = async () => {
     await onChange?.()
@@ -214,7 +216,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
-          {realizations.map((item, index) => {
+          {orderedRealizations.map((item, index) => {
             const src = imageFor(item)
             const itemBusy = busyId === item.id
             return (
@@ -247,7 +249,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
 
       {viewerIndex !== null && (
         <CompanyRealizationsModal
-          realizations={realizations}
+          realizations={orderedRealizations}
           initialIndex={viewerIndex}
           ui={ui}
           onClose={() => setViewerIndex(null)}
@@ -260,7 +262,7 @@ export function CompanyRealizationsManager({ company, plan, realizations = [], o
 export function CompanyRealizationsGallery({ realizations = [], ui, compact = false, previewCount = 6, showEmpty = false, style }) {
   const text = getText(ui)
   const [viewerIndex, setViewerIndex] = useState(null)
-  const photos = useMemo(() => realizations.filter(item => imageFor(item)), [realizations])
+  const photos = useMemo(() => sortCompanyRealizationsNewestFirst(realizations).filter(item => imageFor(item)), [realizations])
   if (!photos.length && !showEmpty) return null
 
   const openViewer = (index, event) => {
