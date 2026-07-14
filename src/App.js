@@ -2470,120 +2470,135 @@ function Dashboard({ user, setUser, t, lang, setLang }) {
   const inactivityTimerRef = useRef(null)
   const ui = getUiText(lang)
 
-const updateNativeAppBadge = async (count) => {
-  const nextCount = Math.max(0, Number(count) || 0)
-  if (nextCount > 0) {
-    await syncUnreadAppBadge(nextCount)
-  } else {
-    await clearAppBadge()
+  const updateNativeAppBadge = async (count) => {
+    const nextCount = Math.max(0, Number(count) || 0)
+    if (nextCount > 0) {
+      await syncUnreadAppBadge(nextCount)
+    } else {
+      await clearAppBadge()
+    }
+    return nextCount
   }
-  return nextCount
-}
 
-const releaseSessionLock = async () => {
-  const token = sessionTokenRef.current
-  if (!token) return
-  try {
-    await supabase.rpc('hubbing_release_session_lock', { p_token: token })
-  } catch (error) {
-    console.warn('Unable to release session lock:', error)
-  }
-}
-
-const forceSignOut = async (message) => {
-  if (signingOutRef.current) return
-  signingOutRef.current = true
-  if (message) window.alert(message)
-  await releaseSessionLock()
-  await clearAppBadge()
-  await signOutCurrentBrowser()
-}
-
-useEffect(() => {
-  unreadCountRef.current = unreadCount
-}, [unreadCount])
-
-useEffect(() => {
-  activeTabRef.current = activeTab
-  if (activeTab !== 'messages') setActiveMessageMatchId(null)
-}, [activeTab])
-
-useEffect(() => {
-  activeMessageMatchIdRef.current = activeMessageMatchId
-  if (sessionReady) loadNotificationCounts()
-}, [activeMessageMatchId, sessionReady])
-
-useEffect(() => {
-  let cancelled = false
-  const acquireSessionLock = async () => {
-    const token = getStoredSessionToken(user.id)
-    sessionTokenRef.current = token
-    const { data, error } = await supabase.rpc('hubbing_acquire_session_lock', {
-      p_token: token,
-      p_device_label: getDeviceLabel(),
-      p_ttl_minutes: SESSION_LOCK_TTL_MINUTES,
-    })
-    if (cancelled) return
-    if (error) {
-      console.warn('Session lock unavailable:', error)
-      setSessionReady(true)
+  const releaseSessionLock = async () => {
+    if (!isNativeApp()) {
+      sessionTokenRef.current = null
       return
     }
-    if (data?.acquired === false) {
-      console.warn('Session lock already active; allowing access to avoid blocking login:', data)
-      if (ENFORCE_SINGLE_DEVICE_LOCK) {
-        await forceSignOut(t.sessionAlreadyOpen)
+
+    const token = sessionTokenRef.current
+    if (!token) return
+
+    try {
+      await supabase.rpc('hubbing_release_session_lock', { p_token: token })
+    } catch (error) {
+      console.warn('Unable to release session lock:', error)
+    }
+  }
+
+  const forceSignOut = async (message) => {
+    if (signingOutRef.current) return
+    signingOutRef.current = true
+    if (message) window.alert(message)
+    await releaseSessionLock()
+    await clearAppBadge()
+    await signOutCurrentBrowser()
+  }
+
+  useEffect(() => {
+    unreadCountRef.current = unreadCount
+  }, [unreadCount])
+
+  useEffect(() => {
+    activeTabRef.current = activeTab
+    if (activeTab !== 'messages') setActiveMessageMatchId(null)
+  }, [activeTab])
+
+  useEffect(() => {
+    activeMessageMatchIdRef.current = activeMessageMatchId
+    if (sessionReady) loadNotificationCounts()
+  }, [activeMessageMatchId, sessionReady])
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!isNativeApp()) {
+      sessionTokenRef.current = null
+      setSessionReady(true)
+      return () => {
+        cancelled = true
+      }
+    }
+
+    const acquireSessionLock = async () => {
+      const token = getStoredSessionToken(user.id)
+      sessionTokenRef.current = token
+      const { data, error } = await supabase.rpc('hubbing_acquire_session_lock', {
+        p_token: token,
+        p_device_label: getDeviceLabel(),
+        p_ttl_minutes: SESSION_LOCK_TTL_MINUTES,
+      })
+      if (cancelled) return
+      if (error) {
+        console.warn('Session lock unavailable:', error)
+        setSessionReady(true)
+        return
+      }
+      if (data?.acquired === false) {
+        console.warn('Session lock already active; allowing access to avoid blocking login:', data)
+        if (ENFORCE_SINGLE_DEVICE_LOCK) {
+          await forceSignOut(t.sessionAlreadyOpen)
+          return
+        }
+        setSessionReady(true)
         return
       }
       setSessionReady(true)
-      return
     }
-    setSessionReady(true)
-  }
 
-  acquireSessionLock()
-  return () => {
-    cancelled = true
-  }
-}, [user.id])
-
-useEffect(() => {
-  if (!sessionReady) return undefined
-
-  const refreshSessionLock = async () => {
-    const token = sessionTokenRef.current
-    if (!token || signingOutRef.current) return
-    const { data, error } = await supabase.rpc('hubbing_refresh_session_lock', {
-      p_token: token,
-      p_ttl_minutes: SESSION_LOCK_TTL_MINUTES,
-    })
-    if (error) {
-      console.warn('Unable to refresh session lock:', error)
-      return
+    acquireSessionLock()
+    return () => {
+      cancelled = true
     }
-    if (data?.active === false) {
-      console.warn('Session lock inactive; keeping current auth session active:', data)
-      if (ENFORCE_SINGLE_DEVICE_LOCK) {
-        await forceSignOut(t.sessionAlreadyOpen)
+  }, [user.id, t.sessionAlreadyOpen])
+
+  useEffect(() => {
+    if (!sessionReady || !isNativeApp()) return undefined
+
+    const refreshSessionLock = async () => {
+      const token = sessionTokenRef.current
+      if (!token || signingOutRef.current) return
+      const { data, error } = await supabase.rpc('hubbing_refresh_session_lock', {
+        p_token: token,
+        p_ttl_minutes: SESSION_LOCK_TTL_MINUTES,
+      })
+      if (error) {
+        console.warn('Unable to refresh session lock:', error)
+        return
+      }
+      if (data?.active === false) {
+        console.warn('Session lock inactive; keeping current auth session active:', data)
+        if (ENFORCE_SINGLE_DEVICE_LOCK) {
+          await forceSignOut(t.sessionAlreadyOpen)
+        }
       }
     }
-  }
 
-  refreshSessionLock()
-  const interval = window.setInterval(refreshSessionLock, 60 * 1000)
-  const handleVisibilityChange = () => {
-    if (!document.hidden) refreshSessionLock()
-  }
-  document.addEventListener('visibilitychange', handleVisibilityChange)
+    refreshSessionLock()
+    const interval = window.setInterval(refreshSessionLock, 60 * 1000)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) refreshSessionLock()
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
-  return () => {
-    window.clearInterval(interval)
-    document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }
-}, [sessionReady, t.sessionAlreadyOpen])
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [sessionReady, t.sessionAlreadyOpen])
 
 useEffect(() => {
-  if (!sessionReady || !ENABLE_INACTIVITY_SIGNOUT) return undefined
+  if (!sessionReady || !isNativeApp() || !ENABLE_INACTIVITY_SIGNOUT) return undefined
 
   const expireForInactivity = async () => {
     await forceSignOut(t.sessionExpired)
