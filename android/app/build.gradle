@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 def getAppVersionCode = { ->
-    return project.hasProperty('versionCode') ? versionCode.toInteger() : 82
+    return project.hasProperty('versionCode') ? versionCode.toInteger() : 83
 }
 
 def getAppVersionName = { ->

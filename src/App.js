@@ -26,7 +26,7 @@ const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
 const ANDROID_PLAY_URL = 'https://play.google.com/store/apps/details?id=ch.hubbing.app'
 const APP_VERSION = '1.0.9'
-const APP_BUILD_NUMBER = 82
+const APP_BUILD_NUMBER = 83
 const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
@@ -2452,7 +2452,6 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
 
 function Dashboard({ user, setUser, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('home')
-  const [mountedTabs, setMountedTabs] = useState(['home'])
   const [selectedCompanyId, setSelectedCompanyId] = useState(null)
   const [companyProfileReturn, setCompanyProfileReturn] = useState(null)
   const [userPlan, setUserPlan] = useState('Starter')
@@ -2506,7 +2505,6 @@ useEffect(() => {
 
 useEffect(() => {
   activeTabRef.current = activeTab
-  setMountedTabs(current => current.includes(activeTab) ? current : [...current, activeTab])
   if (activeTab !== 'messages') setActiveMessageMatchId(null)
 }, [activeTab])
 
@@ -2790,7 +2788,6 @@ const loadNotificationCounts = async () => {
   }
 
 const handleTabChange = (tab) => {
-  setMountedTabs(current => current.includes(tab) ? current : [...current, tab])
   setActiveTab(tab)
   setSelectedCompanyId(null)
   setCompanyProfileReturn(null)
@@ -2806,7 +2803,6 @@ const handleCompanyProfileBack = () => {
   setSelectedCompanyId(null)
   setCompanyProfileReturn(null)
   if (returnTarget?.tab) {
-    setMountedTabs(current => current.includes(returnTarget.tab) ? current : [...current, returnTarget.tab])
     setActiveTab(returnTarget.tab)
   }
   if (returnTarget?.tab === 'messages' && returnTarget.companyId) {
@@ -2814,24 +2810,6 @@ const handleCompanyProfileBack = () => {
     setDirectMessageDraft(null)
   }
 }
-
-  const renderedTabs = mountedTabs.includes(activeTab) ? mountedTabs : [...mountedTabs, activeTab]
-
-  const tabPanelStyle = (tab) => {
-    const isVisible = !selectedCompanyId && activeTab === tab
-    return {
-      position: isVisible ? 'relative' : 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      width: '100%',
-      minHeight: '100%',
-      opacity: isVisible ? 1 : 0,
-      visibility: isVisible ? 'visible' : 'hidden',
-      pointerEvents: isVisible ? 'auto' : 'none',
-      transition: 'opacity 140ms ease',
-    }
-  }
 
   const tabStyle = (tab) => ({
     flex:1, padding:'8px 0 6px', background:'none', border:'none', cursor:'pointer',
@@ -2922,14 +2900,11 @@ const handleCompanyProfileBack = () => {
   setDirectMessageDraft={setDirectMessageDraft}
 />
   )}
-  <div style={{display: selectedCompanyId ? 'none' : 'block', position:'relative', minHeight:'100%'}}>
-      {renderedTabs.includes('home') && (
-        <div style={tabPanelStyle('home')}>
-          <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} plan={userPlan} lang={lang} />
-        </div>
+  <div style={{display: selectedCompanyId ? 'none' : 'block'}}>
+      {activeTab === 'home' && (
+        <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} plan={userPlan} lang={lang} />
       )}
-      {renderedTabs.includes('swipe') && (
-        <div style={tabPanelStyle('swipe')}>
+      {activeTab === 'swipe' && (
         <SwipeScreen
           user={user}
           plan={userPlan}
@@ -2940,27 +2915,18 @@ const handleCompanyProfileBack = () => {
           setDirectMessageDraft={setDirectMessageDraft}
           lang={lang}
         />
-        </div>
       )}
-      {renderedTabs.includes('map') && (
-        <div style={tabPanelStyle('map')}>
-          <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />
-        </div>
+      {activeTab === 'map' && (
+        <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />
       )}
-      {renderedTabs.includes('messages') && (
-        <div style={tabPanelStyle('messages')}>
-          <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} onActiveMatchChange={setActiveMessageMatchId} lang={lang} />
-        </div>
+      {activeTab === 'messages' && (
+        <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} onActiveMatchChange={setActiveMessageMatchId} lang={lang} />
       )}
-      {renderedTabs.includes('pricing') && (
-        <div style={tabPanelStyle('pricing')}>
-          <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />
-        </div>
+      {activeTab === 'pricing' && (
+        <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />
       )}
-      {renderedTabs.includes('profile') && (
-        <div style={tabPanelStyle('profile')}>
-          <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} onPendingCompletionChange={loadNotificationCounts} />
-        </div>
+      {activeTab === 'profile' && (
+        <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} onPendingCompletionChange={loadNotificationCounts} />
       )}
   </div>
 </div>
