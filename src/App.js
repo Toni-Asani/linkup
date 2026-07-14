@@ -26,7 +26,7 @@ const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
 const ANDROID_PLAY_URL = 'https://play.google.com/store/apps/details?id=ch.hubbing.app'
 const APP_VERSION = '1.0.9'
-const APP_BUILD_NUMBER = 83
+const APP_BUILD_NUMBER = 84
 const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
@@ -2802,9 +2802,7 @@ const handleCompanyProfileBack = () => {
   const returnTarget = companyProfileReturn
   setSelectedCompanyId(null)
   setCompanyProfileReturn(null)
-  if (returnTarget?.tab) {
-    setActiveTab(returnTarget.tab)
-  }
+  if (returnTarget?.tab) setActiveTab(returnTarget.tab)
   if (returnTarget?.tab === 'messages' && returnTarget.companyId) {
     setDirectMessageCompanyId(returnTarget.companyId)
     setDirectMessageDraft(null)
@@ -2866,7 +2864,7 @@ const handleCompanyProfileBack = () => {
     </div>
   )}
 </div>
-          <button onClick={() => handleTabChange('pricing')}
+          <button onClick={() => setActiveTab('pricing')}
             style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:20,padding:'5px 12px',cursor:'pointer'}}>
             <PlanBadge user={user} />
           </button>
@@ -2887,7 +2885,7 @@ const handleCompanyProfileBack = () => {
   position:'relative',
   paddingBottom:'calc(60px + env(safe-area-inset-bottom))'
 }}>
-  {selectedCompanyId && (
+  {selectedCompanyId ? (
     <CompanyProfileScreen
   companyId={selectedCompanyId}
   plan={userPlan}
@@ -2899,11 +2897,9 @@ const handleCompanyProfileBack = () => {
   setDirectMessageCompanyId={setDirectMessageCompanyId}
   setDirectMessageDraft={setDirectMessageDraft}
 />
-  )}
-  <div style={{display: selectedCompanyId ? 'none' : 'block'}}>
-      {activeTab === 'home' && (
-        <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} plan={userPlan} lang={lang} />
-      )}
+  ) : (
+    <>
+      {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} plan={userPlan} lang={lang} />}
       {activeTab === 'swipe' && (
         <SwipeScreen
           user={user}
@@ -2916,19 +2912,12 @@ const handleCompanyProfileBack = () => {
           lang={lang}
         />
       )}
-      {activeTab === 'map' && (
-        <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />
-      )}
-      {activeTab === 'messages' && (
-        <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} onActiveMatchChange={setActiveMessageMatchId} lang={lang} />
-      )}
-      {activeTab === 'pricing' && (
-        <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />
-      )}
-      {activeTab === 'profile' && (
-        <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} onPendingCompletionChange={loadNotificationCounts} />
-      )}
-  </div>
+      {activeTab === 'map' && <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />}
+      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} onActiveMatchChange={setActiveMessageMatchId} lang={lang} />}
+      {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
+      {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} onPendingCompletionChange={loadNotificationCounts} />}
+    </>
+  )}
 </div>
 
       <div style={{

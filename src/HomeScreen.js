@@ -278,160 +278,137 @@ export default function HomeScreen({ user, setActiveTab, setSelectedCompanyId, p
       const compWithSubscription = await attachCompanySubscriptions(supabase, comp)
       setCompany(compWithSubscription)
 
-      const loadFollowingMatches = async () => {
-        const { data: myMatches, error: myMatchesError } = await supabase
-          .from('matches')
-          .select('id, company_a, company_b, status, created_at, company_b_profile:company_b(*)')
-          .eq('company_a', comp.id)
-          .eq('status', 'pending')
-        if (myMatchesError) console.warn('Unable to load following matches:', myMatchesError)
+      // Matchs que j'ai initiés
+      const { data: myMatches, error: myMatchesError } = await supabase
+        .from('matches')
+        .select('id, company_a, company_b, status, created_at, company_b_profile:company_b(*)')
+        .eq('company_a', comp.id)
+        .eq('status', 'pending')
+      if (myMatchesError) console.warn('Unable to load following matches:', myMatchesError)
 
-        const followingMatchesRaw = (myMatchesError ? [] : myMatches || []).filter(match => match.company_b && match.company_b !== comp.id)
-        const missingFollowingIds = [...new Set(followingMatchesRaw.filter(m => !m.company_b_profile).map(m => m.company_b).filter(Boolean))]
-        let followingCompaniesById = {}
-        if (missingFollowingIds.length > 0) {
-          const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').in('id', missingFollowingIds)
-          if (companiesError) {
-            console.warn('Unable to load followed companies:', companiesError)
-          } else {
-            followingCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
-          }
+      const followingMatchesRaw = (myMatchesError ? [] : myMatches || []).filter(match => match.company_b && match.company_b !== comp.id)
+      const missingFollowingIds = followingMatchesRaw.filter(m => !m.company_b_profile).map(m => m.company_b).filter(Boolean)
+      let followingCompaniesById = {}
+      if (missingFollowingIds.length > 0) {
+        const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').in('id', missingFollowingIds)
+        if (companiesError) {
+          console.warn('Unable to load followed companies:', companiesError)
+        } else {
+          followingCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
         }
-        const followingMatches = followingMatchesRaw.map(m => ({
-          ...m,
-          company_b: m.company_b_profile || followingCompaniesById[m.company_b]
-        })).filter(m => m.company_b)
-        const followingCompaniesWithSubscriptions = await attachCompanySubscriptions(
-          supabase,
-          followingMatches.map(m => m.company_b)
-        )
-        const followingSubscriptionsById = Object.fromEntries((followingCompaniesWithSubscriptions || []).map(c => [c.id, c]))
-        return followingMatches.map(m => ({
-          ...m,
-          company_b: followingSubscriptionsById[m.company_b.id] || m.company_b
-        }))
       }
-
-      const loadFollowerMatches = async () => {
-        const { data: followersData, count: followers, error: followersError } = await supabase
-          .from('matches')
-          .select('id, company_a, company_b, status, created_at, company_a_profile:company_a(*)', { count: 'exact' })
-          .eq('company_b', comp.id)
-          .eq('status', 'pending')
-        if (followersError) console.warn('Unable to load follower matches:', followersError)
-
-        const followerMatchesRaw = (followersError ? [] : followersData || []).filter(match => match.company_a && match.company_a !== comp.id)
-        const missingFollowerIds = [...new Set(followerMatchesRaw.filter(m => !m.company_a_profile).map(m => m.company_a).filter(Boolean))]
-        let followerCompaniesById = {}
-        if (missingFollowerIds.length > 0) {
-          const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').in('id', missingFollowerIds)
-          if (companiesError) {
-            console.warn('Unable to load follower companies:', companiesError)
-          } else {
-            followerCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
-          }
-        }
-        const followerMatches = followerMatchesRaw.map(m => ({
-          ...m,
-          company_a: m.company_a_profile || followerCompaniesById[m.company_a]
-        })).filter(m => m.company_a)
-        const followerCompaniesWithSubscriptions = await attachCompanySubscriptions(
-          supabase,
-          followerMatches.map(m => m.company_a)
-        )
-        const followerSubscriptionsById = Object.fromEntries((followerCompaniesWithSubscriptions || []).map(c => [c.id, c]))
-        const enrichedFollowerMatches = followerMatches.map(m => ({
-          ...m,
-          company_a: followerSubscriptionsById[m.company_a.id] || m.company_a
-        }))
-        return { matches: enrichedFollowerMatches, count: followers || 0 }
-      }
-
-      const loadSentMessageCount = async () => {
-        const { count: msgCount, error: messagesError } = await supabase
-          .from('messages').select('*', { count: 'exact', head: true })
-          .eq('sender_id', comp.id)
-        if (messagesError) console.warn('Unable to load sent message count:', messagesError)
-        return msgCount || 0
-      }
-
-      const loadTotalCompaniesCount = async () => {
-        const { count: totalCompanies, error: totalCompaniesError } = await supabase
-          .from('companies').select('*', { count: 'exact', head: true })
-        if (totalCompaniesError) console.warn('Unable to load company count:', totalCompaniesError)
-        return totalCompanies || 0
-      }
-
-      const loadOpportunities = async () => {
-        const { data: opportunityRows, error: opportunitiesError } = await supabase
-          .from('companies')
-          .select('*')
-          .eq('is_suspended', false)
-          .limit(240)
-        if (opportunitiesError) console.warn('Unable to load B2B opportunities:', opportunitiesError)
-
-        const opportunityCompanies = (opportunitiesError ? [] : opportunityRows || [])
-          .filter(item => item.id !== comp.id && hasCompanyNeeds(item))
-        const opportunityCompaniesWithSubscriptions = opportunityCompanies.length > 0
-          ? await attachCompanySubscriptions(supabase, opportunityCompanies)
-          : []
-        const opportunityIds = opportunityCompaniesWithSubscriptions.map(item => item.id).filter(Boolean)
-        let attachmentCountsByCompany = {}
-        if (opportunityIds.length > 0) {
-          const { data: attachmentRows, error: attachmentError } = await supabase
-            .from('need_attachments')
-            .select('company_id, id')
-            .in('company_id', opportunityIds)
-            .eq('status', 'active')
-            .eq('moderation_status', 'approved')
-          if (attachmentError) {
-            console.warn('Unable to load opportunity attachment counts:', attachmentError)
-          } else {
-            attachmentCountsByCompany = (attachmentRows || []).reduce((acc, row) => {
-              acc[row.company_id] = (acc[row.company_id] || 0) + 1
-              return acc
-            }, {})
-          }
-        }
-
-        return opportunityCompaniesWithSubscriptions
-          .map(item => buildOpportunity(item, compWithSubscription, attachmentCountsByCompany[item.id] || 0))
-          .filter(Boolean)
-          .filter(item => item.relevanceScore > 0)
-          .sort((a, b) => (
-            b.score - a.score
-            || a.planRank - b.planRank
-            || b.freshness - a.freshness
-            || String(a.company?.name || '').localeCompare(String(b.company?.name || ''))
-          ))
-      }
-
-      const [
-        enrichedFollowingMatches,
-        followerResult,
-        msgCount,
-        totalCompanies,
-        successfulCollaborations,
-        builtOpportunities,
-      ] = await Promise.all([
-        loadFollowingMatches(),
-        loadFollowerMatches(),
-        loadSentMessageCount(),
-        loadTotalCompaniesCount(),
-        fetchSuccessfulCollaborationCount(comp.id, { includeHiddenProvider: true }),
-        loadOpportunities(),
-      ])
-
+      const followingMatches = followingMatchesRaw.map(m => ({
+        ...m,
+        company_b: m.company_b_profile || followingCompaniesById[m.company_b]
+      })).filter(m => m.company_b)
+      const followingCompaniesWithSubscriptions = await attachCompanySubscriptions(
+        supabase,
+        followingMatches.map(m => m.company_b)
+      )
+      const followingSubscriptionsById = Object.fromEntries((followingCompaniesWithSubscriptions || []).map(c => [c.id, c]))
+      const enrichedFollowingMatches = followingMatches.map(m => ({
+        ...m,
+        company_b: followingSubscriptionsById[m.company_b.id] || m.company_b
+      }))
       setMatchedCompanies(enrichedFollowingMatches)
-      setFollowerCompanies(followerResult.matches)
+
+      // Entreprises qui me suivent
+      const { data: followersData, count: followers, error: followersError } = await supabase
+        .from('matches')
+        .select('id, company_a, company_b, status, created_at, company_a_profile:company_a(*)', { count: 'exact' })
+        .eq('company_b', comp.id)
+        .eq('status', 'pending')
+      if (followersError) console.warn('Unable to load follower matches:', followersError)
+
+      const followerMatchesRaw = (followersError ? [] : followersData || []).filter(match => match.company_a && match.company_a !== comp.id)
+      const missingFollowerIds = followerMatchesRaw.filter(m => !m.company_a_profile).map(m => m.company_a).filter(Boolean)
+      let followerCompaniesById = {}
+      if (missingFollowerIds.length > 0) {
+        const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').in('id', missingFollowerIds)
+        if (companiesError) {
+          console.warn('Unable to load follower companies:', companiesError)
+        } else {
+          followerCompaniesById = Object.fromEntries((companiesData || []).map(c => [c.id, c]))
+        }
+      }
+      const followerMatches = followerMatchesRaw.map(m => ({
+        ...m,
+        company_a: m.company_a_profile || followerCompaniesById[m.company_a]
+      })).filter(m => m.company_a)
+      const followerCompaniesWithSubscriptions = await attachCompanySubscriptions(
+        supabase,
+        followerMatches.map(m => m.company_a)
+      )
+      const followerSubscriptionsById = Object.fromEntries((followerCompaniesWithSubscriptions || []).map(c => [c.id, c]))
+      const enrichedFollowerMatches = followerMatches.map(m => ({
+        ...m,
+        company_a: followerSubscriptionsById[m.company_a.id] || m.company_a
+      }))
+      setFollowerCompanies(enrichedFollowerMatches)
+
+      // Messages envoyés
+      const { count: msgCount, error: messagesError } = await supabase
+        .from('messages').select('*', { count: 'exact', head: true })
+        .eq('sender_id', comp.id)
+      if (messagesError) console.warn('Unable to load sent message count:', messagesError)
+
+      // Total entreprises sur Hubbing
+      const { count: totalCompanies, error: totalCompaniesError } = await supabase
+        .from('companies').select('*', { count: 'exact', head: true })
+      if (totalCompaniesError) console.warn('Unable to load company count:', totalCompaniesError)
+
+      const successfulCollaborations = await fetchSuccessfulCollaborationCount(comp.id, { includeHiddenProvider: true })
+
+      // Opportunités B2B: besoins actifs des autres entreprises qui correspondent aux services proposés par mon entreprise.
+      const { data: opportunityRows, error: opportunitiesError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('is_suspended', false)
+        .limit(240)
+      if (opportunitiesError) console.warn('Unable to load B2B opportunities:', opportunitiesError)
+
+      const opportunityCompanies = (opportunitiesError ? [] : opportunityRows || [])
+        .filter(item => item.id !== comp.id && hasCompanyNeeds(item))
+      const opportunityCompaniesWithSubscriptions = opportunityCompanies.length > 0
+        ? await attachCompanySubscriptions(supabase, opportunityCompanies)
+        : []
+      const opportunityIds = opportunityCompaniesWithSubscriptions.map(item => item.id).filter(Boolean)
+      let attachmentCountsByCompany = {}
+      if (opportunityIds.length > 0) {
+        const { data: attachmentRows, error: attachmentError } = await supabase
+          .from('need_attachments')
+          .select('company_id, id')
+          .in('company_id', opportunityIds)
+          .eq('status', 'active')
+          .eq('moderation_status', 'approved')
+        if (attachmentError) {
+          console.warn('Unable to load opportunity attachment counts:', attachmentError)
+        } else {
+          attachmentCountsByCompany = (attachmentRows || []).reduce((acc, row) => {
+            acc[row.company_id] = (acc[row.company_id] || 0) + 1
+            return acc
+          }, {})
+        }
+      }
+
+      const builtOpportunities = opportunityCompaniesWithSubscriptions
+        .map(item => buildOpportunity(item, compWithSubscription, attachmentCountsByCompany[item.id] || 0))
+        .filter(Boolean)
+        .filter(item => item.relevanceScore > 0)
+        .sort((a, b) => (
+          b.score - a.score
+          || a.planRank - b.planRank
+          || b.freshness - a.freshness
+          || String(a.company?.name || '').localeCompare(String(b.company?.name || ''))
+        ))
       setOpportunities(builtOpportunities)
 
       setStats({
         matches: enrichedFollowingMatches.length,
-        messages: msgCount,
-        followers: followerResult.matches.length || followerResult.count,
-        totalCompanies,
-        collaborations: successfulCollaborations || 0,
+        messages: msgCount || 0,
+        followers: enrichedFollowerMatches.length || followers || 0,
+        totalCompanies: totalCompanies || 0,
+        collaborations: successfulCollaborations,
       })
     } catch (error) {
       console.warn('Unable to load home screen:', error)
