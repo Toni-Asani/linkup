@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, SUPABASE_URL } from './supabaseClient'
 import { getUiText } from './i18n'
-import { APPLE_PRODUCT_IDS, HubbingPurchases } from './applePurchases'
+import { APPLE_PRODUCT_IDS, GOOGLE_PLAY_PRODUCT_IDS, HubbingPurchases } from './applePurchases'
 import { isNativeAndroid, isNativeIOS } from './platform'
 import { VerifiedBadge } from './VerifiedBadge'
 
@@ -27,6 +27,7 @@ const getPlans = (ui) => [
     color: '#185FA5',
     priceId: process.env.REACT_APP_STRIPE_PRICE_BASIC,
     appleProductId: APPLE_PRODUCT_IDS.basic,
+    googleProductId: GOOGLE_PLAY_PRODUCT_IDS.basic,
     features: ui.pricing.basicFeatures,
     limits: ui.pricing.basicLimits,
     cta: ui.pricing.chooseBasic,
@@ -39,6 +40,7 @@ const getPlans = (ui) => [
     color: '#E24B4A',
     priceId: process.env.REACT_APP_STRIPE_PRICE_PREMIUM,
     appleProductId: APPLE_PRODUCT_IDS.premium,
+    googleProductId: GOOGLE_PLAY_PRODUCT_IDS.premium,
     features: ui.pricing.premiumFeatures,
     limits: ui.pricing.premiumLimits,
     cta: ui.pricing.choosePremium,
@@ -65,8 +67,8 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
   }, [])
 
   useEffect(() => {
-    if (nativeIOS) loadAppleProducts()
-  }, [nativeIOS])
+    if (nativeIOS || nativeAndroid) loadNativeProducts()
+  }, [nativeIOS, nativeAndroid])
 
   const loadCurrentPlan = async () => {
     const { data } = await supabase
@@ -87,12 +89,14 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
     setTestModeEnabled(Boolean(data?.enabled))
   }
 
-  const loadAppleProducts = async () => {
+  const loadNativeProducts = async () => {
     try {
-      const productIds = plans.filter(plan => plan.appleProductId).map(plan => plan.appleProductId)
+      const productIds = plans
+        .map(plan => nativeAndroid ? plan.googleProductId : plan.appleProductId)
+        .filter(Boolean)
       await HubbingPurchases.getProducts({ productIds })
     } catch (e) {
-      console.warn('Apple products unavailable:', e)
+      console.warn('Native products unavailable:', e)
     }
   }
 
@@ -122,20 +126,33 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
     alert(ui.pricing.purchaseSuccess(plan.name))
   }
 
+  const handleGooglePlaySubscribe = async (plan) => {
+    if (!plan.googleProductId) throw new Error(ui.pricing.androidBillingUnavailable)
+    const result = await HubbingPurchases.purchase({ productId: plan.googleProductId })
+    if (result.cancelled) return
+    if (result.pending) {
+      alert(ui.pricing.purchasePending)
+      return
+    }
+    await saveSubscription(plan, result.transaction)
+    alert(ui.pricing.purchaseSuccess(plan.name))
+  }
+
   const handleRestorePurchases = async () => {
     setRestoring(true)
     try {
       const result = await HubbingPurchases.restorePurchases()
       const transactions = result.transactions || []
-      const premium = transactions.find(transaction => transaction.productId === APPLE_PRODUCT_IDS.premium)
-      const basic = transactions.find(transaction => transaction.productId === APPLE_PRODUCT_IDS.basic)
+      const productIds = nativeAndroid ? GOOGLE_PLAY_PRODUCT_IDS : APPLE_PRODUCT_IDS
+      const premium = transactions.find(transaction => transaction.productId === productIds.premium)
+      const basic = transactions.find(transaction => transaction.productId === productIds.basic)
       const transaction = premium || basic
       if (!transaction) {
         alert(ui.pricing.noPurchaseToRestore)
         return
       }
-      const plan = plans.find(item => item.appleProductId === transaction.productId)
-      if (!plan) throw new Error(ui.pricing.appleProductsUnavailable)
+      const plan = plans.find(item => nativeAndroid ? item.googleProductId === transaction.productId : item.appleProductId === transaction.productId)
+      if (!plan) throw new Error(nativeAndroid ? ui.pricing.androidBillingUnavailable : ui.pricing.appleProductsUnavailable)
       await saveSubscription(plan, transaction)
       alert(ui.pricing.purchaseRestored)
     } catch (e) {
@@ -156,7 +173,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
       }
 
       if (nativeAndroid) {
-        alert(ui.pricing.androidBillingUnavailable)
+        await handleGooglePlaySubscribe(plan)
         return
       }
 
@@ -201,7 +218,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
       }
 
       if (nativeAndroid) {
-        alert(ui.pricing.androidBillingUnavailable)
+        window.open('https://play.google.com/store/account/subscriptions?package=ch.hubbing.app', '_blank', 'noopener,noreferrer')
         return
       }
 
@@ -414,7 +431,7 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
           </a>
         </div>
       </div>
-      {nativeIOS && (
+      {(nativeIOS || nativeAndroid) && (
         <button onClick={handleRestorePurchases} disabled={restoring}
           style={{margin:'0.75rem auto 0',display:'block',background:'none',border:'none',color:'#E24B4A',fontSize:13,fontWeight:600,cursor:restoring ? 'default' : 'pointer'}}>
           {restoring ? ui.common.loading : ui.pricing.restorePurchases}

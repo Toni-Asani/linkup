@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 def getAppVersionCode = { ->
-    return project.hasProperty('versionCode') ? versionCode.toInteger() : 81
+    return project.hasProperty('versionCode') ? versionCode.toInteger() : 82
 }
 
 def getAppVersionName = { ->
-    return project.hasProperty('versionName') ? versionName : "1.0.8"
+    return project.hasProperty('versionName') ? versionName : "1.0.9"
 }
 
 android {
@@ -52,8 +52,11 @@ repositories {
 }
 
 dependencies {
+    def billing_version = "9.1.0"
+
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "com.android.billingclient:billing:$billing_version"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
