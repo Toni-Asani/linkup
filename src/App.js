@@ -2452,6 +2452,7 @@ function VisitorMode({ setScreen, initialTab = 'swipe', t, lang, setLang }) {
 
 function Dashboard({ user, setUser, t, lang, setLang }) {
   const [activeTab, setActiveTab] = useState('home')
+  const [mountedTabs, setMountedTabs] = useState(['home'])
   const [selectedCompanyId, setSelectedCompanyId] = useState(null)
   const [companyProfileReturn, setCompanyProfileReturn] = useState(null)
   const [userPlan, setUserPlan] = useState('Starter')
@@ -2505,6 +2506,7 @@ useEffect(() => {
 
 useEffect(() => {
   activeTabRef.current = activeTab
+  setMountedTabs(current => current.includes(activeTab) ? current : [...current, activeTab])
   if (activeTab !== 'messages') setActiveMessageMatchId(null)
 }, [activeTab])
 
@@ -2788,6 +2790,7 @@ const loadNotificationCounts = async () => {
   }
 
 const handleTabChange = (tab) => {
+  setMountedTabs(current => current.includes(tab) ? current : [...current, tab])
   setActiveTab(tab)
   setSelectedCompanyId(null)
   setCompanyProfileReturn(null)
@@ -2802,12 +2805,33 @@ const handleCompanyProfileBack = () => {
   const returnTarget = companyProfileReturn
   setSelectedCompanyId(null)
   setCompanyProfileReturn(null)
-  if (returnTarget?.tab) setActiveTab(returnTarget.tab)
+  if (returnTarget?.tab) {
+    setMountedTabs(current => current.includes(returnTarget.tab) ? current : [...current, returnTarget.tab])
+    setActiveTab(returnTarget.tab)
+  }
   if (returnTarget?.tab === 'messages' && returnTarget.companyId) {
     setDirectMessageCompanyId(returnTarget.companyId)
     setDirectMessageDraft(null)
   }
 }
+
+  const renderedTabs = mountedTabs.includes(activeTab) ? mountedTabs : [...mountedTabs, activeTab]
+
+  const tabPanelStyle = (tab) => {
+    const isVisible = !selectedCompanyId && activeTab === tab
+    return {
+      position: isVisible ? 'relative' : 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      width: '100%',
+      minHeight: '100%',
+      opacity: isVisible ? 1 : 0,
+      visibility: isVisible ? 'visible' : 'hidden',
+      pointerEvents: isVisible ? 'auto' : 'none',
+      transition: 'opacity 140ms ease',
+    }
+  }
 
   const tabStyle = (tab) => ({
     flex:1, padding:'8px 0 6px', background:'none', border:'none', cursor:'pointer',
@@ -2864,7 +2888,7 @@ const handleCompanyProfileBack = () => {
     </div>
   )}
 </div>
-          <button onClick={() => setActiveTab('pricing')}
+          <button onClick={() => handleTabChange('pricing')}
             style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:20,padding:'5px 12px',cursor:'pointer'}}>
             <PlanBadge user={user} />
           </button>
@@ -2885,7 +2909,7 @@ const handleCompanyProfileBack = () => {
   position:'relative',
   paddingBottom:'calc(60px + env(safe-area-inset-bottom))'
 }}>
-  {selectedCompanyId ? (
+  {selectedCompanyId && (
     <CompanyProfileScreen
   companyId={selectedCompanyId}
   plan={userPlan}
@@ -2897,10 +2921,15 @@ const handleCompanyProfileBack = () => {
   setDirectMessageCompanyId={setDirectMessageCompanyId}
   setDirectMessageDraft={setDirectMessageDraft}
 />
-  ) : (
-    <>
-      {activeTab === 'home' && <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} plan={userPlan} lang={lang} />}
-      {activeTab === 'swipe' && (
+  )}
+  <div style={{display: selectedCompanyId ? 'none' : 'block', position:'relative', minHeight:'100%'}}>
+      {renderedTabs.includes('home') && (
+        <div style={tabPanelStyle('home')}>
+          <HomeScreen user={user} setActiveTab={setActiveTab} setSelectedCompanyId={setSelectedCompanyId} plan={userPlan} lang={lang} />
+        </div>
+      )}
+      {renderedTabs.includes('swipe') && (
+        <div style={tabPanelStyle('swipe')}>
         <SwipeScreen
           user={user}
           plan={userPlan}
@@ -2911,13 +2940,29 @@ const handleCompanyProfileBack = () => {
           setDirectMessageDraft={setDirectMessageDraft}
           lang={lang}
         />
+        </div>
       )}
-      {activeTab === 'map' && <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />}
-      {activeTab === 'messages' && <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} onActiveMatchChange={setActiveMessageMatchId} lang={lang} />}
-      {activeTab === 'pricing' && <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />}
-      {activeTab === 'profile' && <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} onPendingCompletionChange={loadNotificationCounts} />}
-    </>
-  )}
+      {renderedTabs.includes('map') && (
+        <div style={tabPanelStyle('map')}>
+          <MapScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} lang={lang} />
+        </div>
+      )}
+      {renderedTabs.includes('messages') && (
+        <div style={tabPanelStyle('messages')}>
+          <MessagesScreen user={user} plan={userPlan} setSelectedCompanyId={setSelectedCompanyId} setCompanyProfileReturn={setCompanyProfileReturn} setActiveTab={setActiveTab} openMatchWithCompanyId={directMessageCompanyId} openMessageDraft={directMessageDraft} onDirectOpenHandled={() => { setDirectMessageCompanyId(null); setDirectMessageDraft(null) }} onUnreadChange={loadNotificationCounts} onActiveMatchChange={setActiveMessageMatchId} lang={lang} />
+        </div>
+      )}
+      {renderedTabs.includes('pricing') && (
+        <div style={tabPanelStyle('pricing')}>
+          <PricingScreen user={user} setActiveTab={setActiveTab} lang={lang} />
+        </div>
+      )}
+      {renderedTabs.includes('profile') && (
+        <div style={tabPanelStyle('profile')}>
+          <ProfileScreen user={user} setActiveTab={setActiveTab} plan={userPlan} lang={lang} onPendingCompletionChange={loadNotificationCounts} />
+        </div>
+      )}
+  </div>
 </div>
 
       <div style={{
