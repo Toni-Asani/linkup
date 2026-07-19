@@ -16,6 +16,8 @@ import { fetchCompanyRealizations } from './companyRealizations'
 import { shareCompanyProfileCard } from './profileShare'
 import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
+import { ServiceTagsEditor, ServiceTagsPills } from './ServiceTagsComponents'
+import { parseServiceTags } from './serviceTags'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -144,6 +146,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [success, setSuccess] = useState(false)
   const [newTag, setNewTag] = useState('')
   const [tags, setTags] = useState([])
+  const [serviceTags, setServiceTags] = useState([])
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' })
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordNotice, setPasswordNotice] = useState(null)
@@ -176,6 +179,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       try {
         setTags(data.needs_tags ? JSON.parse(data.needs_tags) : [])
       } catch { setTags([]) }
+      setServiceTags(parseServiceTags(data.service_tags))
     }
     setLoading(false)
   }
@@ -533,6 +537,7 @@ const handleContactPhotoUpload = async (e) => {
     canton: form.canton,
     city: form.city,
     description: form.description,
+    service_tags: serviceTags,
     website: form.website,
     contact_linkedin: form.contact_linkedin,
     contact_photo_url: form.contact_photo_url,
@@ -552,7 +557,7 @@ notif_email: form.notif_email ?? true,
   const { error } = await supabase.from('companies').update(updatePayload).eq('user_id', user.id)
 
   if (!error) {
-    setCompany({ ...company, ...form, needs_tags: serializedNeedsTags, lat, lng, needs_updated_at: needsUpdatedAt })
+    setCompany({ ...company, ...form, service_tags: serviceTags, needs_tags: serializedNeedsTags, lat, lng, needs_updated_at: needsUpdatedAt })
     setEditing(false)
     setSuccess(true)
     if (needsChanged && company?.id) {
@@ -634,7 +639,11 @@ notif_email: form.notif_email ?? true,
     <div style={{flex:1,overflowY:'auto',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <h2 style={{fontSize:20,fontWeight:700}}>{ui.profile.editTitle}</h2>
-        <button onClick={() => setEditing(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:14}}>{ui.common.cancel}</button>
+        <button onClick={() => {
+          setForm(company)
+          setServiceTags(parseServiceTags(company?.service_tags))
+          setEditing(false)
+        }} style={{background:'none',border:'none',cursor:'pointer',color:'#999',fontSize:14}}>{ui.common.cancel}</button>
       </div>
 
       <Label>{ui.profile.company}</Label>
@@ -663,6 +672,7 @@ notif_email: form.notif_email ?? true,
 <textarea value={form.description||''} onChange={e => setForm({...form,description:e.target.value})}
         rows={5} placeholder={ui.profile.description}
         style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
+      <ServiceTagsEditor value={serviceTags} onChange={setServiceTags} text={ui.profile.serviceTags} />
       <Input value={form.website||''} onChange={e => setForm({...form,website:e.target.value})} placeholder={ui.profile.website} />
 
       <Label>{ui.profile.contact}</Label>
@@ -1098,6 +1108,13 @@ notif_email: form.notif_email ?? true,
   </InfoCard>
 )}
 
+        {serviceTags.length > 0 && (
+          <div style={{background:'white',border:'1px solid #F1D1D1',borderRadius:12,padding:'1rem'}}>
+            <p style={{fontSize:12,color:'#E24B4A',fontWeight:800,margin:'0 0 8px'}}>{ui.profile.serviceTags?.title || 'SERVICES PROPOSÉS'}</p>
+            <ServiceTagsPills value={serviceTags} maxVisible={10} color="#E24B4A" />
+          </div>
+        )}
+
         {/* Description */}
         {company.description && (
           <div style={{background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
@@ -1116,7 +1133,11 @@ notif_email: form.notif_email ?? true,
           <InfoRow label={ui.profile.email} value={user.email} />
         </InfoCard>
 
-        <button onClick={() => setEditing(true)}
+        <button onClick={() => {
+          setForm(company)
+          setServiceTags(parseServiceTags(company?.service_tags))
+          setEditing(true)
+        }}
           style={{padding:'14px',background:'white',color:'#E24B4A',border:'2px solid #E24B4A',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer'}}>
           {ui.profile.editProfile}
         </button>

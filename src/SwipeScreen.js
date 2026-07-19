@@ -10,6 +10,7 @@ import { CompanyRealizationsGallery } from './CompanyRealizationsComponents'
 import { fetchCompanyRealizationsForCompanies } from './companyRealizations'
 import LoadingIndicator from './LoadingIndicator'
 import { sanitizeDirectContactInfo } from './moderation'
+import { ServiceTagsPills } from './ServiceTagsComponents'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -827,6 +828,12 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               </span>
               <span style={{background:'#f5f5f5',color: ratings[company.id] ? '#E67E22' : '#ccc',padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:600}}>★ {ratings[company.id] || ui.swipe.newLabel}</span>
             </div>
+
+            {company.service_tags?.length > 0 && (
+              <div style={{marginBottom:'0.6rem'}}>
+                <ServiceTagsPills value={company.service_tags} maxVisible={4} color={color} />
+              </div>
+            )}
 
             {(canViewCompanyProfiles || canShareSwipeProfiles) && (
               <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:'0.5rem'}}>

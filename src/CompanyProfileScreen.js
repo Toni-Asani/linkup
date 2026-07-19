@@ -5,6 +5,8 @@ import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } fro
 import { HubbingIcon } from './icons'
 import { createNotificationAndPush } from './pushDelivery'
 import LoadingIndicator from './LoadingIndicator'
+import { ServiceTagsPills } from './ServiceTagsComponents'
+import { parseServiceTags } from './serviceTags'
 import { NeedAttachmentGallery } from './NeedAttachmentComponents'
 import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag, reportNeedAttachment } from './needAttachments'
 import { NeedCompletionsPanel } from './NeedCompletionComponents'
@@ -261,6 +263,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   }
   const tagText = tag => (typeof tag === 'string' ? tag : tag?.label || '').trim()
   const groupedNeedAttachments = groupNeedAttachments(needAttachments)
+  const serviceTags = parseServiceTags(company.service_tags)
 
   let parsedTags = []
   try { parsedTags = company.needs_tags ? JSON.parse(company.needs_tags) : [] } catch { parsedTags = [] }
@@ -363,6 +366,12 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
       </div>
 
       <div style={{padding:'1.5rem 1rem',display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:0}}>
+        {serviceTags.length > 0 && (
+          <div style={{background:'white',border:'1px solid #F1D1D1',borderRadius:12,padding:'1rem'}}>
+            <p style={{fontSize:12,color:'#E24B4A',fontWeight:800,margin:'0 0 8px'}}>{ui.profile.serviceTags?.title || 'SERVICES PROPOSÉS'}</p>
+            <ServiceTagsPills value={serviceTags} maxVisible={10} color="#E24B4A" />
+          </div>
+        )}
 
         {/* Description */}
         {company.description && (

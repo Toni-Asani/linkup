@@ -6,6 +6,7 @@ import { HubbingIcon } from './icons'
 import LoadingIndicator from './LoadingIndicator'
 import { getCompanyCoordinates } from './geo'
 import { fetchSuccessfulCollaborationCount } from './needCompletions'
+import { formatServiceTag, getServiceTagsText, parseServiceTags, serviceTagKey } from './serviceTags'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#2F7D32',
@@ -130,7 +131,7 @@ const getSectorServiceText = (sector) => {
 const getCompanyOfferText = (company) => [
   company?.sector,
   company?.description,
-  company?.services,
+  getServiceTagsText(company?.service_tags),
   getSectorServiceText(company?.sector),
 ].filter(Boolean).join(' ')
 
@@ -170,6 +171,16 @@ const getKeywordMatches = (currentCompany, opportunityCompany) => {
   return unique(needTokens.filter(token => getTokenRoots(token).some(root => currentRoots.has(root)))).slice(0, 4)
 }
 
+const getExactServiceTagMatches = (currentCompany, opportunityCompany) => {
+  const needsText = normalizeSearchText(getCompanyNeedsText(opportunityCompany))
+  return parseServiceTags(currentCompany?.service_tags)
+    .filter(tag => {
+      const key = serviceTagKey(tag)
+      return key && needsText.includes(key)
+    })
+    .slice(0, 4)
+}
+
 const getFreshnessScore = (company) => {
   const value = company?.needs_updated_at || company?.updated_at || company?.created_at
   const timestamp = value ? new Date(value).getTime() : 0
@@ -179,7 +190,8 @@ const getFreshnessScore = (company) => {
 const buildOpportunity = (company, currentCompany, attachmentCount = 0) => {
   const activeTags = getActiveTags(company?.needs_tags)
   const keywordMatches = getKeywordMatches(currentCompany, company)
-  if (!keywordMatches.length) return null
+  const exactServiceTagMatches = getExactServiceTagMatches(currentCompany, company)
+  if (!keywordMatches.length && !exactServiceTagMatches.length) return null
 
   const distanceKm = getDistanceKm(currentCompany, company)
   const matchReasons = []
@@ -199,6 +211,11 @@ const buildOpportunity = (company, currentCompany, attachmentCount = 0) => {
     relevanceScore += 3
     matchReasons.push(token)
   })
+  exactServiceTagMatches.forEach(tag => {
+    score += 6
+    relevanceScore += 6
+    matchReasons.push(formatServiceTag(tag))
+  })
   if (typeof distanceKm === 'number') {
     if (distanceKm <= 25) score += 3
     else if (distanceKm <= 50) score += 2
@@ -212,6 +229,7 @@ const buildOpportunity = (company, currentCompany, attachmentCount = 0) => {
     title: getNeedSummary(company),
     activeTags,
     keywordMatches,
+    exactServiceTagMatches,
     matchReasons: unique(matchReasons).slice(0, 4),
     distanceKm,
     attachmentCount,

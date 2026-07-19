@@ -164,6 +164,19 @@ const parseActiveTags = (needsTags: unknown) => {
   }
 }
 
+const parseServiceTags = (serviceTags: unknown) => {
+  try {
+    const tags = typeof serviceTags === 'string' ? JSON.parse(serviceTags) : serviceTags
+    if (!Array.isArray(tags)) return []
+    return tags
+      .map(tag => String(typeof tag === 'string' ? tag : tag?.label || '').replace(/^#+/, '').trim())
+      .filter(Boolean)
+      .slice(0, 10)
+  } catch {
+    return []
+  }
+}
+
 const getActiveNeeds = (company: Record<string, unknown>) => {
   const needs = []
   const description = String(company.needs_description || '').trim()
@@ -191,26 +204,34 @@ const getActiveNeeds = (company: Record<string, unknown>) => {
 const getCompanyOfferText = (company: Record<string, unknown>) => [
   company.sector,
   company.description,
-  company.services,
+  parseServiceTags(company.service_tags).join(' '),
   getSectorServiceText(String(company.sector || '')),
 ].filter(Boolean).join(' ')
 
 const scoreCompanyForNeed = (needText: string, company: Record<string, unknown>) => {
   const needTokens = tokenize(needText)
+  const normalizedNeed = normalizeSearchText(needText)
+  const exactServiceTagMatches = parseServiceTags(company.service_tags)
+    .filter(tag => {
+      const normalizedTag = normalizeSearchText(tag).replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim()
+      return normalizedTag && normalizedNeed.includes(normalizedTag)
+    })
   const offerTokens = tokenize(getCompanyOfferText(company))
   const offerRoots = new Set(offerTokens.flatMap(getTokenRoots))
   const keywordMatches = unique(needTokens.filter(token => getTokenRoots(token).some(root => offerRoots.has(root))))
-  if (!keywordMatches.length) return null
+  if (!keywordMatches.length && !exactServiceTagMatches.length) return null
 
-  let score = keywordMatches.length * 3
+  const relevanceScore = keywordMatches.length * 3 + exactServiceTagMatches.length * 6
+  let score = relevanceScore
   if (company.canton) score += 1
   if (company.description) score += 1
 
   return {
     company,
     score,
-    relevanceScore: keywordMatches.length * 3,
+    relevanceScore,
     keywordMatches: keywordMatches.slice(0, 4),
+    exactServiceTagMatches: exactServiceTagMatches.slice(0, 4),
   }
 }
 
@@ -265,7 +286,7 @@ serve(async (req) => {
     if (!activeNeeds.length) return json({ ok: true, matched: 0, sent: 0, skipped: 'no_active_needs' })
 
     const candidateCompanies = await readRows<Record<string, unknown>>('companies', {
-      select: 'id,user_id,name,sector,description,canton,notif_app,is_suspended',
+      select: 'id,user_id,name,sector,description,service_tags,canton,notif_app,is_suspended',
       is_suspended: 'eq.false',
       user_id: 'not.is.null',
       limit: '500',

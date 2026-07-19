@@ -21,6 +21,8 @@ import { fetchPendingNeedCompletionCount, NEED_COMPLETION_NOTIFICATION_TYPE } fr
 import { NEED_OPPORTUNITY_NOTIFICATION_TYPE } from './needOpportunityNotifications'
 import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
+import { ServiceTagsEditor } from './ServiceTagsComponents'
+import { parseServiceTags } from './serviceTags'
 
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
@@ -1822,6 +1824,7 @@ function RegisterScreen({ setScreen, t, lang = 'fr' }) {
   const [showPassword, setShowPassword] = useState(false)
   const [company, setCompany] = useState(registrationDraft.company || '')
   const [sector, setSector] = useState(registrationDraft.sector || '')
+  const [serviceTags, setServiceTags] = useState(parseServiceTags(registrationDraft.serviceTags))
   const [zefix, setZefix] = useState(registrationDraft.zefix || '')
   const [contactName, setContactName] = useState(registrationDraft.contactName || '')
   const [contactTitle, setContactTitle] = useState(registrationDraft.contactTitle || '')
@@ -1844,6 +1847,7 @@ useEffect(() => {
       email,
       company,
       sector,
+      serviceTags,
       zefix,
       contactName,
       contactTitle,
@@ -1858,7 +1862,7 @@ useEffect(() => {
   } catch {
     // Safari private windows can block sessionStorage; the form still works without draft restore.
   }
-}, [email, company, sector, zefix, contactName, contactTitle, contactPhone, address, city, canton, npa, accepted, selectedPlan])
+}, [email, company, sector, serviceTags, zefix, contactName, contactTitle, contactPhone, address, city, canton, npa, accepted, selectedPlan])
 
 const handleZefixLookup = (ideNumber) => {
   setZefix(ideNumber)
@@ -2067,6 +2071,7 @@ if (zefixStatus === 'invalid') {
         user_id: userId,
       name: company,
       sector,
+      service_tags: serviceTags,
       zefix_uid: clean,
       contact_name: contactName,
       contact_title: contactTitle,
@@ -2266,6 +2271,9 @@ if (zefixStatus === 'invalid') {
             <option key={option} value={option}>{option}</option>
           ))}
         </select>
+      </div>
+      <div style={{background:'#FFF9F9',border:'1px solid #F5D0D0',borderRadius:12,padding:'12px'}}>
+        <ServiceTagsEditor value={serviceTags} onChange={setServiceTags} text={ui.profile.serviceTags} compact />
       </div>
       <input value={zefix} onChange={e => handleZefixLookup(e.target.value)} placeholder={t.ideNumber}
   style={{padding:'14px',border:`1px solid ${zefixBorderColor}`,borderRadius:10,fontSize:16,outline:'none'}} />

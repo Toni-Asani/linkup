@@ -1,3 +1,5 @@
+import { getServiceTagsText } from './serviceTags'
+
 const WIDTH = 1080
 const HEIGHT = 1920
 
@@ -135,7 +137,7 @@ export const createCompanyShareImage = async (company, ui) => {
   const subtitle = [company?.sector, company?.city].filter(Boolean).join(' · ')
   if (subtitle) drawWrappedText(ctx, subtitle, centerX, cardY + 905, textWidth, 46, 2)
 
-  const services = company?.services || company?.description || ''
+  const services = getServiceTagsText(company?.service_tags) || company?.description || ''
   if (services) {
     ctx.font = '500 36px "Plus Jakarta Sans", Arial, sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
