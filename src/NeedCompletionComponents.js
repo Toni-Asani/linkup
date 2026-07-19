@@ -332,8 +332,39 @@ function CompanyAvatar({ company }) {
   )
 }
 
-export function NeedCompletionsPanel({ companyId, completions = [], ui, onChanged, showPendingActions = false }) {
+export function NeedCompletionsPanel({
+  companyId,
+  completions = [],
+  ui,
+  onChanged,
+  showPendingActions = false,
+  canViewClosed = true,
+  onUpgrade,
+  lang = 'fr',
+}) {
   const text = getText(ui)
+  const closedAccess = {
+    fr: {
+      title: 'Besoins clôturés',
+      description: 'Pour voir les collaborations clôturées, passez au forfait Basic ou Premium.',
+      button: 'Changer d’offre',
+    },
+    de: {
+      title: 'Abgeschlossene Bedürfnisse',
+      description: 'Wechseln Sie zu Basic oder Premium, um abgeschlossene Zusammenarbeiten zu sehen.',
+      button: 'Abo wechseln',
+    },
+    it: {
+      title: 'Bisogni conclusi',
+      description: 'Passa a Basic o Premium per vedere le collaborazioni concluse.',
+      button: 'Cambia piano',
+    },
+    en: {
+      title: 'Closed needs',
+      description: 'Upgrade to Basic or Premium to view completed collaborations.',
+      button: 'Change plan',
+    },
+  }[lang] || {}
   const [busyId, setBusyId] = useState(null)
 
   const pending = useMemo(() => completions.filter(item => (
@@ -368,7 +399,7 @@ export function NeedCompletionsPanel({ companyId, completions = [], ui, onChange
     }
   }
 
-  if (pending.length === 0 && clientVisible.length === 0 && providerVisible.length === 0) return null
+  if (canViewClosed && pending.length === 0 && clientVisible.length === 0 && providerVisible.length === 0) return null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -399,7 +430,23 @@ export function NeedCompletionsPanel({ companyId, completions = [], ui, onChange
         </section>
       )}
 
-      {clientVisible.length > 0 && (
+      {!canViewClosed && (
+        <section style={{ ...panelStyle, borderColor: '#FED7AA', background: '#FFF7ED', textAlign: 'center' }}>
+          <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#FFEDD5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 9px' }}>
+            <HubbingIcon name="lock" size={19} color="#C2410C" />
+          </div>
+          <p style={{ fontSize: 12, color: '#C2410C', fontWeight: 900, margin: '0 0 5px' }}>{closedAccess.title || text.closedNeeds}</p>
+          <p style={{ fontSize: 13, color: '#7C2D12', lineHeight: 1.5, margin: '0 0 11px' }}>
+            {text.closedNeedsUpgrade || closedAccess.description}
+          </p>
+          <button type="button" onClick={onUpgrade}
+            style={{ ...buttonBase, width: '100%', background: '#E24B4A', color: 'white' }}>
+            {text.changePlan || closedAccess.button || ui?.common?.viewPlans}
+          </button>
+        </section>
+      )}
+
+      {canViewClosed && clientVisible.length > 0 && (
         <section style={panelStyle}>
           <p style={{ fontSize: 12, color: '#E67E22', fontWeight: 900, margin: '0 0 10px' }}>{text.closedNeeds}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -408,7 +455,7 @@ export function NeedCompletionsPanel({ companyId, completions = [], ui, onChange
         </section>
       )}
 
-      {providerVisible.length > 0 && (
+      {canViewClosed && providerVisible.length > 0 && (
         <section style={panelStyle}>
           <p style={{ fontSize: 12, color: '#166534', fontWeight: 900, margin: '0 0 10px' }}>{text.providerWorks}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

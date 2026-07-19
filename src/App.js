@@ -26,7 +26,7 @@ const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
 const ANDROID_PLAY_URL = 'https://play.google.com/store/apps/details?id=ch.hubbing.app'
 const APP_VERSION = '1.0.9'
-const APP_BUILD_NUMBER = 84
+const APP_BUILD_NUMBER = 85
 const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
@@ -933,9 +933,9 @@ if (isMarketingSite) return (
         ) : screen === 'login' ? (
           <LoginScreen setScreen={setScreen} setUser={setUser} t={t} />
         ) : screen === 'register' ? (
-          <RegisterScreen setScreen={setScreen} t={t} />
+          <RegisterScreen setScreen={setScreen} t={t} lang={lang} />
         ) : screen === 'visitor' ? (
-          <RegisterScreen setScreen={setScreen} t={t} />
+          <RegisterScreen setScreen={setScreen} t={t} lang={lang} />
         ) : screen === 'legal' ? (
           <LegalScreen setScreen={setScreen} lang={lang} />
           ) : screen === 'privacy' ? (
@@ -1813,8 +1813,10 @@ function ResetPasswordScreen({ setScreen, t }) {
   )
 }
 
-function RegisterScreen({ setScreen, t }) {
+function RegisterScreen({ setScreen, t, lang = 'fr' }) {
+  const ui = getUiText(lang)
   const [registrationDraft] = useState(readRegistrationDraft)
+  const [selectedPlan, setSelectedPlan] = useState(registrationDraft.requestedPlan || '')
   const [email, setEmail] = useState(registrationDraft.email || '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -1851,11 +1853,12 @@ useEffect(() => {
       canton,
       npa,
       accepted,
+      requestedPlan: selectedPlan,
     }))
   } catch {
     // Safari private windows can block sessionStorage; the form still works without draft restore.
   }
-}, [email, company, sector, zefix, contactName, contactTitle, contactPhone, address, city, canton, npa, accepted])
+}, [email, company, sector, zefix, contactName, contactTitle, contactPhone, address, city, canton, npa, accepted, selectedPlan])
 
 const handleZefixLookup = (ideNumber) => {
   setZefix(ideNumber)
@@ -2032,7 +2035,11 @@ if (zefixStatus === 'invalid') {
       return
     }
 
-    const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password })
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: { data: { requested_plan: selectedPlan || 'starter' } },
+    })
     if (error) {
       const alreadyUsed = /already|registered|exists|user/i.test(error.message || '')
       setError(alreadyUsed ? t.errorEmailAlreadyUsed : error.message)
@@ -2102,7 +2109,8 @@ if (zefixStatus === 'invalid') {
           city,
           canton,
           userId,
-          zefixVerification: verificationPayload
+          zefixVerification: verificationPayload,
+          requestedPlan: selectedPlan || 'starter'
         })
       })
       if (!response.ok) {
@@ -2142,13 +2150,89 @@ if (zefixStatus === 'invalid') {
         ? '#E24B4A'
         : '#ddd'
 
+  if (!selectedPlan) {
+    const planCopy = {
+      fr: {
+        title: 'Choisissez votre forfait',
+        subtitle: 'Comparez les fonctions avant de créer votre compte. Les forfaits payants seront activés après validation et paiement sécurisé.',
+        choose: 'Choisir ce forfait',
+        recommended: 'Recommandé',
+      },
+      de: {
+        title: 'Wählen Sie Ihr Abo',
+        subtitle: 'Vergleichen Sie die Funktionen vor der Kontoerstellung. Kostenpflichtige Abos werden nach Prüfung und sicherer Zahlung aktiviert.',
+        choose: 'Dieses Abo wählen',
+        recommended: 'Empfohlen',
+      },
+      it: {
+        title: 'Scegli il tuo piano',
+        subtitle: 'Confronta le funzioni prima di creare l’account. I piani a pagamento saranno attivati dopo la verifica e il pagamento sicuro.',
+        choose: 'Scegli questo piano',
+        recommended: 'Consigliato',
+      },
+      en: {
+        title: 'Choose your plan',
+        subtitle: 'Compare features before creating your account. Paid plans are activated after approval and secure payment.',
+        choose: 'Choose this plan',
+        recommended: 'Recommended',
+      },
+    }[lang] || {}
+    const plans = [
+      { id:'starter', name:'Starter', price:ui.common.free, color:'#64748B', features:ui.pricing.starterFeatures, limits:ui.pricing.starterLimits },
+      { id:'basic', name:'Basic', price:`CHF 19.-${ui.common.month}`, color:'#185FA5', features:ui.pricing.basicFeatures, limits:ui.pricing.basicLimits },
+      { id:'premium', name:'Premium', price:`CHF 39.-${ui.common.month}`, color:'#E24B4A', features:ui.pricing.premiumFeatures, limits:ui.pricing.premiumLimits, recommended:true },
+    ]
+    return (
+      <div style={{height:'100dvh',overflowY:'auto',background:'#F8FAFC',padding:'calc(env(safe-area-inset-top) + 1rem) 1rem calc(env(safe-area-inset-bottom) + 2rem)',WebkitOverflowScrolling:'touch'}}>
+        <div style={{width:'100%',maxWidth:430,margin:'0 auto'}}>
+          <button type="button" onClick={() => setScreen('home')}
+            style={{background:'none',border:'none',cursor:'pointer',color:'#64748B',fontSize:14,fontWeight:700,padding:'0.25rem 0 1rem'}}>
+            {t.back}
+          </button>
+          <h1 style={{fontSize:25,fontWeight:900,color:'#111827',margin:'0 0 7px'}}>{planCopy.title}</h1>
+          <p style={{fontSize:13,color:'#64748B',lineHeight:1.55,margin:'0 0 18px'}}>{planCopy.subtitle}</p>
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            {plans.map(planOption => (
+              <section key={planOption.id}
+                style={{background:'white',border:planOption.recommended ? `2px solid ${planOption.color}` : '1px solid #E2E8F0',borderRadius:16,padding:'1rem',boxShadow:'0 8px 24px rgba(15,23,42,0.06)'}}>
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10,marginBottom:10}}>
+                  <div>
+                    <h2 style={{fontSize:18,fontWeight:900,color:planOption.color,margin:0,display:'flex',alignItems:'center',gap:6}}>
+                      {planOption.name}<VerifiedBadge size={17} variant={planOption.id} />
+                    </h2>
+                    {planOption.recommended && <span style={{fontSize:10,fontWeight:900,color:'#E24B4A'}}>{planCopy.recommended}</span>}
+                  </div>
+                  <strong style={{fontSize:15,color:'#111827'}}>{planOption.price}</strong>
+                </div>
+                {planOption.features.slice(0, 7).map(feature => (
+                  <p key={feature} style={{fontSize:12,color:'#475569',margin:'5px 0',lineHeight:1.4}}>✓ {feature}</p>
+                ))}
+                {planOption.limits.slice(0, 3).map(limit => (
+                  <p key={limit} style={{fontSize:12,color:'#94A3B8',margin:'5px 0',lineHeight:1.4}}>− {limit}</p>
+                ))}
+                <button type="button" onClick={() => setSelectedPlan(planOption.id)}
+                  style={{width:'100%',marginTop:12,padding:'12px',background:planOption.color,color:'white',border:'none',borderRadius:11,fontSize:14,fontWeight:800,fontFamily:'Plus Jakarta Sans'}}>
+                  {planCopy.choose}
+                </button>
+              </section>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',padding:'calc(env(safe-area-inset-top) + 1rem) 2rem calc(env(safe-area-inset-bottom) + 2.5rem)',gap:'1rem',overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch',background:'white'}}>
-      <button onClick={() => setScreen('home')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,alignSelf:'flex-start',padding:'0.25rem 0',marginBottom:'0.5rem'}}>
+      <button onClick={() => setSelectedPlan('')} style={{background:'none',border:'none',cursor:'pointer',color:'#666',textAlign:'left',fontSize:14,alignSelf:'flex-start',padding:'0.25rem 0',marginBottom:'0.5rem'}}>
         {t.back}
       </button>
       <h2 style={{fontSize:24,fontWeight:700}}>{t.registerTitle}</h2>
       <p style={{color:'#666',fontSize:13}}>{t.registerSubtitle}</p>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,padding:'10px 12px'}}>
+        <span style={{fontSize:13,color:'#64748B'}}>{({fr:'Forfait choisi',de:'Gewähltes Abo',it:'Piano scelto',en:'Selected plan'}[lang] || ui.common.currentPlan)}</span>
+        <strong style={{fontSize:14,color:selectedPlan === 'premium' ? '#E24B4A' : selectedPlan === 'basic' ? '#185FA5' : '#64748B',textTransform:'capitalize'}}>{selectedPlan}</strong>
+      </div>
 
       <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.5rem'}}>{t.companyInfo}</p>
       <input value={company} onChange={e => setCompany(e.target.value)} placeholder={t.companyName}
@@ -2790,9 +2874,27 @@ const loadNotificationCounts = async () => {
   }, [unreadCount, pendingCompletionCount])
 
   useEffect(() => {
-  supabase.from('subscriptions').select('plan').eq('user_id', user.id).single()
+  supabase.from('subscriptions').select('plan').eq('user_id', user.id).maybeSingle()
     .then(({ data }) => {
-      if (data) setUserPlan(data.plan.charAt(0).toUpperCase() + data.plan.slice(1))
+      const activePlan = String(data?.plan || 'starter').toLowerCase()
+      setUserPlan(activePlan.charAt(0).toUpperCase() + activePlan.slice(1))
+
+      const requestedPlan = String(user.user_metadata?.requested_plan || 'starter').toLowerCase()
+      const promptKey = `hubbing_requested_plan_shown_${user.id}_${requestedPlan}`
+      let alreadyShown = false
+      try {
+        alreadyShown = window.localStorage.getItem(promptKey) === '1'
+      } catch {
+        // Storage is optional; the selected plan can still open normally.
+      }
+      if (activePlan === 'starter' && ['basic', 'premium'].includes(requestedPlan) && !alreadyShown) {
+        try {
+          window.localStorage.setItem(promptKey, '1')
+        } catch {
+          // Continue even if private browsing blocks local storage.
+        }
+        setActiveTab('pricing')
+      }
     })
   }, [user])
   const handleLogout = async () => {

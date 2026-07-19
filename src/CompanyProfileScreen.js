@@ -378,12 +378,6 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           showEmpty
         />
 
-        <NeedCompletionsPanel
-          companyId={company.id}
-          completions={needCompletions}
-          ui={ui}
-        />
-
         {/* Besoins — visibles par tous, réponse limitée par le plan dans la messagerie */}
         {hasNeeds && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
@@ -433,6 +427,15 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             </button>
           </div>
         )}
+
+        <NeedCompletionsPanel
+          companyId={company.id}
+          completions={needCompletions}
+          ui={ui}
+          canViewClosed={!isStarter}
+          onUpgrade={goToPricing}
+          lang={lang}
+        />
 
         {/* Décisionnaire */}
         {company.contact_name && (

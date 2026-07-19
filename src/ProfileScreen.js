@@ -7,7 +7,7 @@ import { isNativeIOS } from './platform'
 import { VerifiedBadge, attachCompanySubscriptions, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
 import { NeedAttachmentCloud, NeedAttachmentGallery, NeedAttachmentUploader } from './NeedAttachmentComponents'
-import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag } from './needAttachments'
+import { deleteNeedAttachment, fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag } from './needAttachments'
 import { NeedCompletionCloseButton, NeedCompletionCloseModal, NeedCompletionsPanel } from './NeedCompletionComponents'
 import { countSuccessfulCollaborationsForCompany, fetchNeedCompletionsForCompany } from './needCompletions'
 import { notifyNeedOpportunities } from './needOpportunityNotifications'
@@ -71,6 +71,52 @@ const cantons = [
 
 export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', lang = 'fr', onPendingCompletionChange }) {
   const ui = getUiText(lang)
+  const needActions = {
+    fr: {
+      renew: 'Renouveler le besoin',
+      renewTitle: 'Renouveler le besoin',
+      startDate: 'Date de début',
+      endDate: 'Date de fin',
+      confirm: 'Confirmer',
+      delete: 'Supprimer le besoin',
+      deleteConfirm: 'Ce besoin a-t-il été réalisé hors de Hubbing ? Il sera supprimé de votre profil. Cette action est irréversible.',
+      expiredTitle: 'BESOINS EXPIRÉS',
+      invalidDates: 'Choisissez une date de fin postérieure ou égale à la date de début.',
+    },
+    de: {
+      renew: 'Bedarf erneuern',
+      renewTitle: 'Bedarf erneuern',
+      startDate: 'Startdatum',
+      endDate: 'Enddatum',
+      confirm: 'Bestätigen',
+      delete: 'Bedarf löschen',
+      deleteConfirm: 'Wurde dieser Bedarf außerhalb von Hubbing erledigt? Er wird dauerhaft aus Ihrem Profil gelöscht.',
+      expiredTitle: 'ABGELAUFENER BEDARF',
+      invalidDates: 'Das Enddatum muss am oder nach dem Startdatum liegen.',
+    },
+    it: {
+      renew: 'Rinnova il bisogno',
+      renewTitle: 'Rinnova il bisogno',
+      startDate: 'Data di inizio',
+      endDate: 'Data di fine',
+      confirm: 'Conferma',
+      delete: 'Elimina il bisogno',
+      deleteConfirm: 'Questo bisogno è stato svolto fuori da Hubbing? Verrà eliminato definitivamente dal profilo.',
+      expiredTitle: 'BISOGNI SCADUTI',
+      invalidDates: 'La data di fine deve essere uguale o successiva alla data di inizio.',
+    },
+    en: {
+      renew: 'Renew need',
+      renewTitle: 'Renew need',
+      startDate: 'Start date',
+      endDate: 'End date',
+      confirm: 'Confirm',
+      delete: 'Delete need',
+      deleteConfirm: 'Was this need completed outside Hubbing? It will be permanently removed from your profile.',
+      expiredTitle: 'EXPIRED NEEDS',
+      invalidDates: 'Choose an end date on or after the start date.',
+    },
+  }[lang] || {}
   const [uploadingContact, setUploadingContact] = useState(false)
   const [company, setCompany] = useState(null)
   const [editing, setEditing] = useState(false)
@@ -91,6 +137,9 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [needCompletions, setNeedCompletions] = useState([])
   const [realizations, setRealizations] = useState([])
   const [closingNeed, setClosingNeed] = useState(null)
+  const [renewingNeed, setRenewingNeed] = useState(null)
+  const [renewalDates, setRenewalDates] = useState({ starts: '', expires: '' })
+  const [needActionBusy, setNeedActionBusy] = useState(false)
   const [sharingProfile, setSharingProfile] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -280,6 +329,94 @@ const handleContactPhotoUpload = async (e) => {
 
   const removeTag = (tag) => {
     setTags(tags.filter(t => !sameTag(t, tag)))
+  }
+
+  const persistNeedsTags = async nextTags => {
+    const serializedTags = JSON.stringify(nextTags)
+    const now = new Date().toISOString()
+    const { error } = await supabase
+      .from('companies')
+      .update({ needs_tags: serializedTags, needs_updated_at: now })
+      .eq('id', company.id)
+    if (error) throw error
+    setTags(nextTags)
+    setForm(current => ({ ...current, needs_tags: serializedTags }))
+    setCompany(current => ({ ...current, needs_tags: serializedTags, needs_updated_at: now }))
+    notifyNeedOpportunities({ companyId: company.id }).catch(notificationError => {
+      console.warn('Unable to notify renewed need:', notificationError?.message || notificationError)
+    })
+  }
+
+  const openRenewNeed = tag => {
+    const today = new Date()
+    const defaultEnd = new Date(today)
+    defaultEnd.setDate(defaultEnd.getDate() + 30)
+    const dateValue = date => date.toISOString().slice(0, 10)
+    setRenewingNeed(tag)
+    setRenewalDates({
+      starts: dateValue(today),
+      expires: dateValue(defaultEnd),
+    })
+  }
+
+  const confirmRenewNeed = async () => {
+    if (!renewingNeed || needActionBusy) return
+    if (!renewalDates.starts || !renewalDates.expires || renewalDates.expires < renewalDates.starts) {
+      alert(needActions.invalidDates)
+      return
+    }
+    setNeedActionBusy(true)
+    try {
+      const nextTags = tags.map(tag => (
+        sameTag(tag, renewingNeed)
+          ? { ...(typeof tag === 'string' ? { label: tag } : tag), starts: renewalDates.starts, expires: renewalDates.expires }
+          : tag
+      ))
+      await persistNeedsTags(nextTags)
+      setRenewingNeed(null)
+    } catch (error) {
+      alert(error?.message || ui.profile.uploadError)
+    } finally {
+      setNeedActionBusy(false)
+    }
+  }
+
+  const deleteNeed = async tag => {
+    if (needActionBusy || !window.confirm(needActions.deleteConfirm)) return
+    setNeedActionBusy(true)
+    try {
+      const tagKey = needKeyForTag(tag)
+      const relatedAttachments = needAttachments.filter(attachment => attachment.need_key === tagKey)
+      await Promise.all(relatedAttachments.map(deleteNeedAttachment))
+      await persistNeedsTags(tags.filter(item => !sameTag(item, tag)))
+      await loadNeedAttachments(company.id)
+    } catch (error) {
+      alert(error?.message || ui.profile.uploadError)
+    } finally {
+      setNeedActionBusy(false)
+    }
+  }
+
+  const deleteGeneralNeed = async () => {
+    if (needActionBusy || !window.confirm(needActions.deleteConfirm)) return
+    setNeedActionBusy(true)
+    try {
+      const relatedAttachments = needAttachments.filter(attachment => attachment.need_key === GENERAL_NEED_KEY)
+      await Promise.all(relatedAttachments.map(deleteNeedAttachment))
+      const now = new Date().toISOString()
+      const { error } = await supabase
+        .from('companies')
+        .update({ needs_description: null, needs_updated_at: now })
+        .eq('id', company.id)
+      if (error) throw error
+      setForm(current => ({ ...current, needs_description: '' }))
+      setCompany(current => ({ ...current, needs_description: '', needs_updated_at: now }))
+      await loadNeedAttachments(company.id)
+    } catch (error) {
+      alert(error?.message || ui.profile.uploadError)
+    } finally {
+      setNeedActionBusy(false)
+    }
   }
 
   const notifyPasswordChange = async () => {
@@ -721,11 +858,41 @@ notif_email: form.notif_email ?? true,
     const expires = typeof t === 'string' ? null : t.expires
     return getTagStatus(expires) !== 'expired'
   })
+  const expiredTags = parsedTags.filter(t => {
+    const expires = typeof t === 'string' ? null : t.expires
+    return getTagStatus(expires) === 'expired'
+  })
   const successfulCollaborations = countSuccessfulCollaborationsForCompany(company.id, needCompletions, { includeHiddenProvider: true })
 
   return (
     <div style={{flex:1,overflowY:'auto'}}>
       {showUsageGuide && <UsageGuideModal t={ui.usageGuide} onClose={() => setShowUsageGuide(false)} />}
+      {renewingNeed && (
+        <div role="dialog" aria-modal="true" onClick={() => !needActionBusy && setRenewingNeed(null)}
+          style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(15,23,42,0.62)',display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
+          <div onClick={event => event.stopPropagation()}
+            style={{width:'100%',maxWidth:360,background:'white',borderRadius:18,padding:'1.25rem',boxShadow:'0 24px 70px rgba(0,0,0,0.28)'}}>
+            <h3 style={{fontSize:19,fontWeight:800,margin:'0 0 4px'}}>{needActions.renewTitle}</h3>
+            <p style={{fontSize:13,color:'#64748B',lineHeight:1.45,margin:'0 0 16px'}}>{tagText(renewingNeed)}</p>
+            <label style={{display:'block',fontSize:12,fontWeight:700,color:'#475569',marginBottom:6}}>{needActions.startDate}</label>
+            <input type="date" value={renewalDates.starts} onChange={event => setRenewalDates(current => ({...current, starts:event.target.value}))}
+              style={{width:'100%',padding:'12px',border:'1px solid #CBD5E1',borderRadius:10,fontSize:15,fontFamily:'Plus Jakarta Sans',marginBottom:12}} />
+            <label style={{display:'block',fontSize:12,fontWeight:700,color:'#475569',marginBottom:6}}>{needActions.endDate}</label>
+            <input type="date" value={renewalDates.expires} min={renewalDates.starts} onChange={event => setRenewalDates(current => ({...current, expires:event.target.value}))}
+              style={{width:'100%',padding:'12px',border:'1px solid #CBD5E1',borderRadius:10,fontSize:15,fontFamily:'Plus Jakarta Sans',marginBottom:16}} />
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <button type="button" onClick={() => setRenewingNeed(null)} disabled={needActionBusy}
+                style={{padding:'12px',border:'1px solid #E2E8F0',borderRadius:10,background:'white',color:'#64748B',fontSize:14,fontWeight:700}}>
+                {ui.common.cancel}
+              </button>
+              <button type="button" onClick={confirmRenewNeed} disabled={needActionBusy}
+                style={{padding:'12px',border:'none',borderRadius:10,background:'#E24B4A',color:'white',fontSize:14,fontWeight:800}}>
+                {needActionBusy ? ui.common.saving : needActions.confirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{
@@ -797,24 +964,22 @@ notif_email: form.notif_email ?? true,
           showEmpty
         />
 
-        <NeedCompletionsPanel
-          companyId={company.id}
-          completions={needCompletions}
-          ui={ui}
-          showPendingActions
-          onChanged={refreshNeedCompletions}
-        />
-
         {/* Nos besoins */}
-        {(company.needs_description || activeTags.length > 0 || needAttachments.length > 0) && (
+        {(company.needs_description || activeTags.length > 0 || expiredTags.length > 0 || needAttachments.length > 0) && (
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
 	            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
 	              <HubbingIcon name="briefcase" size={14} color="#E67E22" /> {ui.profile.needs}
 	            </p>
             {company.needs_description && (
-              <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 ? 10 : 0}}>
-                {company.needs_description}
-              </p>
+              <>
+                <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom:8}}>
+                  {company.needs_description}
+                </p>
+                <button type="button" onClick={deleteGeneralNeed} disabled={needActionBusy}
+                  style={{padding:'7px 10px',background:'white',color:'#B91C1C',border:'1px solid #FECACA',borderRadius:9,fontSize:11,fontWeight:800,marginBottom:10}}>
+                  {needActions.delete}
+                </button>
+              </>
             )}
             {(groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0 && (
               <NeedAttachmentGallery
@@ -841,8 +1006,40 @@ notif_email: form.notif_email ?? true,
                       ui={ui}
                       canDownload={currentPlan === 'Premium'}
                     />
+                    <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+                      <button type="button" onClick={() => openRenewNeed(tag)} disabled={needActionBusy}
+                        style={{padding:'7px 10px',background:'#FFF7ED',color:'#C2410C',border:'1px solid #FDBA74',borderRadius:9,fontSize:11,fontWeight:800}}>
+                        {needActions.renew}
+                      </button>
+                      <button type="button" onClick={() => deleteNeed(tag)} disabled={needActionBusy}
+                        style={{padding:'7px 10px',background:'white',color:'#B91C1C',border:'1px solid #FECACA',borderRadius:9,fontSize:11,fontWeight:800}}>
+                        {needActions.delete}
+                      </button>
+                    </div>
                   </div>
                 )})}
+              </div>
+            )}
+            {expiredTags.length > 0 && (
+              <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid #FED7AA'}}>
+                <p style={{fontSize:11,color:'#B91C1C',fontWeight:900,margin:'0 0 8px'}}>{needActions.expiredTitle}</p>
+                <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                  {expiredTags.map((tag, i) => (
+                    <div key={`expired-${needKeyForTag(tag)}-${i}`} style={{background:'white',border:'1px solid #FECACA',borderRadius:11,padding:10}}>
+                      <p style={{fontSize:13,fontWeight:700,color:'#334155',margin:'0 0 8px'}}>{tagText(tag)}</p>
+                      <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+                        <button type="button" onClick={() => openRenewNeed(tag)} disabled={needActionBusy}
+                          style={{padding:'8px 10px',background:'#E24B4A',color:'white',border:'none',borderRadius:9,fontSize:11,fontWeight:800}}>
+                          {needActions.renew}
+                        </button>
+                        <button type="button" onClick={() => deleteNeed(tag)} disabled={needActionBusy}
+                          style={{padding:'8px 10px',background:'white',color:'#B91C1C',border:'1px solid #FECACA',borderRadius:9,fontSize:11,fontWeight:800}}>
+                          {needActions.delete}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -853,6 +1050,15 @@ notif_email: form.notif_email ?? true,
           attachments={needAttachments}
           onChange={() => loadNeedAttachments(company.id)}
           ui={ui}
+        />
+
+        <NeedCompletionsPanel
+          companyId={company.id}
+          completions={needCompletions}
+          ui={ui}
+          showPendingActions
+          onChanged={refreshNeedCompletions}
+          lang={lang}
         />
 
         {/* Décideur */}
