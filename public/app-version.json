@@ -1,20 +1,122 @@
 {
   "ios": {
-    "latest_version": "1.0.2",
+    "latest_version": "1.0.10",
     "minimum_supported_version": "1.0.2",
     "minimum_supported_build": 71,
     "store_url": "https://apps.apple.com/ch/app/hubbing/id6762903411",
     "title": "Mise à jour nécessaire",
     "message": "Une nouvelle version de Hubbing est disponible. Veuillez mettre à jour l'application pour continuer.",
-    "button_label": "Mettre à jour"
+    "button_label": "Mettre à jour",
+    "release_announcement": {
+      "enabled": true,
+      "id": "hubbing-1.0.10",
+      "version": "1.0.10",
+      "copy": {
+        "fr": {
+          "title": "Découvrez le nouveau Hubbing",
+          "message": "Cette mise à jour facilite encore davantage la recherche de collaborations entre entreprises.",
+          "bullets": [
+            "Recherches permanentes et besoins ponctuels clairement séparés.",
+            "Services avec hashtags et notifications pour les opportunités correspondantes.",
+            "Détails des besoins, photos, dates, renouvellement et contact par message.",
+            "Aperçu de votre carte de profil et nombreuses améliorations visuelles."
+          ],
+          "button_label": "Découvrir les nouveautés"
+        },
+        "de": {
+          "title": "Entdecken Sie das neue Hubbing",
+          "message": "Dieses Update macht die Suche nach Kooperationen zwischen Unternehmen noch einfacher.",
+          "bullets": [
+            "Dauerhafte Suchen und aktuelle Bedürfnisse sind klar getrennt.",
+            "Leistungen mit Hashtags und Benachrichtigungen für passende Chancen.",
+            "Bedarfsdetails, Fotos, Daten, Verlängerung und Kontakt per Nachricht.",
+            "Vorschau Ihrer Profilkarte und zahlreiche visuelle Verbesserungen."
+          ],
+          "button_label": "Neuheiten entdecken"
+        },
+        "it": {
+          "title": "Scopri il nuovo Hubbing",
+          "message": "Questo aggiornamento rende ancora più semplice trovare collaborazioni tra aziende.",
+          "bullets": [
+            "Ricerche permanenti e bisogni puntuali chiaramente separati.",
+            "Servizi con hashtag e notifiche per le opportunità corrispondenti.",
+            "Dettagli dei bisogni, foto, date, rinnovo e contatto tramite messaggio.",
+            "Anteprima della scheda profilo e numerosi miglioramenti visivi."
+          ],
+          "button_label": "Scopri le novità"
+        },
+        "en": {
+          "title": "Discover the new Hubbing",
+          "message": "This update makes it even easier for companies to find the right collaborations.",
+          "bullets": [
+            "Ongoing searches and current needs are now clearly separated.",
+            "Service hashtags and notifications for matching opportunities.",
+            "Need details, photos, dates, renewal and contact by message.",
+            "Profile card preview and many visual improvements."
+          ],
+          "button_label": "Discover what’s new"
+        }
+      }
+    }
   },
   "android": {
-    "latest_version": "1.0.2",
+    "latest_version": "1.0.10",
     "minimum_supported_version": "1.0.2",
     "minimum_supported_build": 71,
     "store_url": "https://play.google.com/store/apps/details?id=ch.hubbing.app",
     "title": "Mise à jour nécessaire",
     "message": "Une nouvelle version de Hubbing est disponible. Veuillez mettre à jour l'application pour continuer.",
-    "button_label": "Mettre à jour"
+    "button_label": "Mettre à jour",
+    "release_announcement": {
+      "enabled": true,
+      "id": "hubbing-1.0.10",
+      "version": "1.0.10",
+      "copy": {
+        "fr": {
+          "title": "Découvrez le nouveau Hubbing",
+          "message": "Cette mise à jour facilite encore davantage la recherche de collaborations entre entreprises.",
+          "bullets": [
+            "Recherches permanentes et besoins ponctuels clairement séparés.",
+            "Services avec hashtags et notifications pour les opportunités correspondantes.",
+            "Détails des besoins, photos, dates, renouvellement et contact par message.",
+            "Aperçu de votre carte de profil et nombreuses améliorations visuelles."
+          ],
+          "button_label": "Découvrir les nouveautés"
+        },
+        "de": {
+          "title": "Entdecken Sie das neue Hubbing",
+          "message": "Dieses Update macht die Suche nach Kooperationen zwischen Unternehmen noch einfacher.",
+          "bullets": [
+            "Dauerhafte Suchen und aktuelle Bedürfnisse sind klar getrennt.",
+            "Leistungen mit Hashtags und Benachrichtigungen für passende Chancen.",
+            "Bedarfsdetails, Fotos, Daten, Verlängerung und Kontakt per Nachricht.",
+            "Vorschau Ihrer Profilkarte und zahlreiche visuelle Verbesserungen."
+          ],
+          "button_label": "Neuheiten entdecken"
+        },
+        "it": {
+          "title": "Scopri il nuovo Hubbing",
+          "message": "Questo aggiornamento rende ancora più semplice trovare collaborazioni tra aziende.",
+          "bullets": [
+            "Ricerche permanenti e bisogni puntuali chiaramente separati.",
+            "Servizi con hashtag e notifiche per le opportunità corrispondenti.",
+            "Dettagli dei bisogni, foto, date, rinnovo e contatto tramite messaggio.",
+            "Anteprima della scheda profilo e numerosi miglioramenti visivi."
+          ],
+          "button_label": "Scopri le novità"
+        },
+        "en": {
+          "title": "Discover the new Hubbing",
+          "message": "This update makes it even easier for companies to find the right collaborations.",
+          "bullets": [
+            "Ongoing searches and current needs are now clearly separated.",
+            "Service hashtags and notifications for matching opportunities.",
+            "Need details, photos, dates, renewal and contact by message.",
+            "Profile card preview and many visual improvements."
+          ],
+          "button_label": "Discover what’s new"
+        }
+      }
+    }
   }
 }

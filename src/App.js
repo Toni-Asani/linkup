@@ -27,9 +27,10 @@ import { parseServiceTags } from './serviceTags'
 const MapScreen = React.lazy(() => import('./MapScreen'))
 const APP_STORE_URL = 'https://apps.apple.com/ch/app/hubbing/id6762903411'
 const ANDROID_PLAY_URL = 'https://play.google.com/store/apps/details?id=ch.hubbing.app'
-const APP_VERSION = '1.0.9'
-const APP_BUILD_NUMBER = 86
+const APP_VERSION = '1.0.10'
+const APP_BUILD_NUMBER = 87
 const APP_VERSION_CONFIG_URL = 'https://app.hubbing.ch/app-version.json'
+const RELEASE_ANNOUNCEMENT_STORAGE_PREFIX = 'hubbing_release_announcement_seen_'
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
 const PRIVACY_POLICY_URL = 'https://app.hubbing.ch/privacy.html'
 const SESSION_RESTORE_TIMEOUT_MS = 8000
@@ -90,6 +91,32 @@ const getRequiredUpdate = (config, platform) => {
     message: platformConfig.message || "Une nouvelle version de Hubbing est disponible. Veuillez mettre à jour l'application pour continuer.",
     buttonLabel: platformConfig.button_label || 'Mettre à jour',
     storeUrl: platformConfig.store_url || getDefaultStoreUrl(platform),
+  }
+}
+
+const getReleaseAnnouncement = (config, platform, lang) => {
+  const platformConfig = config?.[platform]
+  const announcement = platformConfig?.release_announcement
+  if (!announcement?.enabled) return null
+
+  const releaseVersion = announcement.version || platformConfig?.latest_version
+  if (releaseVersion && compareVersions(APP_VERSION, releaseVersion) < 0) return null
+
+  const releaseId = String(announcement.id || `${platform}-${releaseVersion || APP_VERSION}`)
+  const storageKey = `${RELEASE_ANNOUNCEMENT_STORAGE_PREFIX}${releaseId}`
+  try {
+    if (window.localStorage.getItem(storageKey) === '1') return null
+  } catch {}
+
+  const copy = announcement.copy?.[lang] || announcement.copy?.fr || announcement
+  return {
+    id: releaseId,
+    storageKey,
+    title: copy.title || 'Hubbing évolue',
+    message: copy.message || 'Découvrez les nouveautés de cette mise à jour.',
+    bullets: Array.isArray(copy.bullets) ? copy.bullets.map(item => String(item)).filter(Boolean) : [],
+    buttonLabel: copy.button_label || copy.buttonLabel || 'Découvrir',
+    version: releaseVersion || APP_VERSION,
   }
 }
 
@@ -758,6 +785,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState('fr')
   const [requiredUpdate, setRequiredUpdate] = useState(null)
+  const [releaseAnnouncement, setReleaseAnnouncement] = useState(null)
   const hostname = window.location.hostname.toLowerCase()
   const isStandalonePwa = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true
   const isMarketingSite = (hostname === 'hubbing.ch' || hostname === 'www.hubbing.ch') && !isStandalonePwa
@@ -802,6 +830,7 @@ export default function App() {
 
     if (!isNativeApp() || !['ios', 'android'].includes(platform)) {
       setRequiredUpdate(null)
+      setReleaseAnnouncement(null)
       return undefined
     }
 
@@ -809,14 +838,16 @@ export default function App() {
       .then(response => response.ok ? response.json() : null)
       .then(config => {
         if (cancelled) return
-        setRequiredUpdate(getRequiredUpdate(config, platform))
+        const updateRequirement = getRequiredUpdate(config, platform)
+        setRequiredUpdate(updateRequirement)
+        setReleaseAnnouncement(updateRequirement ? null : getReleaseAnnouncement(config, platform, lang))
       })
       .catch(error => {
         console.warn('Unable to check app version:', error)
       })
 
     return () => { cancelled = true }
-  }, [])
+  }, [lang])
 
   useEffect(() => {
     let active = true
@@ -947,6 +978,17 @@ if (isMarketingSite) return (
         ) : null}
       </div>
       {requiredUpdate && <RequiredUpdateScreen updateRequirement={requiredUpdate} />}
+      {!requiredUpdate && user && releaseAnnouncement && (
+        <ReleaseAnnouncementModal
+          announcement={releaseAnnouncement}
+          onClose={() => {
+            try {
+              window.localStorage.setItem(releaseAnnouncement.storageKey, '1')
+            } catch {}
+            setReleaseAnnouncement(null)
+          }}
+        />
+      )}
     </>
   )
 }
@@ -1007,6 +1049,44 @@ function RequiredUpdateScreen({ updateRequirement }) {
         <p style={{fontSize:11,lineHeight:1.45,color:'#94A3B8',margin:'0.9rem 0 0'}}>
           Version installée : {APP_VERSION} ({APP_BUILD_NUMBER})
         </p>
+      </section>
+    </div>
+  )
+}
+
+function ReleaseAnnouncementModal({ announcement, onClose }) {
+  return (
+    <div role="dialog" aria-modal="true" aria-label={announcement.title}
+      style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(15,23,42,0.68)',display:'flex',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 1.5rem) 1.25rem calc(env(safe-area-inset-bottom) + 1.5rem)',backdropFilter:'blur(8px)'}}>
+      <section style={{width:'100%',maxWidth:370,maxHeight:'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 3rem)',overflowY:'auto',WebkitOverflowScrolling:'touch',background:'white',borderRadius:24,padding:'1.5rem',boxSizing:'border-box',boxShadow:'0 28px 70px rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.8)'}}>
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:14,marginBottom:14}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,minWidth:0}}>
+            <img src="/LOGO-HUBBING-ICON.svg" alt="" style={{width:56,height:56,borderRadius:'50%',boxShadow:'0 10px 26px rgba(226,75,74,0.2)',flexShrink:0}} />
+            <div style={{minWidth:0}}>
+              <p style={{fontSize:10,color:'#E24B4A',fontWeight:900,letterSpacing:0.4,margin:'0 0 4px',textTransform:'uppercase'}}>Version {announcement.version}</p>
+              <h1 style={{fontSize:22,lineHeight:1.2,fontWeight:900,color:'#111827',margin:0}}>{announcement.title}</h1>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Fermer"
+            style={{width:38,height:38,borderRadius:'50%',border:'1px solid #E2E8F0',background:'#F8FAFC',display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer'}}>
+            <HubbingIcon name="x" size={18} color="#475569" />
+          </button>
+        </div>
+        <p style={{fontSize:14,lineHeight:1.6,color:'#64748B',margin:'0 0 14px'}}>{announcement.message}</p>
+        {announcement.bullets.length > 0 && (
+          <div style={{display:'flex',flexDirection:'column',gap:9,marginBottom:18}}>
+            {announcement.bullets.map((item, index) => (
+              <div key={`${index}-${item}`} style={{display:'grid',gridTemplateColumns:'26px minmax(0, 1fr)',alignItems:'start',gap:9,background:'#FFF8F7',border:'1px solid #FEE2E2',borderRadius:12,padding:'10px 11px'}}>
+                <span aria-hidden="true" style={{width:25,height:25,borderRadius:'50%',background:'#E24B4A',color:'white',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900}}>✓</span>
+                <p style={{fontSize:12,lineHeight:1.5,color:'#334155',fontWeight:700,margin:'2px 0 0'}}>{item}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        <button type="button" onClick={onClose}
+          style={{width:'100%',padding:'13px 16px',background:'#E24B4A',color:'white',border:'none',borderRadius:13,fontSize:15,fontWeight:900,cursor:'pointer',fontFamily:'Plus Jakarta Sans',boxShadow:'0 12px 28px rgba(226,75,74,0.24)'}}>
+          {announcement.buttonLabel}
+        </button>
       </section>
     </div>
   )
