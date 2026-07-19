@@ -52,8 +52,8 @@ export default function CompanySwipeCardPreview({ company, realizations = [], co
       onMouseDown={event => {
         if (event.target === event.currentTarget) onClose?.()
       }}
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(60px + env(safe-area-inset-bottom))', zIndex: 3000, boxSizing: 'border-box', overflow: 'hidden', background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(14px, env(safe-area-inset-top)) 14px 14px' }}>
-      <div style={{ width: 'min(100%, 410px)', height: '100%', maxHeight: 760, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(60px + env(safe-area-inset-bottom))', zIndex: 3000, boxSizing: 'border-box', overflow: 'hidden', background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(5px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'max(14px, env(safe-area-inset-top)) 14px 14px' }}>
+      <div style={{ width: 'min(100%, 410px)', flex: '1 1 auto', maxHeight: 760, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, color: 'white', padding: '0 2px' }}>
           <div>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 900 }}>{text.previewTitle || 'Aperçu de votre carte Swipe'}</p>
