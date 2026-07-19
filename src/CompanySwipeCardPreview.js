@@ -52,8 +52,8 @@ export default function CompanySwipeCardPreview({ company, realizations = [], co
       onMouseDown={event => {
         if (event.target === event.currentTarget) onClose?.()
       }}
-      style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom))' }}>
-      <div style={{ width: 'min(100%, 410px)', maxHeight: 'calc(100dvh - 36px)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(60px + env(safe-area-inset-bottom))', zIndex: 3000, boxSizing: 'border-box', overflow: 'hidden', background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(14px, env(safe-area-inset-top)) 14px 14px' }}>
+      <div style={{ width: 'min(100%, 410px)', height: '100%', maxHeight: 760, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, color: 'white', padding: '0 2px' }}>
           <div>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 900 }}>{text.previewTitle || 'Aperçu de votre carte Swipe'}</p>
@@ -66,7 +66,9 @@ export default function CompanySwipeCardPreview({ company, realizations = [], co
           </button>
         </div>
 
-        <article style={{ minHeight: 0, overflowY: 'auto', background: 'white', borderRadius: 20, border: '1px solid rgba(255,255,255,0.7)', boxShadow: '0 24px 70px rgba(15,23,42,0.35)' }}>
+        <article
+          className="company-card-preview-scroll"
+          style={{ flex: '1 1 0', minHeight: 0, overflowY: 'scroll', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y', scrollbarGutter: 'stable', background: 'white', borderRadius: 20, border: '1px solid rgba(255,255,255,0.7)', boxShadow: '0 24px 70px rgba(15,23,42,0.35)' }}>
           <div style={{ height: 112, ...headerBackground, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             {company.logo_url ? (
               <img src={company.logo_url} alt="" style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'cover', border: '3px solid white', boxShadow: '0 8px 24px rgba(15,23,42,0.22)' }} />
