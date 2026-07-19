@@ -56,7 +56,7 @@ export default function CompanySwipeCardPreview({ company, realizations = [], ne
       onMouseDown={event => {
         if (event.target === event.currentTarget) onClose?.()
       }}
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(60px + env(safe-area-inset-bottom))', zIndex: 3000, boxSizing: 'border-box', overflow: 'hidden', background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(5px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'max(14px, env(safe-area-inset-top)) 14px 14px' }}>
+      style={{ position: 'fixed', top: 'calc(56px + env(safe-area-inset-top))', left: 0, right: 0, bottom: 'calc(60px + env(safe-area-inset-bottom))', zIndex: 3000, boxSizing: 'border-box', overflow: 'hidden', background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(5px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px 14px 14px' }}>
       {selectedNeed && (
         <NeedDetailsModal
           need={selectedNeed}
@@ -68,17 +68,17 @@ export default function CompanySwipeCardPreview({ company, realizations = [], ne
           onClose={() => setSelectedNeed(null)}
         />
       )}
+      <button type="button" onClick={onClose}
+        style={{ position: 'absolute', top: 10, right: 14, zIndex: 5, display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0, background: 'white', color: '#334155', border: '1px solid #E2E8F0', borderRadius: 999, padding: '8px 11px', fontSize: 12, fontWeight: 850, cursor: 'pointer', fontFamily: 'Plus Jakarta Sans', boxShadow: '0 6px 18px rgba(15,23,42,0.18)' }}>
+        <X size={15} strokeWidth={2.5} />
+        {ui?.common?.close || 'Fermer'}
+      </button>
       <div style={{ width: 'min(100%, 410px)', flex: '1 1 auto', maxHeight: 760, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, color: 'white', padding: '0 2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'white', padding: '0 100px 0 2px', minHeight: 36 }}>
           <div>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 900 }}>{text.previewTitle || 'Aperçu de votre carte Swipe'}</p>
             <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.72)' }}>{text.previewHelp || 'Voici ce que les autres entreprises voient.'}</p>
           </div>
-          <button type="button" onClick={onClose}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0, background: 'white', color: '#334155', border: 'none', borderRadius: 999, padding: '8px 11px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'Plus Jakarta Sans' }}>
-            <X size={15} strokeWidth={2.5} />
-            {ui?.common?.close || 'Fermer'}
-          </button>
         </div>
 
         <article

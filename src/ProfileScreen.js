@@ -81,8 +81,14 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       startDate: 'Date de début',
       endDate: 'Date de fin',
       confirm: 'Confirmer',
+      edit: 'Modifier',
+      editTitle: 'Modifier le besoin',
+      needLabel: 'Description du besoin',
+      saveChanges: 'Enregistrer les modifications',
       delete: 'Supprimer le besoin',
       deleteConfirm: 'Ce besoin a-t-il été réalisé hors de Hubbing ? Il sera supprimé de votre profil. Cette action est irréversible.',
+      deletePublishedConfirm: 'Supprimer définitivement ce besoin et toutes ses pièces jointes ?',
+      duplicateNeed: 'Un besoin portant ce nom existe déjà.',
       expiredTitle: 'BESOINS EXPIRÉS',
       invalidDates: 'Choisissez une date de fin postérieure ou égale à la date de début.',
     },
@@ -92,8 +98,14 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       startDate: 'Startdatum',
       endDate: 'Enddatum',
       confirm: 'Bestätigen',
+      edit: 'Bearbeiten',
+      editTitle: 'Bedarf bearbeiten',
+      needLabel: 'Beschreibung des Bedarfs',
+      saveChanges: 'Änderungen speichern',
       delete: 'Bedarf löschen',
       deleteConfirm: 'Wurde dieser Bedarf außerhalb von Hubbing erledigt? Er wird dauerhaft aus Ihrem Profil gelöscht.',
+      deletePublishedConfirm: 'Diesen Bedarf und alle Anhänge endgültig löschen?',
+      duplicateNeed: 'Ein Bedarf mit diesem Namen existiert bereits.',
       expiredTitle: 'ABGELAUFENER BEDARF',
       invalidDates: 'Das Enddatum muss am oder nach dem Startdatum liegen.',
     },
@@ -103,8 +115,14 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       startDate: 'Data di inizio',
       endDate: 'Data di fine',
       confirm: 'Conferma',
+      edit: 'Modifica',
+      editTitle: 'Modifica il bisogno',
+      needLabel: 'Descrizione del bisogno',
+      saveChanges: 'Salva le modifiche',
       delete: 'Elimina il bisogno',
       deleteConfirm: 'Questo bisogno è stato svolto fuori da Hubbing? Verrà eliminato definitivamente dal profilo.',
+      deletePublishedConfirm: 'Eliminare definitivamente questo bisogno e tutti gli allegati?',
+      duplicateNeed: 'Esiste già un bisogno con questo nome.',
       expiredTitle: 'BISOGNI SCADUTI',
       invalidDates: 'La data di fine deve essere uguale o successiva alla data di inizio.',
     },
@@ -114,8 +132,14 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       startDate: 'Start date',
       endDate: 'End date',
       confirm: 'Confirm',
+      edit: 'Edit',
+      editTitle: 'Edit need',
+      needLabel: 'Need description',
+      saveChanges: 'Save changes',
       delete: 'Delete need',
       deleteConfirm: 'Was this need completed outside Hubbing? It will be permanently removed from your profile.',
+      deletePublishedConfirm: 'Permanently delete this need and all its attachments?',
+      duplicateNeed: 'A need with this name already exists.',
       expiredTitle: 'EXPIRED NEEDS',
       invalidDates: 'Choose an end date on or after the start date.',
     },
@@ -157,6 +181,8 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [realizations, setRealizations] = useState([])
   const [closingNeed, setClosingNeed] = useState(null)
   const [renewingNeed, setRenewingNeed] = useState(null)
+  const [editingNeed, setEditingNeed] = useState(null)
+  const [editNeedForm, setEditNeedForm] = useState({ label: '', starts: '', expires: '' })
   const [renewalDates, setRenewalDates] = useState({ starts: '', expires: '' })
   const [needActionBusy, setNeedActionBusy] = useState(false)
   const [sharingProfile, setSharingProfile] = useState(false)
@@ -348,10 +374,6 @@ const handleContactPhotoUpload = async (e) => {
     setNewTag('')
   }
 
-  const removeTag = (tag) => {
-    setTags(tags.filter(t => !sameTag(t, tag)))
-  }
-
   const persistNeedsTags = async nextTags => {
     const serializedTags = JSON.stringify(nextTags)
     const now = new Date().toISOString()
@@ -366,6 +388,60 @@ const handleContactPhotoUpload = async (e) => {
     notifyNeedOpportunities({ companyId: company.id }).catch(notificationError => {
       console.warn('Unable to notify renewed need:', notificationError?.message || notificationError)
     })
+  }
+
+  const openEditNeed = tag => {
+    setEditingNeed(tag)
+    setEditNeedForm({
+      label: tagText(tag),
+      starts: typeof tag === 'string' ? '' : tag.starts || '',
+      expires: typeof tag === 'string' ? '' : tag.expires || '',
+    })
+  }
+
+  const confirmEditNeed = async () => {
+    if (!editingNeed || needActionBusy) return
+    const label = editNeedForm.label.trim()
+    if (!label) return
+    if (editNeedForm.starts && editNeedForm.expires && editNeedForm.expires < editNeedForm.starts) {
+      alert(needActions.invalidDates)
+      return
+    }
+    if (tags.some(tag => !sameTag(tag, editingNeed) && sameTag(tag, label))) {
+      alert(needActions.duplicateNeed)
+      return
+    }
+
+    const previousTags = tags
+    const oldKey = needKeyForTag(editingNeed)
+    const updatedNeed = {
+      ...(typeof editingNeed === 'string' ? {} : editingNeed),
+      label,
+      starts: editNeedForm.starts || null,
+      expires: editNeedForm.expires || null,
+    }
+    const newKey = needKeyForTag(updatedNeed)
+    const nextTags = tags.map(tag => sameTag(tag, editingNeed) ? updatedNeed : tag)
+
+    setNeedActionBusy(true)
+    try {
+      await persistNeedsTags(nextTags)
+      const { error } = await supabase
+        .from('need_attachments')
+        .update({ need_key: newKey, need_label: label })
+        .eq('company_id', company.id)
+        .eq('need_key', oldKey)
+      if (error) {
+        await persistNeedsTags(previousTags)
+        throw error
+      }
+      await loadNeedAttachments(company.id)
+      setEditingNeed(null)
+    } catch (error) {
+      alert(error?.message || ui.profile.uploadError)
+    } finally {
+      setNeedActionBusy(false)
+    }
   }
 
   const openRenewNeed = tag => {
@@ -403,7 +479,7 @@ const handleContactPhotoUpload = async (e) => {
   }
 
   const deleteNeed = async tag => {
-    if (needActionBusy || !window.confirm(needActions.deleteConfirm)) return
+    if (needActionBusy || !window.confirm(needActions.deletePublishedConfirm)) return
     setNeedActionBusy(true)
     try {
       const tagKey = needKeyForTag(tag)
@@ -637,8 +713,51 @@ notif_email: form.notif_email ?? true,
     appearance: 'menulist',
   }
 
+  const editNeedModal = editingNeed && (
+    <div role="dialog" aria-modal="true" onClick={() => !needActionBusy && setEditingNeed(null)}
+      style={{position:'fixed',inset:0,zIndex:50000,background:'rgba(15,23,42,0.66)',display:'flex',alignItems:'center',justifyContent:'center',padding:'calc(env(safe-area-inset-top) + 16px) 14px calc(env(safe-area-inset-bottom) + 16px)'}}>
+      <div onClick={event => event.stopPropagation()}
+        style={{width:'100%',maxWidth:380,maxHeight:'100%',overflowY:'auto',WebkitOverflowScrolling:'touch',boxSizing:'border-box',background:'white',borderRadius:18,padding:'1.2rem',boxShadow:'0 24px 70px rgba(0,0,0,0.3)'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:14}}>
+          <h3 style={{fontSize:19,fontWeight:850,margin:0}}>{needActions.editTitle}</h3>
+          <button type="button" onClick={() => setEditingNeed(null)} disabled={needActionBusy}
+            aria-label={ui.common.close}
+            style={{width:36,height:36,borderRadius:'50%',border:'1px solid #E2E8F0',background:'#F8FAFC',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <HubbingIcon name="x" size={17} color="#475569" />
+          </button>
+        </div>
+        <label style={{display:'block',fontSize:12,fontWeight:750,color:'#475569',marginBottom:6}}>{needActions.needLabel}</label>
+        <textarea
+          value={editNeedForm.label}
+          onChange={event => setEditNeedForm(current => ({...current,label:event.target.value}))}
+          rows={4}
+          style={{width:'100%',boxSizing:'border-box',padding:'11px 12px',border:'1px solid #CBD5E1',borderRadius:10,fontSize:15,lineHeight:1.45,fontFamily:'Plus Jakarta Sans',resize:'vertical',marginBottom:12}}
+        />
+        <label style={{display:'block',fontSize:12,fontWeight:750,color:'#475569',marginBottom:6}}>{needActions.startDate}</label>
+        <input type="date" value={editNeedForm.starts}
+          onChange={event => setEditNeedForm(current => ({...current,starts:event.target.value}))}
+          style={{...renewalDateInputStyle,width:'100%',maxWidth:'100%',marginBottom:12}} />
+        <label style={{display:'block',fontSize:12,fontWeight:750,color:'#475569',marginBottom:6}}>{needActions.endDate}</label>
+        <input type="date" value={editNeedForm.expires} min={editNeedForm.starts || undefined}
+          onChange={event => setEditNeedForm(current => ({...current,expires:event.target.value}))}
+          style={{...renewalDateInputStyle,width:'100%',maxWidth:'100%',marginBottom:16}} />
+        <div style={{display:'grid',gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)',gap:8}}>
+          <button type="button" onClick={() => setEditingNeed(null)} disabled={needActionBusy}
+            style={{minWidth:0,padding:'12px 8px',border:'1px solid #E2E8F0',borderRadius:10,background:'white',color:'#64748B',fontSize:13,fontWeight:750}}>
+            {ui.common.cancel}
+          </button>
+          <button type="button" onClick={confirmEditNeed} disabled={needActionBusy || !editNeedForm.label.trim()}
+            style={{minWidth:0,padding:'12px 8px',border:'none',borderRadius:10,background:editNeedForm.label.trim() ? '#E24B4A' : '#E5E7EB',color:editNeedForm.label.trim() ? 'white' : '#94A3B8',fontSize:13,fontWeight:850}}>
+            {needActionBusy ? ui.common.saving : needActions.saveChanges}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
   if (editing) return (
     <div style={{flex:1,overflowY:'auto',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
+      {editNeedModal}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <h2 style={{fontSize:20,fontWeight:700}}>{ui.profile.editTitle}</h2>
         <button onClick={() => {
@@ -748,7 +867,7 @@ notif_email: form.notif_email ?? true,
             return (
             <div key={`${tagKey}-${i}`} style={{display:'flex',flexDirection:'column',gap:8,background:'#f9f9f9',borderRadius:10,padding:'8px 12px'}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
-                <div style={{minWidth:0}}>
+                <div style={{minWidth:0,flex:1}}>
                   <span style={{fontSize:14,fontWeight:500}}>{label}</span>
                   {expires && (
                     <span style={{fontSize:11,color:getTagColor(expires),marginLeft:8}}>
@@ -756,10 +875,16 @@ notif_email: form.notif_email ?? true,
                     </span>
                   )}
                 </div>
-                <button onClick={() => removeTag(tag)}
-                  style={{background:'none',border:'none',cursor:'pointer',color:'#E24B4A',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                  <HubbingIcon name="x" size={16} color="#E24B4A" />
-                </button>
+                <div style={{display:'flex',gap:6,flexShrink:0}}>
+                  <button type="button" onClick={() => openEditNeed(tag)} disabled={needActionBusy}
+                    style={{padding:'7px 9px',background:'#FFF7ED',color:'#C2410C',border:'1px solid #FDBA74',borderRadius:9,fontSize:11,fontWeight:850}}>
+                    {needActions.edit}
+                  </button>
+                  <button type="button" onClick={() => deleteNeed(tag)} disabled={needActionBusy}
+                    style={{padding:'7px 9px',background:'white',color:'#B91C1C',border:'1px solid #FECACA',borderRadius:9,fontSize:11,fontWeight:850}}>
+                    {needActions.delete}
+                  </button>
+                </div>
               </div>
               {company?.id && (
                 <NeedAttachmentUploader
