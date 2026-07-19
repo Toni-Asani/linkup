@@ -18,6 +18,7 @@ import UsageGuideModal from './UsageGuideModal'
 import LoadingIndicator from './LoadingIndicator'
 import { ServiceTagsEditor, ServiceTagsPills } from './ServiceTagsComponents'
 import { parseServiceTags } from './serviceTags'
+import CompanySwipeCardPreview from './CompanySwipeCardPreview'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -159,6 +160,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [renewalDates, setRenewalDates] = useState({ starts: '', expires: '' })
   const [needActionBusy, setNeedActionBusy] = useState(false)
   const [sharingProfile, setSharingProfile] = useState(false)
+  const [showCardPreview, setShowCardPreview] = useState(false)
   const fileInputRef = useRef(null)
 
   useEffect(() => { loadProfile() }, [])
@@ -983,6 +985,12 @@ notif_email: form.notif_email ?? true,
           </div>
         )}
 
+        <button type="button" onClick={() => setShowCardPreview(true)}
+          style={{width:'100%',padding:'14px 16px',background:'linear-gradient(135deg, #E24B4A, #C93645)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 8px 20px rgba(226,75,74,0.22)',fontFamily:'Plus Jakarta Sans'}}>
+          <HubbingIcon name="swipe" size={19} color="white" />
+          {ui.profile.previewCard || 'Voir ma carte de profil'}
+        </button>
+
         <CompanyRealizationsGallery
           realizations={realizations}
           ui={ui}
@@ -1146,6 +1154,16 @@ notif_email: form.notif_email ?? true,
           <HubbingIcon name="sparkles" size={17} color="#E24B4A" />
           {sharingProfile ? (ui.profile.shareProfileBusy || 'Préparation du visuel...') : (ui.profile.shareProfile || 'Partager le profil')}
         </button>
+        {showCardPreview && (
+          <CompanySwipeCardPreview
+            company={{ ...company, service_tags: serviceTags }}
+            realizations={realizations}
+            color={color}
+            ui={ui}
+            onClose={() => setShowCardPreview(false)}
+          />
+        )}
+
         <a href="mailto:contact@hubbing.ch"
   style={{padding:'14px',background:'white',color:'#666',border:'1px solid #eee',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',textDecoration:'none',display:'block'}}>
   {ui.profile.contactHubbing}
