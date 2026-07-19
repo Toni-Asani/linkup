@@ -123,25 +123,27 @@ export default function CompanySwipeCardPreview({ company, realizations = [], ne
             )}
 
             {hasNeeds && (
-              <div style={{ background: '#FFF9F0', border: '1px solid #FDE8C0', borderRadius: 10, padding: '9px 10px', marginBottom: '0.7rem' }}>
-                <p style={{ fontSize: 11, color: '#E67E22', fontWeight: 800, margin: '0 0 5px' }}>{ui?.swipe?.needs || 'BESOINS'}</p>
+              <div style={{display:'flex',flexDirection:'column',gap:7,marginBottom:'0.7rem'}}>
                 {company.needs_description && (
-                  <div style={{ marginBottom: activeNeeds.length ? 6 : 0 }}>
+                  <div style={{background:'#F5F8FF',border:'1px solid #D9E5FF',borderRadius:10,padding:'9px 10px'}}>
+                    <p style={{fontSize:10,color:'#2563EB',fontWeight:850,margin:'0 0 5px'}}>∞ {ui?.profile?.needs || 'RECHERCHE PERMANENTE'}</p>
                     <NeedSummaryButton
                       need={needFromGeneral(company)}
                       compact
+                      color="#2563EB"
                       onClick={() => setSelectedNeed(needFromGeneral(company))}
                     />
                   </div>
                 )}
                 {activeNeeds.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:10,padding:'9px 10px',display:'flex',flexDirection:'column',gap:5}}>
+                    <p style={{fontSize:10,color:'#E67E22',fontWeight:850,margin:'0 0 1px'}}>{ui?.profile?.punctualNeeds || ui?.swipe?.needs || 'BESOINS PONCTUELS'}</p>
                     {activeNeeds.map((tag, index) => (
                       <NeedSummaryButton
                         key={`${needKeyForTag(tag)}-${index}`}
                         need={needFromTag(tag, needKeyForTag(tag))}
                         compact
-                        color="#22A35A"
+                        color="#E67E22"
                         onClick={() => setSelectedNeed(needFromTag(tag, needKeyForTag(tag)))}
                       />
                     ))}

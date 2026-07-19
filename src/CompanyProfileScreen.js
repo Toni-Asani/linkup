@@ -405,34 +405,34 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
 
         {/* Besoins — visibles par tous, réponse limitée par le plan dans la messagerie */}
         {hasNeeds && (
-          <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
-            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>{ui.companyProfile.needs}</p>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {company.needs_description && (
-              <div style={{marginBottom: activeTags.length > 0 ? 8 : 0}}>
+              <div style={{background:'#F5F8FF',border:'1px solid #D9E5FF',borderRadius:12,padding:'1rem'}}>
+                <p style={{fontSize:11,color:'#2563EB',fontWeight:850,margin:'0 0 8px'}}>∞ {ui.profile?.needs || 'RECHERCHE PERMANENTE'}</p>
                 <NeedSummaryButton
                   need={needFromGeneral(company)}
+                  color="#2563EB"
                   onClick={() => setSelectedNeed(needFromGeneral(company))}
                 />
               </div>
             )}
             {activeTags.length > 0 && (
-              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem',display:'flex',flexDirection:'column',gap:8}}>
+                <p style={{fontSize:11,color:'#E67E22',fontWeight:850,margin:'0 0 1px'}}>{ui.profile?.punctualNeeds || ui.companyProfile.needs}</p>
                 {activeTags.map((tag, i) => {
                   const tagKey = needKeyForTag(tag)
                   return (
                     <NeedSummaryButton
                       key={`${tagKey}-${i}`}
                       need={needFromTag(tag, tagKey)}
-                      color="#22A35A"
+                      color="#E67E22"
                       onClick={() => setSelectedNeed(needFromTag(tag, tagKey))}
                     />
                   )
                 })}
               </div>
             )}
-            {isStarter && (
-              <p style={{fontSize:11,color:'#777',margin:'10px 0 0',lineHeight:1.4}}>{ui.companyProfile.upgradeForNeeds}</p>
-            )}
+            {isStarter && <p style={{fontSize:11,color:'#777',margin:0,lineHeight:1.4}}>{ui.companyProfile.upgradeForNeeds}</p>}
           </div>
         )}
 

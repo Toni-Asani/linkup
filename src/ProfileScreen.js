@@ -830,34 +830,29 @@ notif_email: form.notif_email ?? true,
           />
         </>
       )}
-      <Label>{ui.profile.needs}</Label>
-      <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
-	style={{padding:'12px',border:'1px solid #ddd',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px'}} />
-      <p style={{fontSize:12,color:'#666'}}>{ui.profile.needsHelp}</p>
-      {company?.id && (
-        <NeedAttachmentUploader
-          company={company}
-          plan={currentPlan}
-          needKey={GENERAL_NEED_KEY}
-          needLabel={ui.profile.needs}
-          attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
-          onChange={() => loadNeedAttachments(company.id)}
-          ui={ui}
-        />
-      )}
-      {String(form.needs_description || '').trim() && (
-        <NeedCompletionCloseButton
-          ui={ui}
-          need={{
-            needKey: GENERAL_NEED_KEY,
-            needLabel: ui.profile.needs,
-            needTitle: String(form.needs_description || '').trim().slice(0, 120),
-          }}
-          onClick={setClosingNeed}
-        />
-      )}
+      <div style={{display:'flex',flexDirection:'column',gap:10,background:'#F5F8FF',border:'1px solid #D9E5FF',borderRadius:14,padding:'14px'}}>
+        <Label>∞ {ui.profile.needs}</Label>
+        <p style={{fontSize:12,color:'#64748B',lineHeight:1.5,margin:0}}>{ui.profile.needsHelp}</p>
+        <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
+          style={{padding:'12px',border:'1px solid #C7D7FE',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px',boxSizing:'border-box',width:'100%'}} />
+        {company?.id && (
+          <NeedAttachmentUploader
+            company={company}
+            plan={currentPlan}
+            needKey={GENERAL_NEED_KEY}
+            needLabel={ui.profile.needs}
+            attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
+            onChange={() => loadNeedAttachments(company.id)}
+            ui={ui}
+          />
+        )}
+      </div>
 
-      {/* Tags existants */}
+      <div style={{display:'flex',flexDirection:'column',gap:10,background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:14,padding:'14px'}}>
+        <Label>{ui.profile.punctualNeeds}</Label>
+        <p style={{fontSize:12,color:'#64748B',lineHeight:1.5,margin:0}}>{ui.profile.punctualNeedsHelp}</p>
+
+      {/* Besoins ponctuels existants */}
       {tags.length > 0 && (
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           {tags.map((tag, i) => {
@@ -911,25 +906,42 @@ notif_email: form.notif_email ?? true,
         </div>
       )}
 
-      {/* Ajouter un tag */}
-      <div style={{display:'flex',flexDirection:'column',gap:8,background:'#f9f9f9',borderRadius:10,padding:'12px'}}>
+      {/* Ajouter un besoin ponctuel */}
+      <div style={{display:'flex',flexDirection:'column',gap:9,background:'white',border:'1px solid #FDE8C0',borderRadius:10,padding:'12px'}}>
         <Input value={newTag} onChange={e => setNewTag(e.target.value)}
           placeholder={ui.profile.tagPlaceholder} />
-        <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <input type="date" value={form.newTagExpiry||''} onChange={e => setForm({...form,newTagExpiry:e.target.value})}
-            style={{flex:1,padding:'10px',border:'1px solid #ddd',borderRadius:10,fontSize:14,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
-          <button onClick={() => {
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2, minmax(0, 1fr))',gap:8}}>
+          <label style={{minWidth:0,fontSize:11,fontWeight:750,color:'#64748B'}}>
+            {ui.profile.startDate}
+            <input type="date" value={form.newTagStart||''} onChange={e => setForm({...form,newTagStart:e.target.value})}
+              style={{width:'100%',boxSizing:'border-box',marginTop:5,padding:'10px 8px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
+          </label>
+          <label style={{minWidth:0,fontSize:11,fontWeight:750,color:'#64748B'}}>
+            {ui.profile.endDate}
+            <input type="date" value={form.newTagExpiry||''} min={form.newTagStart || undefined} onChange={e => setForm({...form,newTagExpiry:e.target.value})}
+              style={{width:'100%',boxSizing:'border-box',marginTop:5,padding:'10px 8px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
+          </label>
+        </div>
+          <button type="button" disabled={!newTag.trim() || !form.newTagStart || !form.newTagExpiry} onClick={() => {
             const label = newTag.trim()
-            if (!label || tags.some(tag => sameTag(tag, label))) return
-            setTags([...tags, { label, expires: form.newTagExpiry || null }])
+            if (!label || !form.newTagStart || !form.newTagExpiry) {
+              alert(ui.profile.datesRequired)
+              return
+            }
+            if (form.newTagExpiry < form.newTagStart) {
+              alert(needActions.invalidDates)
+              return
+            }
+            if (tags.some(tag => sameTag(tag, label))) return
+            setTags([...tags, { label, starts: form.newTagStart, expires: form.newTagExpiry }])
             setNewTag('')
-            setForm({...form, newTagExpiry: ''})
+            setForm({...form, newTagStart: '', newTagExpiry: ''})
           }}
-            style={{padding:'10px 16px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+            style={{padding:'11px 16px',background:newTag.trim() && form.newTagStart && form.newTagExpiry ? '#E24B4A' : '#E5E7EB',color:newTag.trim() && form.newTagStart && form.newTagExpiry ? 'white' : '#94A3B8',border:'none',borderRadius:10,fontSize:14,fontWeight:750,cursor:newTag.trim() && form.newTagStart && form.newTagExpiry ? 'pointer' : 'default'}}>
             {ui.profile.add}
           </button>
-        </div>
-        <p style={{fontSize:11,color:'#999'}}>{ui.profile.expiryOptional}</p>
+        <p style={{fontSize:11,color:'#999',margin:0}}>{ui.profile.datesRequired}</p>
+      </div>
       </div>
 <Label>{ui.profile.notifications}</Label>
 <div style={{display:'flex',flexDirection:'column',gap:12,background:'#f9f9f9',borderRadius:12,padding:'1rem'}}>
@@ -1122,15 +1134,15 @@ notif_email: form.notif_email ?? true,
           showEmpty
         />
 
-        {/* Nos besoins */}
-        {(company.needs_description || activeTags.length > 0 || expiredTags.length > 0 || needAttachments.length > 0) && (
-          <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
-	            <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
-	              <HubbingIcon name="briefcase" size={14} color="#E67E22" /> {ui.profile.needs}
-	            </p>
+        {/* Recherche permanente */}
+        {(company.needs_description || (groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0) && (
+          <div style={{background:'#F5F8FF',border:'1px solid #D9E5FF',borderRadius:12,padding:'1rem'}}>
+            <p style={{fontSize:12,color:'#2563EB',fontWeight:800,margin:'0 0 8px',display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:17,lineHeight:1}}>∞</span> {ui.profile.needs}
+            </p>
             {company.needs_description && (
               <>
-                <p style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom:8}}>
+                <p style={{fontSize:14,color:'#444',lineHeight:1.6,margin:'0 0 8px',whiteSpace:'pre-line'}}>
                   {company.needs_description}
                 </p>
                 <button type="button" onClick={deleteGeneralNeed} disabled={needActionBusy}
@@ -1145,6 +1157,15 @@ notif_email: form.notif_email ?? true,
                 ui={ui}
               />
             )}
+          </div>
+        )}
+
+        {/* Besoins ponctuels */}
+        {(activeTags.length > 0 || expiredTags.length > 0) && (
+          <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
+            <p style={{fontSize:12,color:'#E67E22',fontWeight:800,margin:'0 0 8px',display:'flex',alignItems:'center',gap:5}}>
+              <HubbingIcon name="briefcase" size={14} color="#E67E22" /> {ui.profile.punctualNeeds}
+            </p>
             {activeTags.length > 0 && (
               <div style={{display:'flex',flexDirection:'column',gap:8}}>
                 {activeTags.map((tag, i) => {
@@ -1156,7 +1177,7 @@ notif_email: form.notif_email ?? true,
                     <div style={{background:'white',border:`1px solid ${getTagColor(expires)}`,borderRadius:20,padding:'4px 10px',display:'flex',alignItems:'center',gap:4,width:'fit-content',maxWidth:'100%'}}>
                       <div style={{width:6,height:6,borderRadius:'50%',background:getTagColor(expires)}}></div>
                       <span style={{fontSize:12,fontWeight:500,color:'#333'}}>{label}</span>
-                      {expires && <span style={{fontSize:10,color:getTagColor(expires)}}>{getTagLabel(expires)}</span>}
+                      <span style={{fontSize:10,color:expires ? getTagColor(expires) : '#94A3B8'}}>{expires ? getTagLabel(expires) : ui.profile.noDeadline}</span>
                     </div>
                     <NeedAttachmentGallery
                       attachments={groupedNeedAttachments[tagKey] || []}

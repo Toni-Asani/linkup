@@ -15,6 +15,9 @@ const fallbackText = {
   contacting: 'Ouverture...',
   ownNeed: 'Ceci est votre propre besoin.',
   information: 'Informations sur le besoin',
+  permanent: 'Recherche permanente',
+  punctual: 'Besoin ponctuel',
+  noDeadline: 'Sans échéance',
 }
 
 const textFor = ui => ({ ...fallbackText, ...(ui?.needDetails || {}) })
@@ -26,6 +29,7 @@ export const needFromGeneral = company => {
   if (!label) return null
   return {
     key: 'general',
+    kind: 'permanent',
     label,
     description: label,
     publishedAt: company?.needs_updated_at || company?.updated_at || company?.created_at || null,
@@ -37,6 +41,7 @@ export const needFromTag = (tag, key) => {
   if (!label) return null
   return {
     key,
+    kind: 'punctual',
     label,
     description: String(typeof tag === 'string' ? tag : tag?.description || label).trim(),
     starts: typeof tag === 'string' ? null : tag?.starts || null,
@@ -122,6 +127,9 @@ export function NeedDetailsModal({
     need.starts && { label: text.startsOn, value: formatDate(need.starts) },
     need.expires && { label: text.endsOn, value: formatDate(need.expires) },
   ].filter(item => item?.value)
+  const isPermanent = need.kind === 'permanent'
+  const kindLabel = isPermanent ? text.permanent : text.punctual
+  const kindColor = isPermanent ? '#2563EB' : '#E67E22'
 
   const dialog = (
     <div
@@ -148,7 +156,10 @@ export function NeedDetailsModal({
         </header>
 
         <div className="need-details-scroll" style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', padding: '16px 15px 18px' }}>
-          <div style={{ background: '#FFF9F0', border: '1px solid #FDE8C0', borderRadius: 14, padding: '13px 14px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 9, padding: '5px 9px', borderRadius: 999, background: `${kindColor}12`, color: kindColor, border: `1px solid ${kindColor}30`, fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }}>
+            {isPermanent ? '∞' : '◷'} {kindLabel}
+          </div>
+          <div style={{ background: isPermanent ? '#F5F8FF' : '#FFF9F0', border: `1px solid ${isPermanent ? '#D9E5FF' : '#FDE8C0'}`, borderRadius: 14, padding: '13px 14px' }}>
             <p style={{ margin: 0, fontSize: 14, color: '#334155', fontWeight: 750, lineHeight: 1.55, whiteSpace: 'pre-line', overflowWrap: 'anywhere' }}>
               {need.description || need.label}
             </p>
@@ -163,6 +174,9 @@ export function NeedDetailsModal({
                 </div>
               ))}
             </div>
+          )}
+          {!isPermanent && dates.length === 0 && (
+            <p style={{ margin: '10px 0 0', color: '#94A3B8', fontSize: 11, fontWeight: 750 }}>{text.noDeadline}</p>
           )}
 
           <div style={{ marginTop: 16 }}>
