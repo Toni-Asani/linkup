@@ -7,14 +7,14 @@ import { createNotificationAndPush } from './pushDelivery'
 import LoadingIndicator from './LoadingIndicator'
 import { ServiceTagsPills } from './ServiceTagsComponents'
 import { parseServiceTags } from './serviceTags'
-import { NeedAttachmentGallery } from './NeedAttachmentComponents'
-import { fetchNeedAttachments, GENERAL_NEED_KEY, groupNeedAttachments, needKeyForTag, reportNeedAttachment } from './needAttachments'
+import { fetchNeedAttachments, groupNeedAttachments, needKeyForTag, reportNeedAttachment } from './needAttachments'
 import { NeedCompletionsPanel } from './NeedCompletionComponents'
 import { countSuccessfulCollaborationsForCompany, fetchNeedCompletionsForCompany } from './needCompletions'
 import { CompanyRealizationsGallery } from './CompanyRealizationsComponents'
 import { fetchCompanyRealizations } from './companyRealizations'
 import { shareCompanyProfileCard } from './profileShare'
 import { sanitizeDirectContactInfo } from './moderation'
+import { NeedDetailsModal, NeedSummaryButton, needFromGeneral, needFromTag } from './NeedDetailsComponents'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -81,6 +81,7 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
   const [attachmentReportComment, setAttachmentReportComment] = useState('')
   const [submittingAttachmentReport, setSubmittingAttachmentReport] = useState(false)
   const [sharingProfile, setSharingProfile] = useState(false)
+  const [selectedNeed, setSelectedNeed] = useState(null)
 
   const attachmentText = ui.needAttachments || {
     reportTitle: 'Signaler une pièce jointe',
@@ -261,7 +262,6 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     setSelectedCompanyId && setSelectedCompanyId(null)
     setActiveTab && setActiveTab('pricing')
   }
-  const tagText = tag => (typeof tag === 'string' ? tag : tag?.label || '').trim()
   const groupedNeedAttachments = groupNeedAttachments(needAttachments)
   const serviceTags = parseServiceTags(company.service_tags)
 
@@ -273,8 +273,6 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
     return new Date(expires) > new Date()
   })
   const hasNeeds = company.needs_description || activeTags.length > 0 || needAttachments.length > 0
-  const fallbackNeedSubject = tagText(activeTags[0]) || company.needs_description || company.name
-
   return (
     <div style={{flex:1,overflowY:'auto'}}>
 
@@ -312,6 +310,24 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
             </button>
           </div>
         </div>
+      )}
+
+      {selectedNeed && (
+        <NeedDetailsModal
+          need={selectedNeed}
+          company={company}
+          attachments={groupedNeedAttachments[selectedNeed.key] || []}
+          ui={ui}
+          lang={lang}
+          onClose={() => setSelectedNeed(null)}
+          onContact={() => {
+            const subject = selectedNeed.label
+            setSelectedNeed(null)
+            handleContact(subject)
+          }}
+          contacting={contacting}
+          onReportAttachment={setReportingAttachment}
+        />
       )}
 
       {/* Header */}
@@ -392,46 +408,31 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
           <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#E67E22',fontWeight:700,marginBottom:8}}>{ui.companyProfile.needs}</p>
             {company.needs_description && (
-              <p onClick={() => handleContact(company.needs_description)}
-                style={{fontSize:14,color:'#444',lineHeight:1.6,marginBottom: activeTags.length > 0 || (groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0 ? 10 : 0,cursor:'pointer'}}>
-                {company.needs_description}
-              </p>
-            )}
-            {(groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0 && (
-              <NeedAttachmentGallery
-                attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
-                ui={ui}
-                onReport={setReportingAttachment}
-              />
+              <div style={{marginBottom: activeTags.length > 0 ? 8 : 0}}>
+                <NeedSummaryButton
+                  need={needFromGeneral(company)}
+                  onClick={() => setSelectedNeed(needFromGeneral(company))}
+                />
+              </div>
             )}
             {activeTags.length > 0 && (
-              <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:10}}>
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
                 {activeTags.map((tag, i) => {
-                  const label = tagText(tag)
                   const tagKey = needKeyForTag(tag)
                   return (
-                    <div key={`${tagKey}-${i}`} style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>
-                      <button onClick={() => handleContact(label)}
-                        style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:500,color:'#333',cursor:'pointer',fontFamily:'Plus Jakarta Sans',width:'fit-content',maxWidth:'100%'}}>
-                        {label}
-                      </button>
-                      <NeedAttachmentGallery
-                        attachments={groupedNeedAttachments[tagKey] || []}
-                        ui={ui}
-                        onReport={setReportingAttachment}
-                      />
-                    </div>
+                    <NeedSummaryButton
+                      key={`${tagKey}-${i}`}
+                      need={needFromTag(tag, tagKey)}
+                      color="#22A35A"
+                      onClick={() => setSelectedNeed(needFromTag(tag, tagKey))}
+                    />
                   )
                 })}
               </div>
             )}
             {isStarter && (
-              <p style={{fontSize:11,color:'#777',margin:'0 0 8px',lineHeight:1.4}}>{ui.companyProfile.upgradeForNeeds}</p>
+              <p style={{fontSize:11,color:'#777',margin:'10px 0 0',lineHeight:1.4}}>{ui.companyProfile.upgradeForNeeds}</p>
             )}
-            <button onClick={() => handleContact(fallbackNeedSubject)}
-              style={{width:'100%',padding:'10px',background:'#E24B4A',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-              {ui.companyProfile.answerNeed}
-            </button>
           </div>
         )}
 

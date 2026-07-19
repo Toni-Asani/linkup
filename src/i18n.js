@@ -626,6 +626,19 @@ const dictionaries = {
         { value: 'other', label: 'Autre' },
       ],
     },
+    needDetails: {
+      title: 'Détails du besoin',
+      publishedOn: 'Publié le',
+      startsOn: 'Date de début',
+      endsOn: 'Échéance',
+      photos: 'PHOTOS ET DOCUMENTS',
+      noPhotos: 'Aucune photo jointe à ce besoin.',
+      loadingPhotos: 'Chargement des photos...',
+      contact: 'Contacter par message',
+      contacting: 'Ouverture...',
+      ownNeed: 'Ceci est votre propre besoin.',
+      information: 'Informations sur le besoin',
+    },
     privacy: {
       title: 'Politique de confidentialité',
       updated: 'Dernière mise à jour : 22 avril 2026',
@@ -963,6 +976,19 @@ dictionaries.en = {
 }
 
 Object.assign(dictionaries.de, {
+  needDetails: {
+    title: 'Details zum Bedarf',
+    publishedOn: 'Veröffentlicht am',
+    startsOn: 'Startdatum',
+    endsOn: 'Frist',
+    photos: 'FOTOS UND DOKUMENTE',
+    noPhotos: 'Keine Fotos zu diesem Bedarf.',
+    loadingPhotos: 'Fotos werden geladen...',
+    contact: 'Per Nachricht kontaktieren',
+    contacting: 'Wird geöffnet...',
+    ownNeed: 'Dies ist Ihr eigener Bedarf.',
+    information: 'Informationen zum Bedarf',
+  },
   companyProfile: {
     featureBasic: 'Basic-Funktion',
     upgradeDesc: 'Wechseln Sie zu Basic oder Premium, um unbegrenzt zu schreiben und mehr Unternehmensdetails zu sehen.',
@@ -1109,6 +1135,19 @@ Object.assign(dictionaries.de, {
 })
 
 Object.assign(dictionaries.it, {
+  needDetails: {
+    title: 'Dettagli del bisogno',
+    publishedOn: 'Pubblicato il',
+    startsOn: 'Data di inizio',
+    endsOn: 'Scadenza',
+    photos: 'FOTO E DOCUMENTI',
+    noPhotos: 'Nessuna foto allegata a questo bisogno.',
+    loadingPhotos: 'Caricamento delle foto...',
+    contact: 'Contatta tramite messaggio',
+    contacting: 'Apertura...',
+    ownNeed: 'Questo è il tuo bisogno.',
+    information: 'Informazioni sul bisogno',
+  },
   home: {
     morning: 'Buongiorno',
     afternoon: 'Buon pomeriggio',
@@ -1444,6 +1483,19 @@ Object.assign(dictionaries.it, {
 })
 
 Object.assign(dictionaries.en, {
+  needDetails: {
+    title: 'Need details',
+    publishedOn: 'Published on',
+    startsOn: 'Start date',
+    endsOn: 'Deadline',
+    photos: 'PHOTOS AND DOCUMENTS',
+    noPhotos: 'No photos attached to this need.',
+    loadingPhotos: 'Loading photos...',
+    contact: 'Contact by message',
+    contacting: 'Opening...',
+    ownNeed: 'This is your own need.',
+    information: 'Need information',
+  },
   home: {
     morning: 'Good morning',
     afternoon: 'Good afternoon',

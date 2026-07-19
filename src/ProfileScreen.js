@@ -1158,8 +1158,10 @@ notif_email: form.notif_email ?? true,
           <CompanySwipeCardPreview
             company={{ ...company, service_tags: serviceTags }}
             realizations={realizations}
+            needAttachments={needAttachments}
             color={color}
             ui={ui}
+            lang={lang}
             onClose={() => setShowCardPreview(false)}
           />
         )}

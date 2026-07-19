@@ -11,6 +11,8 @@ import { fetchCompanyRealizationsForCompanies } from './companyRealizations'
 import LoadingIndicator from './LoadingIndicator'
 import { sanitizeDirectContactInfo } from './moderation'
 import { ServiceTagsPills } from './ServiceTagsComponents'
+import { fetchNeedAttachments, groupNeedAttachments, needKeyForTag } from './needAttachments'
+import { NeedDetailsModal, NeedSummaryButton, needFromGeneral, needFromTag } from './NeedDetailsComponents'
 
 const sectorColors = {
   'Fiduciaire & Comptabilité': '#3B6D11',
@@ -156,6 +158,9 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   const [matchedCompanyIds, setMatchedCompanyIds] = useState(new Set())
   const [swipeHistory, setSwipeHistory] = useState([])
   const [openingNeedMessage, setOpeningNeedMessage] = useState(false)
+  const [needDetails, setNeedDetails] = useState(null)
+  const [needDetailsAttachments, setNeedDetailsAttachments] = useState([])
+  const [loadingNeedDetailsAttachments, setLoadingNeedDetailsAttachments] = useState(false)
   const [sharingProfileId, setSharingProfileId] = useState(null)
   const [ratings, setRatings] = useState({})
   const decisionRef = useRef(null)
@@ -523,6 +528,31 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
     }
   }
 
+  const openNeedDetails = async (company, need, event) => {
+    event?.preventDefault()
+    event?.stopPropagation()
+    dragRef.current = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0, pointerId: null, source: null }
+    setOffset({ x: 0, y: 0 })
+    setNeedDetails({ company, need })
+    setNeedDetailsAttachments([])
+    setLoadingNeedDetailsAttachments(true)
+    try {
+      const grouped = groupNeedAttachments(await fetchNeedAttachments(company.id))
+      setNeedDetailsAttachments(grouped[need.key] || [])
+    } catch (error) {
+      console.warn('Unable to load need attachments:', error?.message || error)
+    } finally {
+      setLoadingNeedDetailsAttachments(false)
+    }
+  }
+
+  const contactSelectedNeed = async () => {
+    const selected = needDetails
+    if (!selected) return
+    setNeedDetails(null)
+    await openNeedConversation(selected.need.label)
+  }
+
   const openCompanyProfile = (event) => {
     event?.preventDefault()
     event?.stopPropagation()
@@ -687,6 +717,7 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
   if (allSeen || current >= filteredCompanies.length) return (
     <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'2rem',textAlign:'center',gap:'1rem',...swipeBackgroundStyle}}>
       {filtersModal}
+
       <div style={{width:56,height:56,borderRadius:'50%',background:'#FFF5F5',display:'flex',alignItems:'center',justifyContent:'center'}}>
         <HubbingIcon name={activeFilters > 0 ? 'search' : 'sparkles'} size={28} color="#E24B4A" />
       </div>
@@ -759,6 +790,20 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
       )}
 
       {filtersModal}
+
+      {needDetails && (
+        <NeedDetailsModal
+          need={needDetails.need}
+          company={needDetails.company}
+          attachments={needDetailsAttachments}
+          loadingAttachments={loadingNeedDetailsAttachments}
+          ui={ui}
+          lang={lang}
+          onClose={() => setNeedDetails(null)}
+          onContact={contactSelectedNeed}
+          contacting={openingNeedMessage}
+        />
+      )}
 
       {!user && (
         <div style={{background:'#FFF5F5',border:'1px solid #FECACA',borderRadius:12,padding:'0.5rem 1rem',width:'100%',textAlign:'center'}}>
@@ -886,27 +931,24 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               <div style={{background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:10,padding:'8px 10px'}}>
                 <p style={{fontSize:11,color:'#E67E22',fontWeight:700,marginBottom:4}}>{ui.swipe.needs}</p>
                 {company.needs_description && (
-                  <button
-                    onClick={event => openNeedConversation(company.needs_description, event)}
-                    onPointerDown={event => event.stopPropagation()}
-                    onTouchStart={event => event.stopPropagation()}
-                    disabled={openingNeedMessage}
-                    style={{display:'block',width:'100%',background:'white',border:'1px solid #FDE8C0',borderRadius:9,padding:'7px 8px',fontSize:12,color:'#444',lineHeight:1.4,margin:'0 0 6px',textAlign:'left',cursor:openingNeedMessage ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans'}}>
-                    {company.needs_description}
-                  </button>
+                  <div style={{marginBottom:6}}>
+                    <NeedSummaryButton
+                      need={needFromGeneral(company)}
+                      compact
+                      onClick={event => openNeedDetails(company, needFromGeneral(company), event)}
+                    />
+                  </div>
                 )}
                 {activeTags.length > 0 && (
-                  <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                  <div style={{display:'flex',flexDirection:'column',gap:5}}>
                     {activeTags.map((tag, i) => (
-                      <button
-                        key={i}
-                        onClick={event => openNeedConversation(tag.label, event)}
-                        onPointerDown={event => event.stopPropagation()}
-                        onTouchStart={event => event.stopPropagation()}
-                        disabled={openingNeedMessage}
-                        style={{background:'white',border:'1px solid #22c55e',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:500,color:'#333',cursor:openingNeedMessage ? 'default' : 'pointer',fontFamily:'Plus Jakarta Sans'}}>
-                        {tag.label}
-                      </button>
+                      <NeedSummaryButton
+                        key={`${needKeyForTag(tag)}-${i}`}
+                        need={needFromTag(tag, needKeyForTag(tag))}
+                        compact
+                        color="#22A35A"
+                        onClick={event => openNeedDetails(company, needFromTag(tag, needKeyForTag(tag)), event)}
+                      />
                     ))}
                   </div>
                 )}

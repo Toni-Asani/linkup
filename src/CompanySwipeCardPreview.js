@@ -1,10 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Eye, X } from 'lucide-react'
 import { VerifiedBadge, getCompanyBadgeVariant } from './VerifiedBadge'
 import { HubbingIcon } from './icons'
 import { sanitizeDirectContactInfo } from './moderation'
 import { ServiceTagsPills } from './ServiceTagsComponents'
 import { CompanyRealizationsGallery } from './CompanyRealizationsComponents'
+import { groupNeedAttachments, needKeyForTag } from './needAttachments'
+import { NeedDetailsModal, NeedSummaryButton, needFromGeneral, needFromTag } from './NeedDetailsComponents'
 
 const getActiveNeeds = value => {
   try {
@@ -16,9 +18,11 @@ const getActiveNeeds = value => {
   }
 }
 
-export default function CompanySwipeCardPreview({ company, realizations = [], color = '#E24B4A', ui, onClose }) {
+export default function CompanySwipeCardPreview({ company, realizations = [], needAttachments = [], color = '#E24B4A', ui, lang = 'fr', onClose }) {
   const activeNeeds = getActiveNeeds(company?.needs_tags)
   const hasNeeds = Boolean(company?.needs_description || activeNeeds.length)
+  const groupedNeedAttachments = groupNeedAttachments(needAttachments)
+  const [selectedNeed, setSelectedNeed] = useState(null)
   const badgeVariant = getCompanyBadgeVariant(company)
   const text = ui?.profile || {}
   const headerBackground = company?.background_url
@@ -53,6 +57,17 @@ export default function CompanySwipeCardPreview({ company, realizations = [], co
         if (event.target === event.currentTarget) onClose?.()
       }}
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(60px + env(safe-area-inset-bottom))', zIndex: 3000, boxSizing: 'border-box', overflow: 'hidden', background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(5px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'max(14px, env(safe-area-inset-top)) 14px 14px' }}>
+      {selectedNeed && (
+        <NeedDetailsModal
+          need={selectedNeed}
+          company={company}
+          attachments={groupedNeedAttachments[selectedNeed.key] || []}
+          ui={ui}
+          lang={lang}
+          ownNeed
+          onClose={() => setSelectedNeed(null)}
+        />
+      )}
       <div style={{ width: 'min(100%, 410px)', flex: '1 1 auto', maxHeight: 760, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, color: 'white', padding: '0 2px' }}>
           <div>
@@ -110,13 +125,25 @@ export default function CompanySwipeCardPreview({ company, realizations = [], co
             {hasNeeds && (
               <div style={{ background: '#FFF9F0', border: '1px solid #FDE8C0', borderRadius: 10, padding: '9px 10px', marginBottom: '0.7rem' }}>
                 <p style={{ fontSize: 11, color: '#E67E22', fontWeight: 800, margin: '0 0 5px' }}>{ui?.swipe?.needs || 'BESOINS'}</p>
-                {company.needs_description && <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.4, margin: activeNeeds.length ? '0 0 6px' : 0 }}>{company.needs_description}</p>}
+                {company.needs_description && (
+                  <div style={{ marginBottom: activeNeeds.length ? 6 : 0 }}>
+                    <NeedSummaryButton
+                      need={needFromGeneral(company)}
+                      compact
+                      onClick={() => setSelectedNeed(needFromGeneral(company))}
+                    />
+                  </div>
+                )}
                 {activeNeeds.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                     {activeNeeds.map((tag, index) => (
-                      <span key={`${tag?.label || tag}-${index}`} style={{ background: 'white', border: '1px solid #FDE8C0', borderRadius: 20, padding: '3px 8px', fontSize: 10, color: '#475569' }}>
-                        {typeof tag === 'string' ? tag : tag.label}
-                      </span>
+                      <NeedSummaryButton
+                        key={`${needKeyForTag(tag)}-${index}`}
+                        need={needFromTag(tag, needKeyForTag(tag))}
+                        compact
+                        color="#22A35A"
+                        onClick={() => setSelectedNeed(needFromTag(tag, needKeyForTag(tag)))}
+                      />
                     ))}
                   </div>
                 )}
