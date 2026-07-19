@@ -119,9 +119,9 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   }[lang] || {}
   const renewalDateInputStyle = {
     display: 'block',
-    width: '100%',
+    width: 'calc(100% - 12px)',
     minWidth: 0,
-    maxWidth: '100%',
+    maxWidth: 'calc(100% - 12px)',
     boxSizing: 'border-box',
     padding: '12px',
     border: '1px solid #CBD5E1',

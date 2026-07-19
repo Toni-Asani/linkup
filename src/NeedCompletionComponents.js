@@ -513,25 +513,104 @@ function CompletionCard({ completion, ui, perspective, actionSlot }) {
 }
 
 function CompletionPhotoStrip({ title, photos = [] }) {
+  const [viewerIndex, setViewerIndex] = useState(null)
+  const availablePhotos = photos.filter(photo => photo.signedUrl)
+
   if (!photos.length) return null
+
   return (
-    <div style={{ marginTop: 10 }}>
-      <p style={{ fontSize: 11, color: '#6B7280', fontWeight: 900, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0 }}>
-        {title}
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
-        {photos.slice(0, 6).map(photo => (
-          <a key={photo.id} href={photo.signedUrl || undefined} target="_blank" rel="noreferrer"
-            onClick={event => { if (!photo.signedUrl) event.preventDefault() }}
-            style={{ aspectRatio: '1', borderRadius: 9, overflow: 'hidden', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280', fontSize: 11, fontWeight: 900, textDecoration: 'none' }}>
-            {photo.signedUrl ? (
-              <img src={photo.signedUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            ) : (
-              'IMG'
-            )}
-          </a>
-        ))}
+    <>
+      <div style={{ marginTop: 10 }}>
+        <p style={{ fontSize: 11, color: '#6B7280', fontWeight: 900, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0 }}>
+          {title}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
+          {photos.slice(0, 6).map(photo => {
+            const photoIndex = availablePhotos.findIndex(item => item.id === photo.id)
+            return (
+              <button key={photo.id} type="button" disabled={!photo.signedUrl}
+                onClick={() => photoIndex >= 0 && setViewerIndex(photoIndex)}
+                aria-label={photo.signedUrl ? `Agrandir la photo ${photoIndex + 1}` : undefined}
+                style={{ aspectRatio: '1', border: 'none', padding: 0, borderRadius: 9, overflow: 'hidden', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280', fontSize: 11, fontWeight: 900, cursor: photo.signedUrl ? 'zoom-in' : 'default' }}>
+                {photo.signedUrl ? (
+                  <img src={photo.signedUrl} alt="" draggable={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                ) : (
+                  'IMG'
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
+      {viewerIndex !== null && availablePhotos[viewerIndex] && (
+        <CompletionPhotoViewer
+          photos={availablePhotos}
+          initialIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+        />
+      )}
+    </>
+  )
+}
+
+function CompletionPhotoViewer({ photos, initialIndex = 0, onClose }) {
+  const [activeIndex, setActiveIndex] = useState(initialIndex)
+  const activePhoto = photos[activeIndex]
+  const hasMultiple = photos.length > 1
+
+  useEffect(() => {
+    const unlock = lockBodyScroll()
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') onClose?.()
+      if (event.key === 'ArrowLeft') setActiveIndex(current => (current - 1 + photos.length) % photos.length)
+      if (event.key === 'ArrowRight') setActiveIndex(current => (current + 1) % photos.length)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      unlock()
+    }
+  }, [onClose, photos.length])
+
+  const viewer = (
+    <div role="dialog" aria-modal="true" aria-label="Photo agrandie" onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(3,7,18,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'calc(env(safe-area-inset-top) + 58px) 14px calc(env(safe-area-inset-bottom) + 54px)' }}>
+      <button type="button" onClick={onClose} aria-label="Fermer"
+        style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top) + 12px)', right: 14, width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.14)', color: 'white', fontSize: 24, lineHeight: 1, cursor: 'pointer', zIndex: 2 }}>
+        ×
+      </button>
+
+      {hasMultiple && (
+        <button type="button" onClick={event => {
+          event.stopPropagation()
+          setActiveIndex(current => (current - 1 + photos.length) % photos.length)
+        }} aria-label="Photo précédente"
+          style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 42, height: 52, borderRadius: 12, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(0,0,0,0.38)', color: 'white', fontSize: 34, cursor: 'pointer', zIndex: 2 }}>
+          ‹
+        </button>
+      )}
+
+      <img src={activePhoto.signedUrl} alt="" draggable={false}
+        onClick={event => event.stopPropagation()}
+        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
+
+      {hasMultiple && (
+        <>
+          <button type="button" onClick={event => {
+            event.stopPropagation()
+            setActiveIndex(current => (current + 1) % photos.length)
+          }} aria-label="Photo suivante"
+            style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', width: 42, height: 52, borderRadius: 12, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(0,0,0,0.38)', color: 'white', fontSize: 34, cursor: 'pointer', zIndex: 2 }}>
+            ›
+          </button>
+          <span style={{ position: 'absolute', bottom: 'calc(env(safe-area-inset-bottom) + 18px)', left: '50%', transform: 'translateX(-50%)', color: 'white', fontSize: 12, fontWeight: 800, background: 'rgba(0,0,0,0.45)', borderRadius: 999, padding: '5px 10px' }}>
+            {activeIndex + 1} / {photos.length}
+          </span>
+        </>
+      )}
     </div>
   )
+
+  return typeof document === 'undefined' ? viewer : createPortal(viewer, document.body)
 }
