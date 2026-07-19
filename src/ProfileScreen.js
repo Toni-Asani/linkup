@@ -117,6 +117,19 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
       invalidDates: 'Choose an end date on or after the start date.',
     },
   }[lang] || {}
+  const renewalDateInputStyle = {
+    display: 'block',
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box',
+    padding: '12px',
+    border: '1px solid #CBD5E1',
+    borderRadius: 10,
+    fontSize: 15,
+    fontFamily: 'Plus Jakarta Sans',
+    background: 'white',
+  }
   const [uploadingContact, setUploadingContact] = useState(false)
   const [company, setCompany] = useState(null)
   const [editing, setEditing] = useState(false)
@@ -871,22 +884,22 @@ notif_email: form.notif_email ?? true,
         <div role="dialog" aria-modal="true" onClick={() => !needActionBusy && setRenewingNeed(null)}
           style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(15,23,42,0.62)',display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
           <div onClick={event => event.stopPropagation()}
-            style={{width:'100%',maxWidth:360,background:'white',borderRadius:18,padding:'1.25rem',boxShadow:'0 24px 70px rgba(0,0,0,0.28)'}}>
+            style={{width:'100%',maxWidth:'min(360px, calc(100vw - 2rem))',minWidth:0,boxSizing:'border-box',overflow:'hidden',background:'white',borderRadius:18,padding:'1.25rem',boxShadow:'0 24px 70px rgba(0,0,0,0.28)'}}>
             <h3 style={{fontSize:19,fontWeight:800,margin:'0 0 4px'}}>{needActions.renewTitle}</h3>
             <p style={{fontSize:13,color:'#64748B',lineHeight:1.45,margin:'0 0 16px'}}>{tagText(renewingNeed)}</p>
             <label style={{display:'block',fontSize:12,fontWeight:700,color:'#475569',marginBottom:6}}>{needActions.startDate}</label>
             <input type="date" value={renewalDates.starts} onChange={event => setRenewalDates(current => ({...current, starts:event.target.value}))}
-              style={{width:'100%',padding:'12px',border:'1px solid #CBD5E1',borderRadius:10,fontSize:15,fontFamily:'Plus Jakarta Sans',marginBottom:12}} />
+              style={{...renewalDateInputStyle,marginBottom:12}} />
             <label style={{display:'block',fontSize:12,fontWeight:700,color:'#475569',marginBottom:6}}>{needActions.endDate}</label>
             <input type="date" value={renewalDates.expires} min={renewalDates.starts} onChange={event => setRenewalDates(current => ({...current, expires:event.target.value}))}
-              style={{width:'100%',padding:'12px',border:'1px solid #CBD5E1',borderRadius:10,fontSize:15,fontFamily:'Plus Jakarta Sans',marginBottom:16}} />
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              style={{...renewalDateInputStyle,marginBottom:16}} />
+            <div style={{display:'grid',gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)',gap:8,minWidth:0}}>
               <button type="button" onClick={() => setRenewingNeed(null)} disabled={needActionBusy}
-                style={{padding:'12px',border:'1px solid #E2E8F0',borderRadius:10,background:'white',color:'#64748B',fontSize:14,fontWeight:700}}>
+                style={{minWidth:0,padding:'12px 8px',border:'1px solid #E2E8F0',borderRadius:10,background:'white',color:'#64748B',fontSize:14,fontWeight:700}}>
                 {ui.common.cancel}
               </button>
               <button type="button" onClick={confirmRenewNeed} disabled={needActionBusy}
-                style={{padding:'12px',border:'none',borderRadius:10,background:'#E24B4A',color:'white',fontSize:14,fontWeight:800}}>
+                style={{minWidth:0,padding:'12px 8px',border:'none',borderRadius:10,background:'#E24B4A',color:'white',fontSize:14,fontWeight:800}}>
                 {needActionBusy ? ui.common.saving : needActions.confirm}
               </button>
             </div>
