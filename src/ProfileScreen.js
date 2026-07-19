@@ -998,7 +998,6 @@ notif_email: form.notif_email ?? true,
               <NeedAttachmentGallery
                 attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
                 ui={ui}
-                canDownload={currentPlan === 'Premium'}
               />
             )}
             {activeTags.length > 0 && (
@@ -1017,7 +1016,6 @@ notif_email: form.notif_email ?? true,
                     <NeedAttachmentGallery
                       attachments={groupedNeedAttachments[tagKey] || []}
                       ui={ui}
-                      canDownload={currentPlan === 'Premium'}
                     />
                     <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
                       <button type="button" onClick={() => openRenewNeed(tag)} disabled={needActionBusy}

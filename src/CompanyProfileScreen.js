@@ -392,7 +392,6 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
               <NeedAttachmentGallery
                 attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
                 ui={ui}
-                canDownload={isPremium}
                 onReport={setReportingAttachment}
               />
             )}
@@ -410,7 +409,6 @@ export default function CompanyProfileScreen({ companyId, plan, onBack, setActiv
                       <NeedAttachmentGallery
                         attachments={groupedNeedAttachments[tagKey] || []}
                         ui={ui}
-                        canDownload={isPremium}
                         onReport={setReportingAttachment}
                       />
                     </div>

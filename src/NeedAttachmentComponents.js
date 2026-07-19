@@ -12,9 +12,7 @@ import {
 const fallbackNeedAttachmentText = {
   attachmentsTitle: 'Pièces jointes du besoin',
   cloudTitle: 'Cloud Hubbing privé',
-  cloudDescription: plan => plan === 'Premium'
-    ? 'Votre espace privé : retrouvez tous vos fichiers attachés aux besoins. Personne d’autre ne peut consulter ce cloud.'
-    : 'Votre espace privé : retrouvez vos fichiers attachés aux besoins. Personne d’autre ne peut consulter ce cloud. Le téléchargement complet des documents est réservé au plan Premium.',
+  cloudDescription: () => 'Votre espace privé : retrouvez tous vos fichiers attachés aux besoins. Personne d’autre ne peut consulter ce cloud.',
   emptyCloud: 'Aucun fichier ajouté pour le moment.',
   openCloud: 'Ouvrir le cloud',
   cloudHint: 'Galerie privée de vos pièces jointes',
@@ -31,9 +29,6 @@ const fallbackNeedAttachmentText = {
   importFile: 'Importer',
   uploading: 'Envoi...',
   open: 'Ouvrir',
-  download: 'Télécharger',
-  downloading: 'Téléchargement...',
-  downloadError: 'Téléchargement impossible.',
   report: 'Signaler',
   delete: 'Supprimer',
   deleting: 'Suppression...',
@@ -82,21 +77,6 @@ const lockBodyScroll = () => {
       bodyOverflowBeforeLock = ''
     }
   }
-}
-
-const downloadSignedAttachment = async ({ attachment, signedUrl, text }) => {
-  if (!signedUrl) return
-  const response = await fetch(signedUrl)
-  if (!response.ok) throw new Error(text.downloadError || 'Téléchargement impossible.')
-  const blob = await response.blob()
-  const objectUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = objectUrl
-  link.download = attachment.file_name || 'piece-jointe'
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
 }
 
 export function NeedAttachmentUploader({ company, plan, needKey, needLabel, attachments = [], onChange, ui }) {
@@ -160,7 +140,6 @@ export function NeedAttachmentUploader({ company, plan, needKey, needLabel, atta
           attachments={attachments}
           ui={ui}
           canDelete
-          canDownload={policy.plan === 'Premium'}
           onDelete={async attachment => {
             await deleteNeedAttachment(attachment)
             await onChange?.()
@@ -175,7 +154,6 @@ export function NeedAttachmentCloud({ plan, attachments = [], onChange, ui }) {
   const policy = useMemo(() => getNeedAttachmentPolicy(plan), [plan])
   const text = getNeedAttachmentText(ui)
   const [isOpen, setIsOpen] = useState(false)
-  const canDownload = policy.plan === 'Premium'
   const countLabel = text.fileCount ? text.fileCount(attachments.length) : `${attachments.length} fichier${attachments.length > 1 ? 's' : ''}`
 
   return (
@@ -222,7 +200,6 @@ export function NeedAttachmentCloud({ plan, attachments = [], onChange, ui }) {
           attachments={attachments}
           ui={ui}
           countLabel={countLabel}
-          canDownload={canDownload}
           onClose={() => setIsOpen(false)}
           onDelete={async attachment => {
             await deleteNeedAttachment(attachment)
@@ -234,14 +211,13 @@ export function NeedAttachmentCloud({ plan, attachments = [], onChange, ui }) {
   )
 }
 
-export function NeedAttachmentGallery({ attachments = [], ui, canDownload = false, onReport }) {
+export function NeedAttachmentGallery({ attachments = [], ui, onReport }) {
   if (!attachments.length) return null
   return (
     <div style={{ marginTop: 8 }}>
       <NeedAttachmentList
         attachments={attachments}
         ui={ui}
-        canDownload={canDownload}
         onReport={onReport}
         compact
       />
@@ -249,7 +225,7 @@ export function NeedAttachmentGallery({ attachments = [], ui, canDownload = fals
   )
 }
 
-function NeedAttachmentCloudPage({ plan, attachments, ui, countLabel, canDownload, onClose, onDelete }) {
+function NeedAttachmentCloudPage({ plan, attachments, ui, countLabel, onClose, onDelete }) {
   const text = getNeedAttachmentText(ui)
   const [preview, setPreview] = useState(null)
 
@@ -353,7 +329,6 @@ function NeedAttachmentCloudPage({ plan, attachments, ui, countLabel, canDownloa
         <NeedAttachmentPreview
           item={preview}
           ui={ui}
-          canDownload={canDownload}
           canDelete
           onClose={() => setPreview(null)}
           onDelete={handleDelete}
@@ -442,11 +417,10 @@ function NeedAttachmentCloudTile({ attachment, ui, onOpen, onDelete }) {
   )
 }
 
-function NeedAttachmentPreview({ item, ui, canDownload, canDelete = false, onClose, onDelete }) {
+function NeedAttachmentPreview({ item, ui, canDelete = false, onClose, onDelete }) {
   const text = getNeedAttachmentText(ui)
   const { attachment, signedUrl } = item
   const [busy, setBusy] = useState(false)
-  const [downloading, setDownloading] = useState(false)
   const isImage = attachment.file_type === 'image'
   const isPdf = attachment.file_type === 'pdf'
 
@@ -474,33 +448,22 @@ function NeedAttachmentPreview({ item, ui, canDownload, canDelete = false, onClo
     }
   }
 
-  const downloadFile = async () => {
-    if (!signedUrl || downloading) return
-    setDownloading(true)
-    try {
-      await downloadSignedAttachment({ attachment, signedUrl, text })
-    } catch (error) {
-      alert(error?.message || text.downloadError || 'Téléchargement impossible.')
-    } finally {
-      setDownloading(false)
-    }
-  }
-
   const dialog = (
     <div role="dialog" aria-modal="true" aria-label={attachment.file_name}
       onClick={event => {
         if (event.target === event.currentTarget) onClose?.()
       }}
       style={{ position: 'fixed', inset: 0, zIndex: 2147483647, background: 'rgba(17,24,39,0.94)', display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 14px calc(env(safe-area-inset-bottom, 0px) + 14px)' }}>
-      <button type="button" onClick={onClose} aria-label={text.close} title={text.close}
-        style={{ position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 10px)', right: 12, zIndex: 2147483647, width: 46, height: 46, borderRadius: 999, border: '1px solid rgba(17,24,39,0.12)', background: '#fff', color: '#111827', boxShadow: '0 14px 32px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 28, fontWeight: 900, lineHeight: 1 }}>
-        ×
-      </button>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, paddingRight: 58 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ margin: 0, color: '#fff', fontSize: 14, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{attachment.file_name}</p>
           <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.72)', fontSize: 11, fontWeight: 700 }}>{formatFileSize(attachment.file_size)}</p>
         </div>
+        <button type="button" onClick={onClose} aria-label={text.close}
+          style={{ minWidth: 42, height: 42, borderRadius: 999, border: '1px solid rgba(255,255,255,0.28)', background: 'rgba(255,255,255,0.12)', color: 'white', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 12px', fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
+          <HubbingIcon name="x" size={18} color="white" />
+          {text.close}
+        </button>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 20, background: 'rgba(255,255,255,0.06)' }}>
@@ -516,27 +479,21 @@ function NeedAttachmentPreview({ item, ui, canDownload, canDelete = false, onClo
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', paddingTop: 12 }}>
-        {canDownload && (
-          <button type="button" onClick={downloadFile} disabled={downloading || !signedUrl}
-            style={{ ...buttonBase, background: '#ECFDF5', color: '#047857', border: '1px solid #BBF7D0', padding: '10px 14px', fontSize: 12, cursor: downloading ? 'default' : 'pointer' }}>
-            {downloading ? (text.downloading || 'Téléchargement...') : text.download}
-          </button>
-        )}
-        {canDelete && (
+      {canDelete && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', paddingTop: 12 }}>
           <button type="button" onClick={deleteFile} disabled={busy}
             style={{ ...buttonBase, background: '#FFF5F5', color: '#E24B4A', border: '1px solid #FECACA', padding: '10px 14px', fontSize: 12 }}>
             {busy ? text.deleting : text.delete}
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 
   return typeof document !== 'undefined' ? createPortal(dialog, document.body) : dialog
 }
 
-function NeedAttachmentList({ attachments, ui, canDelete = false, canDownload = false, onDelete, onReport, compact = false }) {
+function NeedAttachmentList({ attachments, ui, canDelete = false, onDelete, onReport, compact = false }) {
   const [preview, setPreview] = useState(null)
 
   const handleDelete = async attachment => {
@@ -553,7 +510,6 @@ function NeedAttachmentList({ attachments, ui, canDelete = false, canDownload = 
             attachment={attachment}
             ui={ui}
             canDelete={canDelete}
-            canDownload={canDownload}
             onDelete={onDelete}
             onReport={onReport}
             onOpenPreview={setPreview}
@@ -565,7 +521,6 @@ function NeedAttachmentList({ attachments, ui, canDelete = false, canDownload = 
         <NeedAttachmentPreview
           item={preview}
           ui={ui}
-          canDownload={canDownload}
           canDelete={canDelete}
           onClose={() => setPreview(null)}
           onDelete={handleDelete}
@@ -575,11 +530,10 @@ function NeedAttachmentList({ attachments, ui, canDelete = false, canDownload = 
   )
 }
 
-function NeedAttachmentItem({ attachment, ui, canDelete, canDownload, onDelete, onReport, onOpenPreview, compact }) {
+function NeedAttachmentItem({ attachment, ui, canDelete, onDelete, onReport, onOpenPreview, compact }) {
   const text = getNeedAttachmentText(ui)
   const [signedUrl, setSignedUrl] = useState(null)
   const [busy, setBusy] = useState(false)
-  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -601,19 +555,6 @@ function NeedAttachmentItem({ attachment, ui, canDelete, canDownload, onDelete, 
     } catch (error) {
       alert(error?.message || text.deleteError)
       setBusy(false)
-    }
-  }
-
-  const downloadFile = async event => {
-    event.stopPropagation()
-    if (!signedUrl || downloading) return
-    setDownloading(true)
-    try {
-      await downloadSignedAttachment({ attachment, signedUrl, text })
-    } catch (error) {
-      alert(error?.message || text.downloadError || 'Téléchargement impossible.')
-    } finally {
-      setDownloading(false)
     }
   }
 
@@ -648,12 +589,6 @@ function NeedAttachmentItem({ attachment, ui, canDelete, canDownload, onDelete, 
           {attachment.need_label ? ` · ${attachment.need_label}` : ''}
         </p>
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 5 }}>
-          {canDownload && signedUrl && (
-            <button onClick={downloadFile} disabled={downloading}
-              style={{ ...buttonBase, padding: '5px 8px', fontSize: 10, background: '#ECFDF5', color: '#047857', border: '1px solid #BBF7D0', cursor: downloading ? 'default' : 'pointer' }}>
-              {downloading ? (text.downloading || 'Téléchargement...') : text.download}
-            </button>
-          )}
           {onReport && (
             <button onClick={() => onReport(attachment)}
               style={{ ...buttonBase, padding: '5px 8px', fontSize: 10, background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>

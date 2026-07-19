@@ -500,8 +500,8 @@ function CompletionCard({ completion, ui, perspective, actionSlot }) {
         <span style={{ ...pillStyle, background: badge.bg, color: badge.color }}>{badge.label}</span>
       </div>
 
-      <CompletionPhotoStrip title={text.beforePhotos || 'Avant'} photos={beforePhotos} />
-      <CompletionPhotoStrip title={text.afterPhotos || 'Après travaux'} photos={afterPhotos} />
+      <CompletionPhotoStrip title={text.beforePhotos || 'Avant'} photos={beforePhotos} closeLabel={ui?.common?.close || 'Fermer'} />
+      <CompletionPhotoStrip title={text.afterPhotos || 'Après travaux'} photos={afterPhotos} closeLabel={ui?.common?.close || 'Fermer'} />
 
       {completion.status === 'confirmed' && !completion.show_on_provider_profile && perspective === 'client' && !completion.provider_external && (
         <p style={{ fontSize: 11, color: '#9CA3AF', margin: '8px 0 0' }}>{text.hiddenOnProvider}</p>
@@ -512,7 +512,7 @@ function CompletionCard({ completion, ui, perspective, actionSlot }) {
   )
 }
 
-function CompletionPhotoStrip({ title, photos = [] }) {
+function CompletionPhotoStrip({ title, photos = [], closeLabel = 'Fermer' }) {
   const [viewerIndex, setViewerIndex] = useState(null)
   const availablePhotos = photos.filter(photo => photo.signedUrl)
 
@@ -547,6 +547,7 @@ function CompletionPhotoStrip({ title, photos = [] }) {
         <CompletionPhotoViewer
           photos={availablePhotos}
           initialIndex={viewerIndex}
+          closeLabel={closeLabel}
           onClose={() => setViewerIndex(null)}
         />
       )}
@@ -554,7 +555,7 @@ function CompletionPhotoStrip({ title, photos = [] }) {
   )
 }
 
-function CompletionPhotoViewer({ photos, initialIndex = 0, onClose }) {
+function CompletionPhotoViewer({ photos, initialIndex = 0, closeLabel = 'Fermer', onClose }) {
   const [activeIndex, setActiveIndex] = useState(initialIndex)
   const activePhoto = photos[activeIndex]
   const hasMultiple = photos.length > 1
@@ -576,9 +577,10 @@ function CompletionPhotoViewer({ photos, initialIndex = 0, onClose }) {
   const viewer = (
     <div role="dialog" aria-modal="true" aria-label="Photo agrandie" onClick={onClose}
       style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(3,7,18,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'calc(env(safe-area-inset-top) + 58px) 14px calc(env(safe-area-inset-bottom) + 54px)' }}>
-      <button type="button" onClick={onClose} aria-label="Fermer"
-        style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top) + 12px)', right: 14, width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.14)', color: 'white', fontSize: 24, lineHeight: 1, cursor: 'pointer', zIndex: 2 }}>
-        ×
+      <button type="button" onClick={onClose} aria-label={closeLabel}
+        style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top) + 12px)', right: 14, minWidth: 42, height: 42, borderRadius: 999, border: '1px solid rgba(255,255,255,0.28)', background: 'rgba(255,255,255,0.12)', color: 'white', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 12px', fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: 900, zIndex: 2 }}>
+        <HubbingIcon name="x" size={18} color="white" />
+        {closeLabel}
       </button>
 
       {hasMultiple && (

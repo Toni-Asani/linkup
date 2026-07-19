@@ -434,7 +434,7 @@ const dictionaries = {
       starterLimits: ['Adresse complète masquée', 'Téléphone, site web et LinkedIn masqués', '1 photo par besoin · 10 MB max'],
       basicFeatures: ['Swipes illimités', 'Messages illimités · 1000 caractères/message', 'Adresse entreprise visible', 'Réception des messages illimitée', 'Statistiques de base'],
       basicLimits: ['Téléphone, site web et LinkedIn masqués', '5 photos par besoin · 10 MB/photo'],
-      premiumFeatures: ['Tout Basic inclus', 'Messages jusqu’à 2000 caractères', 'Coordonnées complètes', 'Site web et LinkedIn visibles', '15 fichiers par besoin (photos/PDF)', 'Téléchargement des documents', 'Visibilité prioritaire'],
+      premiumFeatures: ['Tout Basic inclus', 'Messages jusqu’à 2000 caractères', 'Coordonnées complètes', 'Site web et LinkedIn visibles', '15 fichiers par besoin (photos/PDF)', 'Visibilité prioritaire'],
       premiumLimits: [],
       chooseBasic: 'Choisir Basic',
       choosePremium: 'Choisir Premium',
@@ -571,9 +571,7 @@ const dictionaries = {
     needAttachments: {
       attachmentsTitle: 'Pièces jointes du besoin',
       cloudTitle: 'Cloud Hubbing privé',
-      cloudDescription: (plan) => plan === 'Premium'
-        ? 'Votre espace privé : retrouvez tous vos fichiers attachés aux besoins. Personne d’autre ne peut consulter ce cloud.'
-        : 'Votre espace privé : retrouvez vos fichiers attachés aux besoins. Personne d’autre ne peut consulter ce cloud. Le téléchargement complet des documents est réservé au plan Premium.',
+      cloudDescription: () => 'Votre espace privé : retrouvez tous vos fichiers attachés aux besoins. Personne d’autre ne peut consulter ce cloud.',
       emptyCloud: 'Aucun fichier ajouté pour le moment.',
       openCloud: 'Ouvrir le cloud',
       cloudHint: 'Galerie privée de vos pièces jointes',
@@ -590,9 +588,6 @@ const dictionaries = {
       importFile: 'Importer',
       uploading: 'Envoi...',
       open: 'Ouvrir',
-      download: 'Télécharger',
-      downloading: 'Téléchargement...',
-      downloadError: 'Téléchargement impossible.',
       report: 'Signaler',
       delete: 'Supprimer',
       deleting: 'Suppression...',
