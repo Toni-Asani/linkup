@@ -957,14 +957,16 @@ export default function SwipeScreen({ user, setScreen, plan = 'Starter', setActi
               </div>
             )}
 
-            <CompanyRealizationsGallery
-              realizations={company.realizations || []}
-              ui={ui}
-              compact
-              previewCount={3}
-              showEmpty
-              style={{ marginTop: 'auto', marginBottom: 0 }}
-            />
+            <div style={{marginTop:'auto',paddingTop:8}}>
+              <CompanyRealizationsGallery
+                realizations={company.realizations || []}
+                ui={ui}
+                compact
+                previewCount={3}
+                showEmpty
+                style={{margin:0}}
+              />
+            </div>
           </div>
         </div>
       </div>

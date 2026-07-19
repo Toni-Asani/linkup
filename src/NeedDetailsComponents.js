@@ -179,7 +179,7 @@ export function NeedDetailsModal({
             <p style={{ margin: '10px 0 0', color: '#94A3B8', fontSize: 11, fontWeight: 750 }}>{text.noDeadline}</p>
           )}
 
-          <div style={{ marginTop: 16 }}>
+          {!isPermanent && <div style={{ marginTop: 16 }}>
             <p style={{ margin: '0 0 8px', fontSize: 11, color: '#E67E22', fontWeight: 900 }}>{text.photos}</p>
             {loadingAttachments ? (
               <div style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', borderRadius: 12, padding: 16, textAlign: 'center', color: '#64748B', fontSize: 12, fontWeight: 700 }}>{text.loadingPhotos}</div>
@@ -188,7 +188,7 @@ export function NeedDetailsModal({
             ) : (
               <div style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', borderRadius: 12, padding: 16, textAlign: 'center', color: '#94A3B8', fontSize: 12, fontWeight: 700 }}>{text.noPhotos}</div>
             )}
-          </div>
+          </div>}
         </div>
 
         <footer style={{ flexShrink: 0, padding: '12px 15px', borderTop: '1px solid #F1F5F9', background: 'white', boxShadow: '0 -10px 24px rgba(15,23,42,0.05)' }}>

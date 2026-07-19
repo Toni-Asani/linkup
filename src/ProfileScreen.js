@@ -188,6 +188,7 @@ export default function ProfileScreen({ user, setActiveTab, plan = 'Starter', la
   const [sharingProfile, setSharingProfile] = useState(false)
   const [showCardPreview, setShowCardPreview] = useState(false)
   const fileInputRef = useRef(null)
+  const newNeedTextareaRef = useRef(null)
 
   useEffect(() => { loadProfile() }, [])
 
@@ -736,11 +737,11 @@ notif_email: form.notif_email ?? true,
         <label style={{display:'block',fontSize:12,fontWeight:750,color:'#475569',marginBottom:6}}>{needActions.startDate}</label>
         <input type="date" value={editNeedForm.starts}
           onChange={event => setEditNeedForm(current => ({...current,starts:event.target.value}))}
-          style={{...renewalDateInputStyle,width:'100%',maxWidth:'100%',marginBottom:12}} />
+          style={{...renewalDateInputStyle,marginBottom:12}} />
         <label style={{display:'block',fontSize:12,fontWeight:750,color:'#475569',marginBottom:6}}>{needActions.endDate}</label>
         <input type="date" value={editNeedForm.expires} min={editNeedForm.starts || undefined}
           onChange={event => setEditNeedForm(current => ({...current,expires:event.target.value}))}
-          style={{...renewalDateInputStyle,width:'100%',maxWidth:'100%',marginBottom:16}} />
+          style={{...renewalDateInputStyle,marginBottom:16}} />
         <div style={{display:'grid',gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)',gap:8}}>
           <button type="button" onClick={() => setEditingNeed(null)} disabled={needActionBusy}
             style={{minWidth:0,padding:'12px 8px',border:'1px solid #E2E8F0',borderRadius:10,background:'white',color:'#64748B',fontSize:13,fontWeight:750}}>
@@ -835,17 +836,6 @@ notif_email: form.notif_email ?? true,
         <p style={{fontSize:12,color:'#64748B',lineHeight:1.5,margin:0}}>{ui.profile.needsHelp}</p>
         <textarea value={form.needs_description||''} onChange={e => setForm({...form,needs_description:e.target.value})}
           style={{padding:'12px',border:'1px solid #C7D7FE',borderRadius:10,fontSize:16,outline:'none',fontFamily:'Plus Jakarta Sans',resize:'vertical',minHeight:'120px',boxSizing:'border-box',width:'100%'}} />
-        {company?.id && (
-          <NeedAttachmentUploader
-            company={company}
-            plan={currentPlan}
-            needKey={GENERAL_NEED_KEY}
-            needLabel={ui.profile.needs}
-            attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
-            onChange={() => loadNeedAttachments(company.id)}
-            ui={ui}
-          />
-        )}
       </div>
 
       <div style={{display:'flex',flexDirection:'column',gap:10,background:'#FFF9F0',border:'1px solid #FDE8C0',borderRadius:14,padding:'14px'}}>
@@ -908,18 +898,28 @@ notif_email: form.notif_email ?? true,
 
       {/* Ajouter un besoin ponctuel */}
       <div style={{display:'flex',flexDirection:'column',gap:9,background:'white',border:'1px solid #FDE8C0',borderRadius:10,padding:'12px'}}>
-        <Input value={newTag} onChange={e => setNewTag(e.target.value)}
-          placeholder={ui.profile.tagPlaceholder} />
-        <div style={{display:'grid',gridTemplateColumns:'repeat(2, minmax(0, 1fr))',gap:8}}>
-          <label style={{minWidth:0,fontSize:11,fontWeight:750,color:'#64748B'}}>
+        <textarea
+          ref={newNeedTextareaRef}
+          rows={1}
+          value={newTag}
+          onChange={event => setNewTag(event.target.value)}
+          onInput={event => {
+            event.currentTarget.style.height = 'auto'
+            event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`
+          }}
+          placeholder={ui.profile.tagPlaceholder}
+          style={{width:'100%',minWidth:0,minHeight:50,boxSizing:'border-box',overflow:'hidden',resize:'none',padding:'12px 14px',border:'1px solid #ddd',borderRadius:10,fontSize:16,lineHeight:1.45,outline:'none',fontFamily:'Plus Jakarta Sans',whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}
+        />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2, minmax(0, 1fr))',columnGap:12,rowGap:8,width:'100%'}}>
+          <label style={{display:'block',width:'100%',minWidth:0,fontSize:11,fontWeight:750,color:'#64748B'}}>
             {ui.profile.startDate}
             <input type="date" value={form.newTagStart||''} onChange={e => setForm({...form,newTagStart:e.target.value})}
-              style={{width:'100%',boxSizing:'border-box',marginTop:5,padding:'10px 8px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
+              style={{display:'block',width:'100%',maxWidth:'100%',minWidth:0,boxSizing:'border-box',marginTop:5,padding:'10px 8px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
           </label>
-          <label style={{minWidth:0,fontSize:11,fontWeight:750,color:'#64748B'}}>
+          <label style={{display:'block',width:'100%',minWidth:0,fontSize:11,fontWeight:750,color:'#64748B'}}>
             {ui.profile.endDate}
             <input type="date" value={form.newTagExpiry||''} min={form.newTagStart || undefined} onChange={e => setForm({...form,newTagExpiry:e.target.value})}
-              style={{width:'100%',boxSizing:'border-box',marginTop:5,padding:'10px 8px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
+              style={{display:'block',width:'100%',maxWidth:'100%',minWidth:0,boxSizing:'border-box',marginTop:5,padding:'10px 8px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
           </label>
         </div>
           <button type="button" disabled={!newTag.trim() || !form.newTagStart || !form.newTagExpiry} onClick={() => {
@@ -935,6 +935,7 @@ notif_email: form.notif_email ?? true,
             if (tags.some(tag => sameTag(tag, label))) return
             setTags([...tags, { label, starts: form.newTagStart, expires: form.newTagExpiry }])
             setNewTag('')
+            if (newNeedTextareaRef.current) newNeedTextareaRef.current.style.height = 'auto'
             setForm({...form, newTagStart: '', newTagExpiry: ''})
           }}
             style={{padding:'11px 16px',background:newTag.trim() && form.newTagStart && form.newTagExpiry ? '#E24B4A' : '#E5E7EB',color:newTag.trim() && form.newTagStart && form.newTagExpiry ? 'white' : '#94A3B8',border:'none',borderRadius:10,fontSize:14,fontWeight:750,cursor:newTag.trim() && form.newTagStart && form.newTagExpiry ? 'pointer' : 'default'}}>
@@ -1135,7 +1136,7 @@ notif_email: form.notif_email ?? true,
         />
 
         {/* Recherche permanente */}
-        {(company.needs_description || (groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0) && (
+        {company.needs_description && (
           <div style={{background:'#F5F8FF',border:'1px solid #D9E5FF',borderRadius:12,padding:'1rem'}}>
             <p style={{fontSize:12,color:'#2563EB',fontWeight:800,margin:'0 0 8px',display:'flex',alignItems:'center',gap:5}}>
               <span style={{fontSize:17,lineHeight:1}}>∞</span> {ui.profile.needs}
@@ -1150,12 +1151,6 @@ notif_email: form.notif_email ?? true,
                   {needActions.delete}
                 </button>
               </>
-            )}
-            {(groupedNeedAttachments[GENERAL_NEED_KEY] || []).length > 0 && (
-              <NeedAttachmentGallery
-                attachments={groupedNeedAttachments[GENERAL_NEED_KEY] || []}
-                ui={ui}
-              />
             )}
           </div>
         )}
