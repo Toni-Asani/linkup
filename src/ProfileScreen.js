@@ -913,13 +913,18 @@ notif_email: form.notif_email ?? true,
         <div style={{display:'grid',gridTemplateColumns:'repeat(2, minmax(0, 1fr))',columnGap:12,rowGap:8,width:'100%'}}>
           <label style={{display:'block',width:'100%',minWidth:0,fontSize:11,fontWeight:750,color:'#64748B'}}>
             {ui.profile.startDate}
-            <input type="date" value={form.newTagStart||''} onChange={e => setForm({...form,newTagStart:e.target.value})}
-              style={{display:'block',width:'100%',maxWidth:'100%',minWidth:0,boxSizing:'border-box',marginTop:5,padding:'10px 8px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
+            <CompactDateInput
+              value={form.newTagStart || ''}
+              onChange={event => setForm({...form,newTagStart:event.target.value})}
+            />
           </label>
           <label style={{display:'block',width:'100%',minWidth:0,fontSize:11,fontWeight:750,color:'#64748B'}}>
             {ui.profile.endDate}
-            <input type="date" value={form.newTagExpiry||''} min={form.newTagStart || undefined} onChange={e => setForm({...form,newTagExpiry:e.target.value})}
-              style={{display:'block',width:'100%',maxWidth:'100%',minWidth:0,boxSizing:'border-box',marginTop:5,padding:'10px 8px',border:'1px solid #ddd',borderRadius:10,fontSize:13,outline:'none',fontFamily:'Plus Jakarta Sans'}} />
+            <CompactDateInput
+              value={form.newTagExpiry || ''}
+              min={form.newTagStart || undefined}
+              onChange={event => setForm({...form,newTagExpiry:event.target.value})}
+            />
           </label>
         </div>
           <button type="button" disabled={!newTag.trim() || !form.newTagStart || !form.newTagExpiry} onClick={() => {
@@ -1329,6 +1334,20 @@ notif_email: form.notif_email ?? true,
 
 function Label({ children }) {
   return <p style={{fontSize:12,color:'#E24B4A',fontWeight:600,marginTop:'0.25rem'}}>{children}</p>
+}
+
+function CompactDateInput({ value, min, onChange }) {
+  return (
+    <span style={{position:'relative',display:'block',width:'100%',height:56,minWidth:0,boxSizing:'border-box',marginTop:5,overflow:'hidden',background:'#F3F4F6',border:'1px solid #D1D5DB',borderRadius:10}}>
+      <input
+        type="date"
+        value={value}
+        min={min}
+        onChange={onChange}
+        style={{position:'absolute',inset:0,display:'block',width:'100%',height:'100%',minWidth:0,maxWidth:'100%',boxSizing:'border-box',margin:0,padding:'0 9px',border:'none',borderRadius:0,outline:'none',background:'transparent',fontSize:13,fontFamily:'Plus Jakarta Sans',color:'#111827'}}
+      />
+    </span>
+  )
 }
 
 function DeleteAccountButton({ user, lang = 'fr' }) {
