@@ -128,14 +128,56 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
 
   const handleGooglePlaySubscribe = async (plan) => {
     if (!plan.googleProductId) throw new Error(ui.pricing.androidBillingUnavailable)
-    const result = await HubbingPurchases.purchase({ productId: plan.googleProductId })
+    const replacementMode = currentPlan === 'basic' && plan.id === 'premium'
+      ? 'upgrade'
+      : currentPlan === 'premium' && plan.id === 'basic'
+        ? 'downgrade'
+        : 'none'
+    const result = await HubbingPurchases.purchase({
+      productId: plan.googleProductId,
+      accountId: user.id,
+      replacementMode,
+    })
     if (result.cancelled) return
     if (result.pending) {
       alert(ui.pricing.purchasePending)
       return
     }
-    await saveSubscription(plan, result.transaction)
+    const verified = await verifyGooglePlayTransaction(result.transaction)
+    if (result.replacementMode === 'downgrade' && verified.plan !== plan.id) {
+      alert(ui.pricing.downgradeScheduled)
+      return
+    }
     alert(ui.pricing.purchaseSuccess(plan.name))
+  }
+
+  const verifyGooglePlayTransaction = async (transaction = {}) => {
+    const purchaseToken = transaction.purchaseToken || transaction.originalTransactionId
+    const productId = transaction.productId
+    if (!purchaseToken || !productId) throw new Error(ui.pricing.androidVerificationFailed)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const accessToken = session?.access_token
+    if (!accessToken) throw new Error('missing_session')
+
+    const response = await fetch(
+      `${SUPABASE_FUNCTIONS_URL}/functions/v1/verify-google-play-subscription`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ purchaseToken, productId }),
+      }
+    )
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok || !payload?.subscription?.entitled) {
+      throw new Error(payload.error || ui.pricing.androidVerificationFailed)
+    }
+
+    setCurrentPlan(payload.subscription.plan)
+    return payload.subscription
   }
 
   const handleRestorePurchases = async () => {
@@ -143,17 +185,35 @@ export default function PricingScreen({ user, setActiveTab, lang = 'fr' }) {
     try {
       const result = await HubbingPurchases.restorePurchases()
       const transactions = result.transactions || []
-      const productIds = nativeAndroid ? GOOGLE_PLAY_PRODUCT_IDS : APPLE_PRODUCT_IDS
-      const premium = transactions.find(transaction => transaction.productId === productIds.premium)
-      const basic = transactions.find(transaction => transaction.productId === productIds.basic)
-      const transaction = premium || basic
-      if (!transaction) {
+      if (!transactions.length) {
         alert(ui.pricing.noPurchaseToRestore)
         return
       }
-      const plan = plans.find(item => nativeAndroid ? item.googleProductId === transaction.productId : item.appleProductId === transaction.productId)
-      if (!plan) throw new Error(nativeAndroid ? ui.pricing.androidBillingUnavailable : ui.pricing.appleProductsUnavailable)
-      await saveSubscription(plan, transaction)
+
+      if (nativeAndroid) {
+        const verifiedSubscriptions = []
+        for (const transaction of transactions) {
+          if (Object.values(GOOGLE_PLAY_PRODUCT_IDS).includes(transaction.productId)) {
+            verifiedSubscriptions.push(await verifyGooglePlayTransaction(transaction))
+          }
+        }
+        if (!verifiedSubscriptions.length) {
+          alert(ui.pricing.noPurchaseToRestore)
+          return
+        }
+      } else {
+        const productIds = APPLE_PRODUCT_IDS
+        const premium = transactions.find(transaction => transaction.productId === productIds.premium)
+        const basic = transactions.find(transaction => transaction.productId === productIds.basic)
+        const transaction = premium || basic
+        if (!transaction) {
+          alert(ui.pricing.noPurchaseToRestore)
+          return
+        }
+        const plan = plans.find(item => item.appleProductId === transaction.productId)
+        if (!plan) throw new Error(ui.pricing.appleProductsUnavailable)
+        await saveSubscription(plan, transaction)
+      }
       alert(ui.pricing.purchaseRestored)
     } catch (e) {
       alert(ui.pricing.purchaseError(e.message))

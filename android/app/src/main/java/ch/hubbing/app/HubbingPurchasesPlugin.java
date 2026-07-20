@@ -37,6 +37,7 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
     private BillingClient billingClient;
     private PluginCall pendingPurchaseCall;
     private String pendingProductId;
+    private String pendingReplacementMode;
     private final Map<String, ProductDetails> productDetailsById = new HashMap<>();
 
     private interface BillingReadyCallback {
@@ -80,6 +81,8 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
     @PluginMethod
     public void purchase(PluginCall call) {
         String productId = call.getString("productId");
+        String accountId = call.getString("accountId");
+        String replacementMode = call.getString("replacementMode", "none");
         if (productId == null || productId.trim().isEmpty()) {
             call.reject("Missing product id");
             return;
@@ -93,7 +96,7 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
         ensureBillingReady(call, () -> {
             ProductDetails cached = productDetailsById.get(productId);
             if (cached != null) {
-                launchPurchaseFlow(call, productId, cached);
+                preparePurchaseFlow(call, productId, cached, accountId, replacementMode);
                 return;
             }
 
@@ -104,7 +107,7 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
                 }
                 ProductDetails productDetails = productDetailsList.get(0);
                 productDetailsById.put(productDetails.getProductId(), productDetails);
-                launchPurchaseFlow(call, productId, productDetails);
+                preparePurchaseFlow(call, productId, productDetails, accountId, replacementMode);
             });
         });
     }
@@ -249,7 +252,54 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
         });
     }
 
-    private void launchPurchaseFlow(PluginCall call, String productId, ProductDetails productDetails) {
+    private void preparePurchaseFlow(
+        PluginCall call,
+        String productId,
+        ProductDetails productDetails,
+        String accountId,
+        String replacementMode
+    ) {
+        billingClient.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder()
+                .setProductType(BillingClient.ProductType.SUBS)
+                .build(),
+            (billingResult, purchases) -> {
+                if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                    call.reject(billingResult.getDebugMessage());
+                    return;
+                }
+
+                Purchase existingPurchase = null;
+                for (Purchase purchase : purchases) {
+                    if (
+                        purchase.getPurchaseState() == Purchase.PurchaseState.PURCHASED
+                        && !purchase.getProducts().contains(productId)
+                    ) {
+                        existingPurchase = purchase;
+                        break;
+                    }
+                }
+
+                launchPurchaseFlow(
+                    call,
+                    productId,
+                    productDetails,
+                    accountId,
+                    replacementMode,
+                    existingPurchase
+                );
+            }
+        );
+    }
+
+    private void launchPurchaseFlow(
+        PluginCall call,
+        String productId,
+        ProductDetails productDetails,
+        String accountId,
+        String replacementMode,
+        Purchase existingPurchase
+    ) {
         String offerToken = firstOfferToken(productDetails);
         if (offerToken == null) {
             call.reject("Subscription offer not found");
@@ -258,6 +308,7 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
 
         pendingPurchaseCall = call;
         pendingProductId = productId;
+        pendingReplacementMode = replacementMode;
 
         BillingFlowParams.ProductDetailsParams productDetailsParams =
             BillingFlowParams.ProductDetailsParams.newBuilder()
@@ -265,9 +316,27 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
                 .setOfferToken(offerToken)
                 .build();
 
-        BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
-            .setProductDetailsParamsList(Collections.singletonList(productDetailsParams))
-            .build();
+        BillingFlowParams.Builder billingFlowBuilder = BillingFlowParams.newBuilder()
+            .setProductDetailsParamsList(Collections.singletonList(productDetailsParams));
+
+        if (accountId != null && !accountId.trim().isEmpty()) {
+            billingFlowBuilder.setObfuscatedAccountId(accountId);
+        }
+
+        if (existingPurchase != null) {
+            int googleReplacementMode = "downgrade".equals(replacementMode)
+                ? BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.DEFERRED
+                : BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.CHARGE_PRORATED_PRICE;
+
+            BillingFlowParams.SubscriptionUpdateParams updateParams =
+                BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+                    .setOldPurchaseToken(existingPurchase.getPurchaseToken())
+                    .setSubscriptionReplacementMode(googleReplacementMode)
+                    .build();
+            billingFlowBuilder.setSubscriptionUpdateParams(updateParams);
+        }
+
+        BillingFlowParams billingFlowParams = billingFlowBuilder.build();
 
         BillingResult result = billingClient.launchBillingFlow(getActivity(), billingFlowParams);
         if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) {
@@ -373,6 +442,8 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
         JSObject response = new JSObject();
         response.put("cancelled", cancelled);
         response.put("pending", pending);
+        response.put("requestedProductId", pendingProductId);
+        response.put("replacementMode", pendingReplacementMode != null ? pendingReplacementMode : "none");
         if (purchase != null) {
             response.put("transaction", transactionPayload(purchase));
         }
@@ -416,5 +487,6 @@ public class HubbingPurchasesPlugin extends Plugin implements PurchasesUpdatedLi
     private void clearPendingPurchase() {
         pendingPurchaseCall = null;
         pendingProductId = null;
+        pendingReplacementMode = null;
     }
 }
